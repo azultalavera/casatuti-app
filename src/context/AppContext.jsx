@@ -21,6 +21,7 @@ export const AppProvider = ({ children }) => {
   const [clayDeliveries, setClayDeliveries] = useState([]);
   const [payments, setPayments] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [nonWorkingDays, setNonWorkingDays] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Cargar todos los datos desde el servicio
@@ -35,6 +36,7 @@ export const AppProvider = ({ children }) => {
       const loadedDeliveries = await mockService.getClayDeliveries();
       const loadedPayments = await mockService.getPayments();
       const loadedAlerts = await mockService.getAlerts();
+      const loadedNonWorkingDays = await mockService.getNonWorkingDays().catch(() => []);
 
       setUsers(loadedUsers);
       setStudentProfiles(loadedProfiles);
@@ -43,6 +45,7 @@ export const AppProvider = ({ children }) => {
       setClayDeliveries(loadedDeliveries);
       setPayments(loadedPayments);
       setAlerts(loadedAlerts);
+      setNonWorkingDays(loadedNonWorkingDays || []);
 
       // Comprobar si hay una sesión guardada en sessionStorage
       const savedUserId = sessionStorage.getItem('tuti_session_user_id');
@@ -419,6 +422,28 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const changeClassTeacher = async (classId, teacherId) => {
+    setLoading(true);
+    try {
+      await mockService.updateClassTeacher(classId, teacherId);
+      const loadedClasses = await mockService.getClasses();
+      setClasses(loadedClasses);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const bulkAssignClasses = async (teacherId, classIds) => {
+    setLoading(true);
+    try {
+      await mockService.bulkAssignClassesToTeacher(teacherId, classIds);
+      const loadedClasses = await mockService.getClasses();
+      setClasses(loadedClasses);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 7. Crear un nuevo estudiante o profesor por el ADMIN
   const createNewUserAction = async (userData) => {
     setLoading(true);
@@ -488,6 +513,29 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // 9. Días no laborales (Calendario)
+  const addNonWorkingDay = async (fecha, motivo) => {
+    setLoading(true);
+    try {
+      await mockService.addNonWorkingDay(fecha, motivo);
+      const loaded = await mockService.getNonWorkingDays();
+      setNonWorkingDays(loaded);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteNonWorkingDay = async (fecha) => {
+    setLoading(true);
+    try {
+      await mockService.deleteNonWorkingDay(fecha);
+      const loaded = await mockService.getNonWorkingDays();
+      setNonWorkingDays(loaded);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -500,6 +548,7 @@ export const AppProvider = ({ children }) => {
         clayDeliveries,
         payments,
         alerts,
+        nonWorkingDays,
         loading,
         loginAction,
         logoutAction,
@@ -512,11 +561,15 @@ export const AppProvider = ({ children }) => {
         deliverClayToStudent,
         recordStudentPayment,
         createNewTurn,
+        changeClassTeacher,
+        bulkAssignClasses,
         createNewUserAction,
         updateUserAction,
         deleteUserAction,
         toggleStudentBlockAction,
         resolveAlertAction,
+        addNonWorkingDay,
+        deleteNonWorkingDay,
         reloadAllData: loadData
       }}
     >

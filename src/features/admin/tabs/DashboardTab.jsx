@@ -1,25 +1,71 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function DashboardTab({ classes, bookings, students, studentProfiles, setAdminTab }) {
+  const [selectedBranch, setSelectedBranch] = useState('ALL');
+
   const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const todayDay = daysMap[new Date().getDay()];
 
-  const turnosHoyCount    = classes.filter(c => c.day === todayDay).length;
-  const alumnosCount      = students.length;
-  const paquetesActivos   = studentProfiles.filter(p => p.classCredits > 0).length;
-  const unpaidCount       = students.filter(st => {
-    const p = studentProfiles.find(p => p.studentId === st.id);
+  // Filtrado por sucursal
+  const filteredClasses = selectedBranch === 'ALL'
+    ? classes
+    : classes.filter(c => (c.sucursal || '').toUpperCase() === selectedBranch);
+
+  const filteredStudents = selectedBranch === 'ALL'
+    ? students
+    : students.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch);
+
+  const filteredStudentProfiles = selectedBranch === 'ALL'
+    ? studentProfiles
+    : studentProfiles.filter(p => {
+      const student = students.find(s => s.id === p.studentId);
+      return student && (student.sucursal || '').toUpperCase() === selectedBranch;
+    });
+
+  const turnosHoyCount = filteredClasses.filter(c => c.day === todayDay).length;
+  const alumnosCount = filteredStudents.length;
+  const paquetesActivos = filteredStudentProfiles.filter(p => p.classCredits > 0).length;
+  const unpaidCount = filteredStudents.filter(st => {
+    const p = filteredStudentProfiles.find(p => p.studentId === st.id);
     return !p || p.classCredits === 0;
   }).length;
   const deudaTotal = unpaidCount * 8000;
 
   return (
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <h2 style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-sans)', marginBottom: '4px', color: 'var(--gris-oscuro)' }}>
-          Panel de Administración
-        </h2>
-        <p style={{ color: 'var(--gris-medio)', fontSize: '13px' }}>Resumen operacional de Casa Tuti</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-sans)', marginBottom: '4px', color: 'var(--gris-oscuro)' }}>
+            Panel de Administración
+          </h2>
+          <p style={{ color: 'var(--gris-medio)', fontSize: '13px' }}>Resumen operacional de Casa Tuti</p>
+        </div>
+
+        {/* Filtro por Sucursal (Pills) */}
+        <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-crema-claro)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--gris-claro)' }}>
+          {['ALL', 'CENTRO', 'ALTO VERDE'].map((branch) => {
+            const isActive = selectedBranch === branch;
+            return (
+              <button
+                key={branch}
+                onClick={() => setSelectedBranch(branch)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  backgroundColor: isActive ? 'var(--verde-oliva)' : 'transparent',
+                  color: isActive ? 'var(--blanco)' : 'var(--gris-medio)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {branch === 'ALL' ? 'Todas' : branch === 'ALTO VERDE' ? 'Alto Verde' : 'Centro'}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Stats 2x2 */}
@@ -54,39 +100,6 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
       </div>
 
-      {/* Próximos Turnos */}
-      <div>
-        <div className="dashboard-section-header">
-          <h3 className="dashboard-section-title">Próximos Turnos</h3>
-          <button className="dashboard-section-link" onClick={() => setAdminTab('classes')}>Ver todos</button>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
-          {classes.length === 0 ? (
-            <div className="clay-card" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
-              <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No hay turnos vigentes.</p>
-            </div>
-          ) : (
-            classes.map(c => {
-              const startTime      = c.time.split(' - ')[0];
-              const occupancyCount = bookings.filter(b => b.classId === c.id && b.status === 'CONFIRMED').length;
-              return (
-                <div key={c.id} className="upcoming-turn-card">
-                  <span className="upcoming-turn-time">{startTime}</span>
-                  <div className="upcoming-turn-details">
-                    <span className="upcoming-turn-title">{c.sucursal ? `${c.sucursal} ·` : ''} {c.day}</span>
-                    <span className="upcoming-turn-subtitle">Profe: {c.teacherName} | {c.time}</span>
-                  </div>
-                  <span className="upcoming-turn-badge">{occupancyCount}/{c.capacity}</span>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      <button className="fab-create-turn" onClick={() => setAdminTab('classes')}>
-        <span>+</span> Crear Turno
-      </button>
     </div>
   );
 }

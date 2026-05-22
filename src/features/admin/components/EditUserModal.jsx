@@ -61,48 +61,40 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Nombre *:</label>
-              <input type="text" className="input-tuti" value={nombre} onChange={e => setNombre(e.target.value)} required />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Apellido *:</label>
-              <input type="text" className="input-tuti" value={apellido} onChange={e => setApellido(e.target.value)} required />
-            </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Nombre *</label>
+            <input type="text" className="input-tuti" value={nombre} onChange={e => setNombre(e.target.value)} required style={{ width: '100%' }} />
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Email *:</label>
-              <input type="email" className="input-tuti" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>DNI / Documento *:</label>
-              <input type="number" className="input-tuti" value={documento} onChange={e => setDocumento(e.target.value)} required />
-            </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Apellido *</label>
+            <input type="text" className="input-tuti" value={apellido} onChange={e => setApellido(e.target.value)} required style={{ width: '100%' }} />
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Teléfono:</label>
-              <input type="number" className="input-tuti" value={telefono} onChange={e => setTelefono(e.target.value)} />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Instagram:</label>
-              <input type="text" className="input-tuti" value={instagram} onChange={e => setInstagram(e.target.value)} />
-            </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Email *</label>
+            <input type="email" className="input-tuti" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%' }} />
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Fecha Nacimiento:</label>
-              <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Sucursal:</label>
-              <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)}>
-                <option value="CENTRO">CENTRO</option>
-                <option value="ALTO VERDE">ALTO VERDE</option>
-              </select>
-            </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>DNI / Documento *</label>
+            <input type="number" className="input-tuti" value={documento} onChange={e => setDocumento(e.target.value)} required style={{ width: '100%' }} />
+          </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Teléfono</label>
+            <input type="number" className="input-tuti" value={telefono} onChange={e => setTelefono(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Instagram</label>
+            <input type="text" className="input-tuti" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha Nacimiento</label>
+            <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
+            <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
+              <option value="CENTRO">CENTRO</option>
+              <option value="ALTO VERDE">ALTO VERDE</option>
+            </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button type="button" onClick={onClose} className="btn-tuti btn-secondary" style={{ flex: 1, padding: '12px' }}>Cancelar</button>

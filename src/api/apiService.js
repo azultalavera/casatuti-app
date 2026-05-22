@@ -115,6 +115,24 @@ export const apiService = {
     return Array.isArray(classes) ? classes[0] : classes;
   },
 
+  updateClassTeacher: async (classId, teacherId) => {
+    const res = await fetch(`${API_URL}/classes/${classId}/teacher`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teacherId })
+    });
+    return handleResponse(res);
+  },
+
+  bulkAssignClassesToTeacher: async (teacherId, classIds) => {
+    const res = await fetch(`${API_URL}/teachers/${teacherId}/classes`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classIds })
+    });
+    return handleResponse(res);
+  },
+
   // --- RESERVAS ---
   getBookings: async () => {
     const res = await fetch(`${API_URL}/bookings`);
@@ -216,6 +234,28 @@ export const apiService = {
   resolveAlert: async (alertId) => {
     const res = await fetch(`${API_URL}/alerts/${alertId}/resolve`, {
       method: 'PUT'
+    });
+    return handleResponse(res);
+  },
+
+  // --- DÍAS NO LABORALES (CALENDARIO) ---
+  getNonWorkingDays: async () => {
+    const res = await fetch(`${API_URL}/non-working-days`);
+    return handleResponse(res);
+  },
+
+  addNonWorkingDay: async (fecha, motivo) => {
+    const res = await fetch(`${API_URL}/non-working-days`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fecha, motivo })
+    });
+    return handleResponse(res);
+  },
+
+  deleteNonWorkingDay: async (fecha) => {
+    const res = await fetch(`${API_URL}/non-working-days/${fecha}`, {
+      method: 'DELETE'
     });
     return handleResponse(res);
   }

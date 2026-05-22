@@ -616,6 +616,63 @@ app.post('/api/classes', async (req, res) => {
   }
 });
 
+// Actualizar profesor de una clase
+app.put('/api/classes/:id/teacher', async (req, res) => {
+  const { id } = req.params;
+  const { teacherId } = req.body;
+
+  if (!teacherId) {
+    return res.status(400).json({ error: 'El id_profesor es obligatorio.' });
+  }
+
+  try {
+    const { rowCount } = await db.query(
+      'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id = $2',
+      [teacherId, id]
+    );
+
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Turno no encontrado.' });
+    }
+
+    res.json({ success: true, message: 'Profesor actualizado con éxito.' });
+  } catch (error) {
+    console.error('Error al actualizar profesor del turno:', error);
+    res.status(500).json({ error: 'Error al actualizar el profesor.' });
+  }
+});
+
+// Asignar múltiples turnos a un profesor (Bulk)
+app.put('/api/teachers/:teacherId/classes', async (req, res) => {
+  const { teacherId } = req.params;
+  const { classIds } = req.body;
+
+  if (!Array.isArray(classIds)) {
+    return res.status(400).json({ error: 'classIds debe ser un arreglo de IDs.' });
+  }
+
+  try {
+    // 1. Quitar la asignación de este profesor de todas las clases
+    await db.query(
+      'UPDATE public.t_clases_def SET id_profesor = NULL WHERE id_profesor = $1',
+      [teacherId]
+    );
+
+    // 2. Asignar las clases seleccionadas
+    if (classIds.length > 0) {
+      await db.query(
+        'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id = ANY($2)',
+        [teacherId, classIds]
+      );
+    }
+
+    res.json({ success: true, message: 'Asignaciones de turnos actualizadas con éxito.' });
+  } catch (error) {
+    console.error('Error en asignación múltiple de turnos:', error);
+    res.status(500).json({ error: 'Error al actualizar las asignaciones.' });
+  }
+});
+
 
 // ==========================================
 // 5. ENDPOINTS DE RESERVAS
@@ -1085,6 +1142,91 @@ app.put('/api/alerts/:id/resolve', async (req, res) => {
   } catch (error) {
     console.error('Error al resolver alerta:', error);
     res.status(500).json({ error: 'Error al resolver la alerta.' });
+  }
+});
+
+
+// ==========================================
+// 9. DIAS NO LABORALES (CALENDARIO)
+// ==========================================
+
+// Inicializar tabla si no existe (con auto-healing/migración)
+db.query(`
+  CREATE TABLE IF NOT EXISTS public.t_dias_no_laborales (
+    fecha DATE PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL DEFAULT 'inamovible',
+    nombre VARCHAR(255) NOT NULL DEFAULT 'Feriado / Cerrado'
+  );
+`).then(() => {
+  console.log('✓ Tabla public.t_dias_no_laborales verificada/creada con éxito.');
+}).catch(async () => {
+  // Si hay conflicto de tipos (por ejemplo, si ya existía como VARCHAR), la migramos de forma segura
+  try {
+    console.log('🔄 Migrando tabla public.t_dias_no_laborales al estándar de producción...');
+    await db.query('DROP TABLE IF EXISTS public.t_dias_no_laborales CASCADE');
+    await db.query(`
+      CREATE TABLE public.t_dias_no_laborales (
+        fecha DATE PRIMARY KEY,
+        tipo VARCHAR(50) NOT NULL DEFAULT 'inamovible',
+        nombre VARCHAR(255) NOT NULL DEFAULT 'Feriado / Cerrado'
+      );
+    `);
+    console.log('✓ Tabla public.t_dias_no_laborales migrada con éxito.');
+  } catch (err) {
+    console.error('❌ Error al migrar tabla de días no laborales:', err);
+  }
+});
+
+// Listar días no laborales
+app.get('/api/non-working-days', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        TO_CHAR(fecha, 'YYYY-MM-DD') AS fecha, 
+        tipo, 
+        nombre, 
+        nombre AS motivo 
+      FROM public.t_dias_no_laborales 
+      ORDER BY fecha ASC
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al listar días no laborales:', error);
+    res.status(500).json({ error: 'Error al obtener días no laborales.' });
+  }
+});
+
+// Agregar o actualizar día no laboral
+app.post('/api/non-working-days', async (req, res) => {
+  const { fecha, motivo, nombre, tipo } = req.body;
+  if (!fecha) {
+    return res.status(400).json({ error: 'La fecha es obligatoria.' });
+  }
+  try {
+    const valNombre = nombre || motivo || 'Feriado / Cerrado';
+    const valTipo = tipo || 'inamovible';
+    await db.query(
+      `INSERT INTO public.t_dias_no_laborales (fecha, tipo, nombre)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (fecha) DO UPDATE SET nombre = EXCLUDED.nombre, tipo = EXCLUDED.tipo`,
+      [fecha, valTipo, valNombre]
+    );
+    res.status(201).json({ success: true, fecha, nombre: valNombre, tipo: valTipo, motivo: valNombre });
+  } catch (error) {
+    console.error('Error al guardar día no laboral:', error);
+    res.status(500).json({ error: 'Error al registrar día no laboral.' });
+  }
+});
+
+// Eliminar día no laboral
+app.delete('/api/non-working-days/:fecha', async (req, res) => {
+  const { fecha } = req.params;
+  try {
+    await db.query('DELETE FROM public.t_dias_no_laborales WHERE fecha = $1', [fecha]);
+    res.json({ success: true, fecha });
+  } catch (error) {
+    console.error('Error al eliminar día no laboral:', error);
+    res.status(500).json({ error: 'Error al eliminar día no laboral.' });
   }
 });
 

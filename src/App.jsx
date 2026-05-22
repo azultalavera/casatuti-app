@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from './assets/logo.png';
 import { AppProvider, useApp } from './context/AppContext';
 import AlumnoView from './features/student/AlumnoView';
 import ProfeView from './features/teacher/ProfeView';
@@ -12,6 +13,7 @@ function AppContentWrapper() {
   const [showImpersonatorDropdown, setShowImpersonatorDropdown] = useState(false);
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [adminTab, setAdminTab] = useState('dashboard');
 
   // Determinar qué vista renderizar
   const renderActiveView = () => {
@@ -23,7 +25,7 @@ function AppContentWrapper() {
 
     switch (currentUser.role) {
       case 'ADMIN':
-        return <AdminView />;
+        return <AdminView activeTab={adminTab} setActiveTab={setAdminTab} />;
       case 'PROFE':
         return <ProfeView />;
       case 'ALUMNO':
@@ -176,7 +178,7 @@ function AppContentWrapper() {
       {/* Cabecera de Marca Premium Unificada */}
       <div className="app-brand-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="brand-logo-pill">CT</div>
+          <img src={logo} alt="Casa Tuti logo" className="brand-logo-img" />
           <span className="brand-title-text">Casa Tuti</span>
         </div>
         
@@ -377,43 +379,109 @@ function AppContentWrapper() {
 
       {/* Navbar Móvil Flotante Inferior */}
       <div className="mobile-navbar-floating">
-        <button
-          onClick={() => setViewOverride(null)}
-          className={`nav-item ${viewOverride === null ? 'active' : ''}`}
-          style={{ background: 'transparent', border: 'none' }}
-        >
-          <svg viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-          </svg>
-          <span>Inicio</span>
-        </button>
+        {currentUser?.role === 'ADMIN' && viewOverride === null ? (
+          <>
+            {/* Alumnas */}
+            <button
+              onClick={() => setAdminTab('students')}
+              className={`nav-item ${adminTab === 'students' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Alumnas"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </button>
 
-        <button
-          onClick={() => setViewOverride('config')}
-          className={`nav-item ${viewOverride === 'config' ? 'active' : ''}`}
-          style={{ background: 'transparent', border: 'none' }}
-        >
-          <svg viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.99l1.005.831a1.125 1.125 0 01.26 1.43l-1.297 2.247a1.125 1.125 0 01-1.37.491l-1.216-.456c-.356-.133-.751-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.83c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.831a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span>Soporte</span>
-        </button>
+            {/* Profesores */}
+            <button
+              onClick={() => setAdminTab('teachers')}
+              className={`nav-item ${adminTab === 'teachers' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Profesores"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.9c2.785 0 5.42-.447 7.85-1.285a60.4 60.4 0 00-.49-6.348m-15.7 0L12 6.062l8.34 4.085m-16.68 0L12 14.232l8.34-4.085M21 12v5.25" />
+              </svg>
+            </button>
 
-        <button
-          onClick={() => {
-            logoutAction();
-            setViewOverride(null);
-            setShowHeaderDropdown(false);
-          }}
-          className="nav-item"
-          style={{ background: 'transparent', border: 'none' }}
-        >
-          <svg viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-          </svg>
-          <span>Salir</span>
-        </button>
+            {/* Resumen (Al Medio) */}
+            <button
+              onClick={() => setAdminTab('dashboard')}
+              className={`nav-item ${adminTab === 'dashboard' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Resumen"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </button>
+
+            {/* Turnos */}
+            <button
+              onClick={() => setAdminTab('classes')}
+              className={`nav-item ${adminTab === 'classes' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Turnos"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </button>
+
+            {/* Pagos */}
+            <button
+              onClick={() => setAdminTab('payments')}
+              className={`nav-item ${adminTab === 'payments' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Pagos"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5h16.5a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6a1.5 1.5 0 011.5-1.5zm10.875 7.5a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0z" />
+              </svg>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setViewOverride(null)}
+              className={`nav-item ${viewOverride === null ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+              <span>Inicio</span>
+            </button>
+
+            <button
+              onClick={() => setViewOverride('config')}
+              className={`nav-item ${viewOverride === 'config' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.99l1.005.831a1.125 1.125 0 01.26 1.43l-1.297 2.247a1.125 1.125 0 01-1.37.491l-1.216-.456c-.356-.133-.751-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.83c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.831a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Soporte</span>
+            </button>
+
+            <button
+              onClick={() => {
+                logoutAction();
+                setViewOverride(null);
+                setShowHeaderDropdown(false);
+              }}
+              className="nav-item"
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+              </svg>
+              <span>Salir</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

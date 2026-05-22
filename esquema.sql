@@ -125,3 +125,10 @@ CREATE TABLE public.t_usuarios (
   sucursal text,
   CONSTRAINT t_usuarios_pkey PRIMARY KEY (id_usuario)
 );
+
+CREATE TABLE public.t_dias_no_laborales (
+  fecha date NOT NULL,
+  tipo character varying(50) NOT NULL,
+  nombre character varying(255) NOT NULL,
+  CONSTRAINT t_dias_no_laborales_pkey PRIMARY KEY (fecha)
+);

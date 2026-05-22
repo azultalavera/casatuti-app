@@ -15,10 +15,9 @@ const TABS = [
   { id: 'payments',  label: 'Pagos'      },
 ];
 
-export default function AdminView() {
+export default function AdminView({ activeTab = 'dashboard', setActiveTab = () => {} }) {
   const { users, studentProfiles, classes, bookings } = useApp();
 
-  const [activeTab, setActiveTab]     = useState('dashboard');
   const [alertMsg, setAlertMsg]       = useState({ text: '', type: '' });
   const [editUserId, setEditUserId]   = useState(null); // null = modal cerrado
 
@@ -33,33 +32,7 @@ export default function AdminView() {
   const closeEdit = ()     => setEditUserId(null);
 
   return (
-    <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex', backgroundColor: 'var(--blanco)',
-        padding: '6px', borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-flat)', border: '1px solid var(--gris-claro)',
-        marginTop: '2px'
-      }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1, padding: '10px 0', border: 'none',
-              borderRadius: 'var(--radius-sm)', fontSize: '12px',
-              fontWeight: activeTab === tab.id ? '700' : '500',
-              cursor: 'pointer',
-              backgroundColor: activeTab === tab.id ? 'var(--marron-arcilla)' : 'transparent',
-              color: activeTab === tab.id ? 'var(--blanco)' : 'var(--gris-medio)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Feedback banner */}
       {alertMsg.text && (
