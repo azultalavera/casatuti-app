@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 
 export default function EditUserModal({ userId, onClose, showFeedback }) {
-  const { users, updateUserAction } = useApp();
+  const { users, updateUserAction, branches } = useApp();
   const user = users.find(u => u.id === userId);
   const isTeacher = user?.role === 'PROFE';
 
@@ -15,7 +15,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
   const [telefono, setTelefono]   = useState(user?.telefono || '');
   const [instagram, setInstagram] = useState(user?.instagram || '');
   const [birthdate, setBirthdate] = useState((user?.fecha_nacimiento || '').split('T')[0] || '');
-  const [branch, setBranch]       = useState(user?.sucursal || 'CENTRO');
+  const [branch, setBranch]       = useState(user?.sucursal || (branches.length > 0 ? branches[0].name : 'CENTRO'));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -92,8 +92,9 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
             <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
-              <option value="CENTRO">CENTRO</option>
-              <option value="ALTO VERDE">ALTO VERDE</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.name}>{b.name}</option>
+              ))}
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>

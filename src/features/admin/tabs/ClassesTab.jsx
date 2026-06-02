@@ -1,33 +1,29 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DAY_ABBR = { Lunes: 'LUN', Martes: 'MAR', 'Miércoles': 'MIÉ', Jueves: 'JUE', Viernes: 'VIE', Sábado: 'SÁB' };
 export default function ClassesTab({ showFeedback }) {
-  const { users, classes, createNewTurn, nonWorkingDays, addNonWorkingDay, deleteNonWorkingDay, changeClassTeacher } = useApp();
+  const { users, classes, createNewTurn, changeClassTeacher, branches } = useApp();
   const teachers = users.filter(u => u.role === 'PROFE');
 
   const [mode, setMode] = useState('list'); // 'list' or 'create'
   const [editingTeacherClassId, setEditingTeacherClassId] = useState(null);
-  
+
   // Calcular día actual por defecto
   const todayNum = new Date().getDay(); // 0=Dom, 1=Lun, 2=Mar...
   const defaultIdx = (todayNum === 0 || todayNum === 6) ? 0 : todayNum - 1;
   const defaultDay = DAYS[defaultIdx] || 'Lunes';
   const [selectedDay, setSelectedDay] = useState(defaultDay);
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState('ALL');
 
-  // Form states
-  const [sucursal, setSucursal]     = useState('CENTRO');
-  const [teacherId, setTeacherId]   = useState('');
-  const [capacity, setCapacity]     = useState('8');
-  const [time, setTime]             = useState('18:00 - 20:00');
+  const [sucursal, setSucursal] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
+  const [teacherId, setTeacherId] = useState('');
+  const [capacity, setCapacity] = useState('8');
+  const [time, setTime] = useState('18:00 - 20:00');
   const [repeatDays, setRepeatDays] = useState([]);
 
-  // Calendar states
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth());
-  const [currentCalendarYear, setCurrentCalendarYear] = useState(new Date().getFullYear());
-  const [holidayReason, setHolidayReason] = useState('');
 
   const toggleDay = (day) =>
     setRepeatDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
@@ -55,26 +51,13 @@ export default function ClassesTab({ showFeedback }) {
     }
   };
 
-  // Turnos del día seleccionado
-  const classesForDay = classes.filter(c => c.day === selectedDay);
+  // Turnos del día y sucursal seleccionados
+  const classesForDay = classes.filter(c => c.day === selectedDay && (selectedBranchFilter === 'ALL' || (c.sucursal || '').toUpperCase() === selectedBranchFilter));
 
-  // Helpers de calendario
-  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (month, year) => {
-    const d = new Date(year, month, 1).getDay();
-    return d === 0 ? 6 : d - 1; // Lunes = index 0
-  };
-
-  const daysInMonth = getDaysInMonth(currentCalendarMonth, currentCalendarYear);
-  const firstDay = getFirstDayOfMonth(currentCalendarMonth, currentCalendarYear);
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      
+
       {/* 1. VISTA DE CREACIÓN / REGISTRO */}
       {mode === 'create' && (
         <div className="clay-card animate-slide-up" style={{ padding: '24px' }}>
@@ -102,14 +85,15 @@ export default function ClassesTab({ showFeedback }) {
           </button>
 
           <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Agregar Turno Semanal</h3>
-          
+
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
+
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal *</label>
               <select className="input-tuti" value={sucursal} onChange={e => setSucursal(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
-                <option value="CENTRO">CENTRO</option>
-                <option value="ALTO VERDE">ALTO VERDE</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
               </select>
             </div>
 
@@ -141,7 +125,8 @@ export default function ClassesTab({ showFeedback }) {
                 backgroundColor: '#FAF8F5',
                 padding: '12px',
                 borderRadius: '16px',
-                border: '1px solid rgba(146, 101, 61, 0.08)'
+                border: 'none',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
               }}>
                 {DAYS.map(day => {
                   const sel = repeatDays.includes(day);
@@ -182,39 +167,38 @@ export default function ClassesTab({ showFeedback }) {
       {/* 2. VISTA DE CONSULTA / LISTADO */}
       {mode === 'list' && (
         <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Header de la Tab */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          {/* Header de la Tab y Filtros */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <span className="badge badge-oliva" style={{ marginBottom: '6px' }}>Panel de Control</span>
               <h2 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>Turnos</h2>
             </div>
 
-            {/* Botón Calendario Feriados */}
-            <button
-              onClick={() => setShowCalendarModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                padding: '10px 14px',
-                borderRadius: '12px',
-                border: '1px solid var(--gris-claro)',
-                backgroundColor: 'var(--blanco)',
-                color: 'var(--verde-oliva)',
-                fontWeight: '700',
-                fontSize: '12px',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-clay)',
-                transition: 'all 0.2s ease',
-              }}
-              title="Gestionar Feriados"
-            >
-              <svg style={{ width: '15px', height: '15px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
-              </svg>
-              Calendario
-            </button>
+            {/* Filtro Sucursal */}
+            <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-crema-claro)', padding: '4px', borderRadius: 'var(--radius-md)', border: 'none', overflowX: 'auto' }}>
+              {[{ id: 'all', name: 'ALL' }, ...branches].map((branch) => {
+                const isActive = selectedBranchFilter === branch.name;
+                return (
+                  <button
+                    key={branch.id}
+                    onClick={() => setSelectedBranchFilter(branch.name)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      backgroundColor: isActive ? 'var(--verde-oliva)' : 'transparent',
+                      color: isActive ? 'var(--blanco)' : 'var(--gris-medio)',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {branch.name === 'ALL' ? 'Todas' : branch.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Mini-cards de Días (Estilo Alumna) */}
@@ -243,28 +227,24 @@ export default function ClassesTab({ showFeedback }) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '2px',
-                    padding: '12px 10px',
-                    borderRadius: '14px',
-                    border: isSelected
-                      ? '2px solid var(--verde-oliva)'
-                      : '2px solid var(--gris-claro)',
+                    padding: '8px',
+                    borderRadius: '24px',
+                    border: 'none',
                     backgroundColor: isSelected
-                      ? 'var(--verde-oliva)'
+                      ? 'var(--card-rust)'
                       : 'var(--blanco)',
                     color: isSelected
                       ? 'var(--blanco)'
                       : 'var(--gris-oscuro)',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isSelected ? 'var(--shadow-clay)' : 'none',
-                    minWidth: '58px'
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    boxShadow: isSelected ? '0 8px 24px rgba(204, 122, 66, 0.3)' : '0 4px 16px rgba(0,0,0,0.03)',
+                    minWidth: '48px',
+                    height: '80px'
                   }}
                 >
                   <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'Outfit, sans-serif' }}>
                     {DAY_ABBR[day]}
-                  </span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.7 }}>
-                    {day.substring(0, 3) === 'Mié' ? 'MIÉR' : day.substring(0, 4).toUpperCase()}
                   </span>
                   {hasTurns && (
                     <span style={{
@@ -301,13 +281,14 @@ export default function ClassesTab({ showFeedback }) {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '4px',
                     marginTop: '4px',
                     paddingBottom: '4px',
                     borderBottom: '2px solid var(--verde-oliva-light)'
                   }}>
+                    <LocationOnIcon style={{ color: 'var(--verde-oliva-dark)', fontSize: '16px' }} />
                     <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--verde-oliva-dark)', letterSpacing: '0.5px' }}>
-                      📍 {branch}
+                      {branch}
                     </span>
                     <span className="badge badge-oliva" style={{ fontSize: '9px', padding: '2px 6px' }}>
                       {branchClasses.length} turno{branchClasses.length !== 1 ? 's' : ''}
@@ -319,14 +300,17 @@ export default function ClassesTab({ showFeedback }) {
                     {branchClasses.map(c => (
                       <div
                         key={c.id}
-                        className="clay-card animate-slide-up"
+                        className="stat-card-modern animate-slide-up"
                         style={{
-                          padding: '14px 16px',
+                          padding: '20px',
+                          borderRadius: '24px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          borderLeft: '4px solid var(--verde-oliva)',
-                          backgroundColor: 'var(--blanco)'
+                          backgroundColor: 'var(--blanco)',
+                          border: 'none',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                          transition: 'transform 0.2s ease'
                         }}
                       >
                         <div>
@@ -334,7 +318,7 @@ export default function ClassesTab({ showFeedback }) {
                           <span style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--gris-oscuro)' }}>
                             {c.time}
                           </span>
-                          
+
                           {/* Profesor asignable */}
                           {editingTeacherClassId === c.id ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
@@ -360,7 +344,7 @@ export default function ClassesTab({ showFeedback }) {
                                   padding: '2px 6px',
                                   height: '26px',
                                   borderRadius: '6px',
-                                  border: '1px solid var(--verde-oliva)',
+                                  border: 'none',
                                   backgroundColor: 'var(--blanco)',
                                   color: 'var(--gris-oscuro)',
                                   fontFamily: 'Outfit, sans-serif',
@@ -424,7 +408,7 @@ export default function ClassesTab({ showFeedback }) {
           {/* Botón Flotante "+" para Crear Turnos */}
           <button
             onClick={() => {
-              setSucursal('CENTRO');
+              setSucursal(branches.length > 0 ? branches[0].name : 'CENTRO');
               setTeacherId('');
               setCapacity('8');
               setTime('18:00 - 20:00');
@@ -457,226 +441,6 @@ export default function ClassesTab({ showFeedback }) {
           >
             +
           </button>
-        </div>
-      )}
-
-      {/* 3. MODAL DE CALENDARIO Y FERIADOS */}
-      {showCalendarModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(30, 27, 22, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '16px'
-        }}>
-          <div className="clay-card animate-slide-up" style={{
-            width: '100%',
-            maxWidth: '440px',
-            backgroundColor: 'var(--blanco)',
-            padding: '24px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
-          }}>
-            {/* Header Modal */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Calendario de Feriados</h3>
-              <button
-                onClick={() => setShowCalendarModal(false)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  color: 'var(--gris-medio)'
-                }}
-              >
-                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: 0 }}>
-              Selecciona los días en el calendario para marcarlos como feriados o no laborables. Las clases regulares no se programarán en estas fechas.
-            </p>
-
-            {/* Input para Motivo Personalizado */}
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gris-medio)' }}>Motivo (Opcional):</label>
-              <input
-                type="text"
-                placeholder="Ej. Navidad, Mantenimiento..."
-                className="input-tuti"
-                value={holidayReason}
-                onChange={e => setHolidayReason(e.target.value)}
-                style={{ fontSize: '13px', padding: '8px 12px' }}
-              />
-            </div>
-
-            {/* Controles del Mes */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-crema)', padding: '8px 12px', borderRadius: '12px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentCalendarMonth === 0) {
-                    setCurrentCalendarMonth(11);
-                    setCurrentCalendarYear(prev => prev - 1);
-                  } else {
-                    setCurrentCalendarMonth(prev => prev - 1);
-                  }
-                }}
-                style={{ border: 'none', background: 'transparent', color: 'var(--verde-oliva)', fontWeight: '800', cursor: 'pointer', fontSize: '14px' }}
-              >
-                ←
-              </button>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>
-                {monthNames[currentCalendarMonth]} {currentCalendarYear}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentCalendarMonth === 11) {
-                    setCurrentCalendarMonth(0);
-                    setCurrentCalendarYear(prev => prev + 1);
-                  } else {
-                    setCurrentCalendarMonth(prev => prev + 1);
-                  }
-                }}
-                style={{ border: 'none', background: 'transparent', color: 'var(--verde-oliva)', fontWeight: '800', cursor: 'pointer', fontSize: '14px' }}
-              >
-                →
-              </button>
-            </div>
-
-            {/* Calendario Grid */}
-            <div>
-              {/* Días de la semana abreviados */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '6px' }}>
-                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                  <span key={i} style={{ fontSize: '10px', fontWeight: 800, color: 'var(--gris-medio)' }}>{d}</span>
-                ))}
-              </div>
-
-              {/* Días Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-                {/* Celdas vacías iniciales */}
-                {Array.from({ length: firstDay }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-
-                {/* Días del mes */}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const dayNum = i + 1;
-                  const dateString = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                  const holiday = nonWorkingDays.find(d => d.fecha === dateString);
-                  const isHoliday = !!holiday;
-
-                  return (
-                    <button
-                      key={dayNum}
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          if (isHoliday) {
-                            await deleteNonWorkingDay(dateString);
-                            showFeedback('Día marcado como laborable.', 'info');
-                          } else {
-                            await addNonWorkingDay(dateString, holidayReason || 'Feriado / Cerrado');
-                            showFeedback('Feriado registrado con éxito.', 'info');
-                          }
-                        } catch (err) {
-                          showFeedback(err.message, 'danger');
-                        }
-                      }}
-                      style={{
-                        aspectRatio: '1',
-                        borderRadius: '50%',
-                        border: isHoliday ? '1px solid var(--rojo-alerta)' : '1px solid var(--gris-claro)',
-                        backgroundColor: isHoliday ? 'var(--rojo-alerta-light)' : 'var(--blanco)',
-                        color: isHoliday ? 'var(--rojo-alerta)' : 'var(--gris-oscuro)',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease',
-                        position: 'relative'
-                      }}
-                      title={isHoliday ? holiday.motivo : 'Día laboral'}
-                    >
-                      {dayNum}
-                      {isHoliday && (
-                        <span style={{
-                          width: '4px',
-                          height: '4px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--rojo-alerta)',
-                          position: 'absolute',
-                          bottom: '3px'
-                        }} />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Listado de Feriados del Año */}
-            <div style={{ marginTop: '4px', borderTop: '1px solid var(--gris-claro)', paddingTop: '12px' }}>
-              <h4 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '8px' }}>Feriados Registrados:</h4>
-              {nonWorkingDays.length === 0 ? (
-                <p style={{ fontSize: '11px', color: 'var(--gris-medio)', fontStyle: 'italic', margin: 0 }}>No hay feriados registrados en el año.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {nonWorkingDays.map(d => (
-                    <div key={d.fecha} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', backgroundColor: 'var(--bg-crema)', borderRadius: '8px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
-                          {d.fecha.split('-').reverse().join('/')}
-                        </span>
-                        <span style={{ fontSize: '10px', color: 'var(--gris-medio)' }}>{d.motivo}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await deleteNonWorkingDay(d.fecha);
-                            showFeedback('Feriado eliminado.', 'info');
-                          } catch (err) {
-                            showFeedback(err.message, 'danger');
-                          }
-                        }}
-                        style={{ border: 'none', background: 'transparent', color: 'var(--rojo-alerta)', fontWeight: '700', fontSize: '10px', cursor: 'pointer' }}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowCalendarModal(false)}
-              className="btn-tuti btn-primary-oliva"
-              style={{ width: '100%', padding: '10px', fontSize: '13px' }}
-            >
-              Listo
-            </button>
-          </div>
         </div>
       )}
     </div>

@@ -22,6 +22,9 @@ export const AppProvider = ({ children }) => {
   const [payments, setPayments] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [nonWorkingDays, setNonWorkingDays] = useState([]);
+  const [packs, setPacks] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Cargar todos los datos desde el servicio
@@ -37,6 +40,9 @@ export const AppProvider = ({ children }) => {
       const loadedPayments = await mockService.getPayments();
       const loadedAlerts = await mockService.getAlerts();
       const loadedNonWorkingDays = await mockService.getNonWorkingDays().catch(() => []);
+      const loadedPacks = await mockService.getPacks().catch(() => []);
+      const loadedBranches = await mockService.getBranches().catch(() => []);
+      const loadedFaqs = await mockService.getFaqs().catch(() => []);
 
       setUsers(loadedUsers);
       setStudentProfiles(loadedProfiles);
@@ -46,6 +52,9 @@ export const AppProvider = ({ children }) => {
       setPayments(loadedPayments);
       setAlerts(loadedAlerts);
       setNonWorkingDays(loadedNonWorkingDays || []);
+      setPacks(loadedPacks || []);
+      setBranches(loadedBranches || []);
+      setFaqs(loadedFaqs || []);
 
       // Comprobar si hay una sesión guardada en sessionStorage
       const savedUserId = sessionStorage.getItem('tuti_session_user_id');
@@ -349,32 +358,54 @@ export const AppProvider = ({ children }) => {
   };
 
   // 5. Registrar pago manual e incrementar créditos por el ADMIN
-  const recordStudentPayment = async (studentId, amount, creditsToAdd) => {
+  const recordStudentPayment = async (studentIds, amount, creditsToAdd, paymentDate) => {
     setLoading(true);
     try {
-      const profile = studentProfiles.find(p => p.studentId === studentId);
-      if (!profile) throw new Error("Perfil de estudiante no encontrado");
+      if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        throw new Error("Debe seleccionar al menos un estudiante");
+      }
 
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      // Registrar el pago
-      await mockService.createPayment({
-        studentId,
-        amount,
-        date: todayStr,
-        status: 'PAID',
-        classCreditsAdded: creditsToAdd
-      });
-
-      // Sumar los créditos al perfil del alumno
-      await mockService.updateStudentProfile(studentId, {
-        classCredits: profile.classCredits + creditsToAdd,
-        monthlyClayKg: 0 // Cuando paga el nuevo mes, se le reinicia el contador de arcilla para permitir su retiro mensual
-      });
+      // El backend ahora se encarga de crear el pago y actualizar los saldos
+      await mockService.recordStudentPayment(studentIds, amount, creditsToAdd, paymentDate);
 
       // Recargar datos
       const loadedProfiles = await mockService.getStudentProfiles();
       setStudentProfiles(loadedProfiles);
+      const loadedPayments = await mockService.getPayments();
+      setPayments(loadedPayments);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmPendingPayment = async (paymentId) => {
+    setLoading(true);
+    try {
+      await mockService.confirmPayment(paymentId);
+      // Recargar perfiles y pagos
+      const loadedProfiles = await mockService.getStudentProfiles();
+      setStudentProfiles(loadedProfiles);
+      const loadedPayments = await mockService.getPayments();
+      setPayments(loadedPayments);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendTransferReminder = async (paymentId) => {
+    setLoading(true);
+    try {
+      await mockService.notifyPaymentReminder(paymentId);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestStudentPayment = async (studentId, amount, creditsToAdd) => {
+    setLoading(true);
+    try {
+      await mockService.requestPayment({ studentId, amount, classCreditsAdded: creditsToAdd });
+      // Reload payments immediately so that if the user refreshes or switches to admin they see it
       const loadedPayments = await mockService.getPayments();
       setPayments(loadedPayments);
     } finally {
@@ -536,6 +567,86 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // --- GESTIÓN DE PAQUETES ---
+  const createPack = async (packData) => {
+    setLoading(true);
+    try {
+      await mockService.createPack(packData);
+      const loadedPacks = await mockService.getPacks();
+      setPacks(loadedPacks);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePack = async (packId, packData) => {
+    setLoading(true);
+    try {
+      await mockService.updatePack(packId, packData);
+      const loadedPacks = await mockService.getPacks();
+      setPacks(loadedPacks);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletePack = async (packId) => {
+    setLoading(true);
+    try {
+      await mockService.deletePack(packId);
+      const loadedPacks = await mockService.getPacks();
+      setPacks(loadedPacks);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- FAQS CRUD ---
+  const createFaq = async (faq) => {
+    setLoading(true);
+    try {
+      await mockService.createFaq(faq);
+      setFaqs(await mockService.getFaqs());
+    } finally { setLoading(false); }
+  };
+  const updateFaq = async (id, data) => {
+    setLoading(true);
+    try {
+      await mockService.updateFaq(id, data);
+      setFaqs(await mockService.getFaqs());
+    } finally { setLoading(false); }
+  };
+  const deleteFaq = async (id) => {
+    setLoading(true);
+    try {
+      await mockService.deleteFaq(id);
+      setFaqs(await mockService.getFaqs());
+    } finally { setLoading(false); }
+  };
+
+  // --- BRANCHES CRUD ---
+  const createBranch = async (branch) => {
+    setLoading(true);
+    try {
+      await mockService.createBranch(branch);
+      setBranches(await mockService.getBranches());
+    } finally { setLoading(false); }
+  };
+  const updateBranch = async (id, data) => {
+    setLoading(true);
+    try {
+      await mockService.updateBranch(id, data);
+      setBranches(await mockService.getBranches());
+    } finally { setLoading(false); }
+  };
+  const deleteBranch = async (id) => {
+    setLoading(true);
+    try {
+      await mockService.deleteBranch(id);
+      setBranches(await mockService.getBranches());
+    } finally { setLoading(false); }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -549,6 +660,9 @@ export const AppProvider = ({ children }) => {
         payments,
         alerts,
         nonWorkingDays,
+        packs,
+        branches,
+        faqs,
         loading,
         loginAction,
         logoutAction,
@@ -560,6 +674,9 @@ export const AppProvider = ({ children }) => {
         takeAttendance,
         deliverClayToStudent,
         recordStudentPayment,
+        confirmPendingPayment,
+        sendTransferReminder,
+        requestStudentPayment,
         createNewTurn,
         changeClassTeacher,
         bulkAssignClasses,
@@ -570,6 +687,15 @@ export const AppProvider = ({ children }) => {
         resolveAlertAction,
         addNonWorkingDay,
         deleteNonWorkingDay,
+        createPack,
+        updatePack,
+        deletePack,
+        createFaq,
+        updateFaq,
+        deleteFaq,
+        createBranch,
+        updateBranch,
+        deleteBranch,
         reloadAllData: loadData
       }}
     >

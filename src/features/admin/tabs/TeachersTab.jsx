@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 export default function TeachersTab({ showFeedback, onEdit }) {
-  const { users, createNewUserAction, deleteUserAction, classes, bulkAssignClasses } = useApp();
+  const { users, createNewUserAction, deleteUserAction, classes, bulkAssignClasses, branches } = useApp();
   const teachers = users.filter(u => u.role === 'PROFE');
 
   const [mode, setMode] = useState('list'); // 'list' | 'create'
@@ -56,7 +57,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
   const [telefono, setTelefono]   = useState('');
   const [instagram, setInstagram] = useState('');
   const [birthdate, setBirthdate] = useState('');
-  const [branch, setBranch]       = useState('CENTRO');
+  const [branch, setBranch] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
 
   // Filtrado de Profesores
   const filteredTeachers = teachers.filter(tc => {
@@ -86,7 +87,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
       });
       alert(`¡Profesor/a "${fullName}" registrado con éxito!`);
       setNombre(''); setApellido(''); setEmail(''); setDocumento('');
-      setTelefono(''); setInstagram(''); setBirthdate(''); setBranch('CENTRO');
+      setTelefono(''); setInstagram(''); setBirthdate(''); setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
       setMode('list'); // Regresa al listado después de crear
     } catch (err) {
       showFeedback(err.message, 'danger');
@@ -168,8 +169,9 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal Principal</label>
               <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
-                <option value="CENTRO">CENTRO</option>
-                <option value="ALTO VERDE">ALTO VERDE</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
               </select>
             </div>
             <button type="submit" className="btn-tuti btn-secondary" style={{ marginTop: '8px', fontSize: '14px', padding: '12px' }}>
@@ -202,7 +204,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                 className="input-tuti"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '12px', height: '42px' }}
+                style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: 'none', borderRadius: '20px', height: '42px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               />
             </div>
 
@@ -210,12 +212,12 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               {/* Sucursales */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '4px' }}>Sucursal:</span>
-                {['ALL', 'CENTRO', 'ALTO VERDE'].map(br => {
-                  const isActive = selectedBranch === br;
+                {[{ id: 'all', name: 'ALL' }, ...branches].map(br => {
+                  const isActive = selectedBranch === br.name;
                   return (
                     <button
-                      key={br}
-                      onClick={() => setSelectedBranch(br)}
+                      key={br.id}
+                      onClick={() => setSelectedBranch(br.name)}
                       style={{
                         padding: '6px 14px',
                         borderRadius: '16px',
@@ -225,10 +227,11 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                         cursor: 'pointer',
                         backgroundColor: isActive ? 'rgba(69, 95, 62, 0.12)' : 'var(--blanco)',
                         color: isActive ? 'var(--verde-oliva)' : 'var(--gris-medio)',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      {br === 'ALL' ? 'Todas' : br === 'CENTRO' ? 'Centro' : 'Alto Verde'}
+                      {br.name === 'ALL' ? 'Todas' : br.name}
                     </button>
                   );
                 })}
@@ -247,7 +250,8 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                   backgroundColor: 'rgba(0,0,0,0.04)',
                   borderRadius: '20px',
                   padding: '2px',
-                  border: '1px solid rgba(0,0,0,0.02)',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                   cursor: 'pointer',
                   userSelect: 'none'
                 }}>
@@ -305,9 +309,9 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {filteredTeachers.length === 0 ? (
-              <div className="clay-card" style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--gris-medio)' }}>
+              <div className="stat-card-modern" style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--gris-medio)' }}>
                 <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No hay profesores registrados.</p>
               </div>
             ) : (
@@ -319,233 +323,174 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                 return (
                   <div
                     key={tc.id}
-                    className="clay-card animate-slide-up"
                     onClick={() => setExpandedTeacherId(isExpanded ? null : tc.id)}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      padding: '14px 16px',
+                      padding: '20px',
+                      borderRadius: '24px',
+                      backgroundColor: 'var(--blanco)',
                       opacity: isBlocked ? 0.6 : 1,
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      borderLeft: isBlocked ? '4px solid var(--rojo-alerta)' : '1px solid var(--gris-claro)',
-                      backgroundColor: 'var(--blanco)'
+                      transition: 'transform 0.2s ease',
+                      border: 'none',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
                     }}
                   >
                     {/* Fila Principal */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
                       {/* Avatar */}
                       <div style={{
-                        width: '44px',
-                        height: '44px',
+                        width: '48px',
+                        height: '48px',
                         borderRadius: '50%',
-                        backgroundColor: 'rgba(69, 95, 62, 0.08)',
+                        backgroundColor: 'var(--bg-crema)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: '700',
-                        color: 'var(--verde-oliva)',
-                        fontSize: '13px',
+                        fontWeight: '800',
+                        color: 'var(--marron-arcilla)',
+                        fontSize: '15px',
                         flexShrink: 0
                       }}>
                         {initials}
                       </div>
 
-                      {/* Nombre y Detalles */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {/* Info de Profesor */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {tc.name}
                           </h4>
                           {isBlocked && (
-                            <span style={{ fontSize: '7px', fontWeight: 'bold', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '1px 4px', borderRadius: '4px' }}>
-                              PAUSA
+                            <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '2px 8px', borderRadius: '8px' }}>
+                              INACTIVA
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: '11px', color: 'var(--gris-medio)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {tc.email}
-                        </span>
 
-                        {/* Badge de Sucursal */}
-                        <span style={{
-                          fontSize: '8px',
-                          fontWeight: '800',
-                          letterSpacing: '0.4px',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          alignSelf: 'flex-start',
-                          marginTop: '3px',
-                          backgroundColor: (tc.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'rgba(69, 95, 62, 0.08)' : 'rgba(146, 101, 61, 0.08)',
-                          color: (tc.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--verde-oliva)' : 'var(--marron-arcilla)'
-                        }}>
-                          {(tc.sucursal || 'CENTRO').toUpperCase()}
-                        </span>
+                          {/* Removed Email and Specialty to make it cleaner */}
+                        </div>
+
+                      {/* Icono de expansión */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <svg
+                          style={{
+                            width: '16px',
+                            height: '16px',
+                            color: 'var(--gris-medio)',
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.25s ease',
+                            flexShrink: 0
+                          }}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
                       </div>
-
-                      {/* Chevron */}
-                      <svg
-                        style={{
-                          width: '12px',
-                          height: '12px',
-                          color: 'var(--gris-medio)',
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.25s ease',
-                          marginLeft: '2px',
-                          flexShrink: 0
-                        }}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3.5"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
-                      </svg>
                     </div>
 
-                    {/* Bloque Desplegable */}
-                    {isExpanded && (
-                      <div
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                          width: '100%',
-                          marginTop: '12px',
-                          borderTop: '1px solid rgba(234, 229, 219, 0.5)',
-                          paddingTop: '12px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px',
-                          animation: 'fadeInAcc 0.2s ease-out'
-                        }}
-                      >
-                        {/* Botones de acción en grilla */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                          {/* 1. Pausar / Reactivar */}
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleBlock(tc.id, tc.name, isBlocked);
-                            }}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              padding: '12px 8px',
-                              borderRadius: '16px',
-                              border: isBlocked ? '1px solid rgba(69, 95, 62, 0.12)' : '1px solid rgba(146, 101, 61, 0.12)',
-                              backgroundColor: isBlocked ? '#EAF2E8' : '#FAF5F0',
-                              color: isBlocked ? 'var(--verde-oliva)' : '#92653D',
-                              cursor: 'pointer',
-                              transition: 'transform 0.1s ease',
-                              textAlign: 'center'
-                            }}
-                          >
-                            {isBlocked ? (
-                              <svg style={{ width: '16px', height: '16px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                              </svg>
-                            ) : (
-                              <svg style={{ width: '16px', height: '16px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-                              </svg>
-                            )}
-                            <span style={{ fontSize: '10px', fontWeight: '700' }}>
-                              {isBlocked ? 'Reactivar' : 'Pausar'}
+                      {/* Bloque Desplegable de Acciones y Detalles */}
+                      {isExpanded && (
+                        <div
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            width: '100%',
+                            marginTop: '16px',
+                            borderTop: '1px solid rgba(0,0,0,0.04)',
+                            paddingTop: '16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            animation: 'fadeInAcc 0.2s ease-out'
+                          }}
+                        >
+                          {/* Detalles Extras */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{tc.email}</span>
+                            <span style={{
+                              fontSize: '9px', fontWeight: '800', letterSpacing: '0.4px', padding: '2px 8px', borderRadius: '12px',
+                              backgroundColor: 'var(--bg-crema-claro)', color: 'var(--marron-arcilla)'
+                            }}>
+                              CERÁMICA
                             </span>
                           </div>
+                        {/* Botón Asignar Turnos (Principal) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignModalTeacher(tc);
+                            setSelectedTurnIds(classes.filter(c => c.teacher_id === tc.id).map(c => c.id));
+                            setShowAssignModal(true);
+                          }}
+                          style={{
+                            width: '100%', padding: '12px', fontSize: '12px', fontWeight: '800',
+                            borderRadius: '16px', backgroundColor: 'var(--bg-crema-claro)', color: 'var(--marron-arcilla)',
+                            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                        >
+                          <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Asignar Turnos
+                        </button>
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          {/* 1. Pausar */}
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleToggleBlock(tc.id, tc.name, isBlocked);
+                            }}
+                            style={{
+                              flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                              backgroundColor: isBlocked ? '#EAF2E8' : 'var(--bg-crema)',
+                              color: isBlocked ? 'var(--verde-oliva)' : 'var(--marron-arcilla)',
+                              fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseOut={e => e.currentTarget.style.opacity = 1}
+                          >
+                            {isBlocked ? 'Reactivar' : 'Pausar'}
+                          </button>
 
                           {/* 2. Editar */}
-                          <div
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onEdit(tc);
                             }}
                             style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              padding: '12px 8px',
-                              borderRadius: '16px',
-                              border: '1px solid rgba(146, 101, 61, 0.12)',
-                              backgroundColor: '#FAF5F0',
-                              color: '#92653D',
-                              cursor: 'pointer',
-                              transition: 'transform 0.1s ease',
-                              textAlign: 'center'
+                              flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                              backgroundColor: 'var(--gris-oscuro)', color: 'var(--blanco)',
+                              fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
                             }}
+                            onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseOut={e => e.currentTarget.style.opacity = 1}
                           >
-                            <svg style={{ width: '16px', height: '16px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                            </svg>
-                            <span style={{ fontSize: '10px', fontWeight: '700' }}>Editar</span>
-                          </div>
+                            Editar
+                          </button>
 
                           {/* 3. Eliminar */}
-                          <div
-                            onClick={(e) => {
+                          <button
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              handleDelete(tc.id, tc.name);
+                              await handleDelete(tc.id, tc.name);
                             }}
                             style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              padding: '12px 8px',
-                              borderRadius: '16px',
-                              border: '1px solid rgba(200, 90, 63, 0.1)',
-                              backgroundColor: 'var(--rojo-alerta-light)',
-                              color: 'var(--rojo-alerta)',
-                              cursor: 'pointer',
-                              transition: 'transform 0.1s ease',
-                              textAlign: 'center'
+                              flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                              backgroundColor: '#FFF5F5', color: '#E53E3E',
+                              fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
                             }}
+                            onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseOut={e => e.currentTarget.style.opacity = 1}
                           >
-                            <svg style={{ width: '16px', height: '16px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                            <span style={{ fontSize: '10px', fontWeight: '700' }}>Eliminar</span>
-                          </div>
+                            Eliminar
+                          </button>
                         </div>
-
-                        {/* Botón Asignar Turnos (Abre Popup) */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAssignModalTeacher(tc);
-                            setSelectedTurnIds(classes.filter(c => c.teacher_id === tc.id).map(c => c.id));
-                            setShowAssignModal(true);
-                          }}
-                          className="btn-tuti btn-secondary"
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            padding: '10px',
-                            fontSize: '12px',
-                            fontWeight: '800',
-                            borderRadius: '12px',
-                            backgroundColor: 'var(--blanco)',
-                            color: 'var(--verde-oliva)',
-                            border: '1px solid var(--verde-oliva)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            marginTop: '4px'
-                          }}
-                        >
-                          <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Asignar Turnos
-                        </button>
                       </div>
                     )}
                   </div>
@@ -567,7 +512,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             setTelefono('');
             setInstagram('');
             setBirthdate('');
-            setBranch('CENTRO');
+            setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
             setMode('create');
           }}
           style={{
@@ -698,7 +643,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           {c.day} - {c.time}
                         </span>
                         <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: '600' }}>
-                          📍 Sucursal: {c.sucursal} | Actual: {c.teacherName}
+                          <LocationOnIcon style={{ fontSize: '12px' }} /> Sucursal: {c.sucursal} | Actual: {c.teacherName}
                         </span>
                       </div>
 
@@ -732,7 +677,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                 type="button"
                 onClick={() => setShowAssignModal(false)}
                 className="btn-tuti btn-secondary"
-                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800', border: '1px solid var(--gris-medio)', color: 'var(--gris-medio)', backgroundColor: 'transparent' }}
+                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800', border: 'none', color: 'var(--gris-medio)', backgroundColor: 'transparent' }}
               >
                 Cancelar
               </button>

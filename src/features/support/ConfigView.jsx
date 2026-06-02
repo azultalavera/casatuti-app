@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 export default function ConfigView() {
   const {
@@ -73,7 +74,7 @@ export default function ConfigView() {
                   <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>{u.name}</h4>
                   <p style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>{u.email}</p>
                   <p style={{ fontSize: '11px', color: 'var(--marron-arcilla)', fontWeight: 600, marginTop: '4px' }}>
-                    🔑 Clave: <code style={{ backgroundColor: 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{u.password}</code>
+                    <VpnKeyIcon style={{ fontSize: '12px' }} /> Clave: <code style={{ backgroundColor: 'rgba(0,0,0,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{u.password}</code>
                   </p>
                 </div>
                 

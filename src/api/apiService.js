@@ -36,6 +36,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  recordStudentPayment: async (studentIds, amount, creditsToAdd, date) => {
+    const res = await fetch(`${API_URL}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentIds, amount, creditsToAdd, date })
+    });
+    return handleResponse(res);
+  },
+
   login: async (email, password) => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -216,6 +225,33 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  requestPayment: async (paymentData) => {
+    const res = await fetch(`${API_URL}/payments/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: paymentData.studentId,
+        amount: paymentData.amount,
+        creditsToAdd: paymentData.classCreditsAdded
+      })
+    });
+    return handleResponse(res);
+  },
+
+  confirmPayment: async (paymentId) => {
+    const res = await fetch(`${API_URL}/payments/${paymentId}/confirm`, {
+      method: 'PUT'
+    });
+    return handleResponse(res);
+  },
+
+  notifyPaymentReminder: async (paymentId) => {
+    const res = await fetch(`${API_URL}/payments/${paymentId}/notify`, {
+      method: 'POST'
+    });
+    return handleResponse(res);
+  },
+
   // --- ALERTAS ---
   getAlerts: async () => {
     const res = await fetch(`${API_URL}/alerts`);
@@ -255,6 +291,99 @@ export const apiService = {
 
   deleteNonWorkingDay: async (fecha) => {
     const res = await fetch(`${API_URL}/non-working-days/${fecha}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  },
+
+  // --- PAQUETES DE CREDITOS (PACKS) ---
+  getPacks: async () => {
+    const res = await fetch(`${API_URL}/packs`);
+    return handleResponse(res);
+  },
+
+  createPack: async (packData) => {
+    const res = await fetch(`${API_URL}/packs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(packData)
+    });
+    return handleResponse(res);
+  },
+
+  updatePack: async (packId, packData) => {
+    const res = await fetch(`${API_URL}/packs/${packId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(packData)
+    });
+    return handleResponse(res);
+  },
+
+  deletePack: async (packId) => {
+    const res = await fetch(`${API_URL}/packs/${packId}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  },
+
+  // --- SUCURSALES (BRANCHES) ---
+  getBranches: async () => {
+    const res = await fetch(`${API_URL}/branches`);
+    return handleResponse(res);
+  },
+
+  createBranch: async (branch) => {
+    const res = await fetch(`${API_URL}/branches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(branch)
+    });
+    return handleResponse(res);
+  },
+
+  updateBranch: async (id, data) => {
+    const res = await fetch(`${API_URL}/branches/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  deleteBranch: async (id) => {
+    const res = await fetch(`${API_URL}/branches/${id}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  },
+
+  // --- NORMAS (FAQS) ---
+  getFaqs: async () => {
+    const res = await fetch(`${API_URL}/faqs`);
+    return handleResponse(res);
+  },
+
+  createFaq: async (faq) => {
+    const res = await fetch(`${API_URL}/faqs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(faq)
+    });
+    return handleResponse(res);
+  },
+
+  updateFaq: async (id, data) => {
+    const res = await fetch(`${API_URL}/faqs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  deleteFaq: async (id) => {
+    const res = await fetch(`${API_URL}/faqs/${id}`, {
       method: 'DELETE'
     });
     return handleResponse(res);

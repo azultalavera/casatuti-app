@@ -40,6 +40,11 @@ export const mockService = {
       setStorageItem('tuti_clay_deliveries', initialClayDeliveries);
       setStorageItem('tuti_payments', initialPayments);
       setStorageItem('tuti_alerts', initialAlerts);
+      setStorageItem('tuti_branches', [{ id: 'br_1', name: 'CENTRO' }, { id: 'br_2', name: 'ALTO VERDE' }]);
+      setStorageItem('tuti_faqs', [
+        { id: 'faq_1', question: '¿Cómo recupero una clase?', answer: 'Debes cancelar con 2 horas de anticipación.' },
+        { id: 'faq_2', question: '¿Cuánto dura un bloque de arcilla?', answer: 'Depende del tamaño de tus piezas, pero en promedio 4 clases.' }
+      ]);
       return true;
     }
 
@@ -56,8 +61,12 @@ export const mockService = {
         setStorageItem('tuti_clay_deliveries', initialClayDeliveries);
         setStorageItem('tuti_payments', initialPayments);
         setStorageItem('tuti_alerts', initialAlerts);
+        setStorageItem('tuti_branches', [{ id: 'br_1', name: 'CENTRO' }, { id: 'br_2', name: 'ALTO VERDE' }]);
+        setStorageItem('tuti_faqs', [
+          { id: 'faq_1', question: '¿Cómo recupero una clase?', answer: 'Debes cancelar con 2 horas de anticipación.' },
+          { id: 'faq_2', question: '¿Cuánto dura un bloque de arcilla?', answer: 'Depende del tamaño de tus piezas, pero en promedio 4 clases.' }
+        ]);
         return true;
-      }
 
       let updated = false;
       const patchedUsers = storedUsers.map(u => {
@@ -326,5 +335,64 @@ export const mockService = {
       return alerts[idx];
     }
     throw new Error('Alerta no encontrada');
+  }
+  // --- FAQS ---
+  getFaqs: async () => {
+    await delay();
+    return getStorageItem('tuti_faqs', []);
+  },
+  createFaq: async (faq) => {
+    await delay();
+    const faqs = getStorageItem('tuti_faqs', []);
+    const newFaq = { ...faq, id: `faq_${Date.now()}` };
+    faqs.push(newFaq);
+    setStorageItem('tuti_faqs', faqs);
+    return newFaq;
+  },
+  updateFaq: async (id, data) => {
+    await delay();
+    const faqs = getStorageItem('tuti_faqs', []);
+    const idx = faqs.findIndex(f => f.id === id);
+    if (idx !== -1) {
+      faqs[idx] = { ...faqs[idx], ...data };
+      setStorageItem('tuti_faqs', faqs);
+      return faqs[idx];
+    }
+    throw new Error('FAQ no encontrada');
+  },
+  deleteFaq: async (id) => {
+    await delay();
+    const faqs = getStorageItem('tuti_faqs', []);
+    setStorageItem('tuti_faqs', faqs.filter(f => f.id !== id));
+  },
+
+  // --- BRANCHES ---
+  getBranches: async () => {
+    await delay();
+    return getStorageItem('tuti_branches', [{ id: 'br_1', name: 'CENTRO' }, { id: 'br_2', name: 'ALTO VERDE' }]);
+  },
+  createBranch: async (branch) => {
+    await delay();
+    const branches = getStorageItem('tuti_branches', []);
+    const newBranch = { ...branch, id: `br_${Date.now()}` };
+    branches.push(newBranch);
+    setStorageItem('tuti_branches', branches);
+    return newBranch;
+  },
+  updateBranch: async (id, data) => {
+    await delay();
+    const branches = getStorageItem('tuti_branches', []);
+    const idx = branches.findIndex(b => b.id === id);
+    if (idx !== -1) {
+      branches[idx] = { ...branches[idx], ...data };
+      setStorageItem('tuti_branches', branches);
+      return branches[idx];
+    }
+    throw new Error('Sucursal no encontrada');
+  },
+  deleteBranch: async (id) => {
+    await delay();
+    const branches = getStorageItem('tuti_branches', []);
+    setStorageItem('tuti_branches', branches.filter(b => b.id !== id));
   }
 };

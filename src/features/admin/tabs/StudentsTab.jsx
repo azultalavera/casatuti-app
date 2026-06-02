@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 
 export default function StudentsTab({ showFeedback, onEdit }) {
-  const { users, studentProfiles, createNewUserAction, deleteUserAction, toggleStudentBlockAction } = useApp();
+  const { users, studentProfiles, createNewUserAction, deleteUserAction, toggleStudentBlockAction, branches } = useApp();
   const students = users.filter(u => u.role === 'ALUMNO');
 
   const [mode, setMode] = useState('list'); // 'list' | 'create'
@@ -18,7 +18,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
   const [telefono, setTelefono] = useState('');
   const [instagram, setInstagram] = useState('');
   const [birthdate, setBirthdate] = useState('');
-  const [branch, setBranch] = useState('CENTRO');
+  const [branch, setBranch] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
 
   const filteredStudents = students.filter(st => {
     const profile = studentProfiles.find(p => p.studentId === st.id) || { isBlocked: false };
@@ -49,7 +49,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
       });
       alert(`¡Alumna "${fullName}" registrada con éxito!`);
       setNombre(''); setApellido(''); setEmail(''); setDocumento('');
-      setTelefono(''); setInstagram(''); setBirthdate(''); setBranch('CENTRO');
+      setTelefono(''); setInstagram(''); setBirthdate(''); setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
       setMode('list'); // Redirigir a listado después de crear
     } catch (err) {
       showFeedback(err.message, 'danger');
@@ -149,8 +149,9 @@ export default function StudentsTab({ showFeedback, onEdit }) {
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
               <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
-                <option value="CENTRO">CENTRO</option>
-                <option value="ALTO VERDE">ALTO VERDE</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
               </select>
             </div>
 
@@ -185,7 +186,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 className="input-tuti"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '12px', height: '42px' }}
+                style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: 'none', borderRadius: '20px', height: '42px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               />
             </div>
 
@@ -193,12 +194,12 @@ export default function StudentsTab({ showFeedback, onEdit }) {
               {/* Sucursales */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '4px' }}>Sucursal:</span>
-                {['ALL', 'CENTRO', 'ALTO VERDE'].map(br => {
-                  const isActive = selectedBranch === br;
+                {[{ id: 'all', name: 'ALL' }, ...branches].map(br => {
+                  const isActive = selectedBranch === br.name;
                   return (
                     <button
-                      key={br}
-                      onClick={() => setSelectedBranch(br)}
+                      key={br.id}
+                      onClick={() => setSelectedBranch(br.name)}
                       style={{
                         padding: '6px 14px',
                         borderRadius: '16px',
@@ -208,10 +209,11 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                         cursor: 'pointer',
                         backgroundColor: isActive ? 'rgba(69, 95, 62, 0.12)' : 'var(--blanco)',
                         color: isActive ? 'var(--verde-oliva)' : 'var(--gris-medio)',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      {br === 'ALL' ? 'Todas' : br === 'CENTRO' ? 'Centro' : 'Alto Verde'}
+                      {br.name === 'ALL' ? 'Todas' : br.name}
                     </button>
                   );
                 })}
@@ -230,7 +232,8 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                   backgroundColor: 'rgba(0,0,0,0.04)',
                   borderRadius: '20px',
                   padding: '2px',
-                  border: '1px solid rgba(0,0,0,0.02)',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                   cursor: 'pointer',
                   userSelect: 'none'
                 }}>
@@ -295,7 +298,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No se encontraron alumnas.</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {filteredStudents.map(st => {
                   const profile = studentProfiles.find(p => p.studentId === st.id) || { classCredits: 0, monthlyClayKg: 0, isBlocked: false };
                   const initials = getInitials(st.name);
@@ -304,103 +307,79 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                   return (
                     <div
                       key={st.id}
-                      className="clay-card animate-slide-up"
                       onClick={() => setExpandedStudentId(isExpanded ? null : st.id)}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        padding: '14px 16px',
+                        padding: '20px',
+                        borderRadius: '24px',
+                        backgroundColor: 'var(--blanco)',
                         opacity: profile.isBlocked ? 0.6 : 1,
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        borderLeft: profile.isBlocked ? '4px solid var(--rojo-alerta)' : '1px solid var(--gris-claro)',
-                        backgroundColor: 'var(--blanco)'
+                        transition: 'transform 0.2s ease',
+                        border: 'none',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
                       }}
                     >
                       {/* Fila Principal de Información */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
                         {/* Círculo con Iniciales */}
                         <div style={{
-                          width: '44px',
-                          height: '44px',
+                          width: '48px',
+                          height: '48px',
                           borderRadius: '50%',
-                          backgroundColor: 'rgba(69, 95, 62, 0.08)',
+                          backgroundColor: 'var(--bg-crema)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontWeight: '700',
-                          color: 'var(--verde-oliva)',
-                          fontSize: '13px',
+                          fontWeight: '800',
+                          color: 'var(--marron-arcilla)',
+                          fontSize: '15px',
                           flexShrink: 0
                         }}>
                           {initials}
                         </div>
 
                         {/* Nombre y Detalles */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {st.name}
                             </h4>
                             {profile.isBlocked && (
-                              <span style={{ fontSize: '7px', fontWeight: 'bold', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '1px 4px', borderRadius: '4px' }}>
+                              <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '2px 8px', borderRadius: '8px' }}>
                                 PAUSA
                               </span>
                             )}
                           </div>
 
-                          <span style={{ fontSize: '11px', color: 'var(--gris-medio)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {st.email}
-                          </span>
-
-                          {/* Badge de Sucursal */}
-                          <span style={{
-                            fontSize: '8px',
-                            fontWeight: '800',
-                            letterSpacing: '0.4px',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            alignSelf: 'flex-start',
-                            marginTop: '3px',
-                            backgroundColor: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'rgba(69, 95, 62, 0.08)' : 'rgba(146, 101, 61, 0.08)',
-                            color: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--verde-oliva)' : 'var(--marron-arcilla)'
-                          }}>
-                            {(st.sucursal || 'CENTRO').toUpperCase()}
-                          </span>
+                          {/* Removed Email and Branch to make it cleaner */}
                         </div>
 
                         {/* Clases, Barra Indicadora y Chevron de despliegue */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <span style={{ fontSize: '8px', fontWeight: '800', color: 'var(--gris-medio)', letterSpacing: '0.5px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gris-medio)', letterSpacing: '0.5px' }}>
                               CLASES
                             </span>
-                            <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gris-oscuro)', lineHeight: '1' }}>
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gris-oscuro)', lineHeight: '1' }}>
                               {profile.classCredits}
                             </span>
                           </div>
-                          {/* Barra vertical de indicador */}
-                          <div style={{
-                            width: '4px',
-                            height: '24px',
-                            borderRadius: '2px',
-                            backgroundColor: profile.classCredits > 0 ? 'var(--verde-oliva)' : 'var(--gris-claro)'
-                          }} />
 
                           {/* Chevron indicador de colapso */}
                           <svg
                             style={{
-                              width: '12px',
-                              height: '12px',
+                              width: '16px',
+                              height: '16px',
                               color: 'var(--gris-medio)',
                               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                               transition: 'transform 0.25s ease',
-                              marginLeft: '2px',
                               flexShrink: 0
                             }}
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="3.5"
+                            strokeWidth="3"
                             viewBox="0 0 24 24"
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
@@ -408,119 +387,95 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                         </div>
                       </div>
 
-                      {/* Bloque Desplegable de Acciones (Estilo Mockup) */}
+                      {/* Bloque Desplegable de Acciones y Detalles */}
                       {isExpanded && (
                         <div
                           onClick={e => e.stopPropagation()}
                           style={{
                             width: '100%',
-                            marginTop: '12px',
-                            borderTop: '1px solid rgba(234, 229, 219, 0.5)',
-                            paddingTop: '12px',
+                            marginTop: '16px',
+                            borderTop: '1px solid rgba(0,0,0,0.04)',
+                            paddingTop: '16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '8px',
+                            gap: '12px',
                             animation: 'fadeInAcc 0.2s ease-out'
                           }}
                         >
+                          {/* Detalles Extras */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{st.email}</span>
+                              <span style={{
+                                fontSize: '9px', fontWeight: '800', letterSpacing: '0.4px', padding: '2px 8px', borderRadius: '12px',
+                                backgroundColor: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--card-sage)' : 'var(--bg-crema-claro)',
+                                color: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--blanco)' : 'var(--marron-arcilla)'
+                              }}>
+                                {(st.sucursal || 'CENTRO').toUpperCase()}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gris-medio)', letterSpacing: '0.5px' }}>ARCILLA</span>
+                              <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gris-oscuro)' }}>{profile.monthlyClayKg} <span style={{fontSize: '10px'}}>kg</span></span>
+                            </div>
+                          </div>
 
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                          {/* Botones de acción */}
+                          <div style={{ display: 'flex', gap: '8px' }}>
                             {/* 1. Pausar */}
-                            <div
+                            <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 await handleToggleBlock(st.id, st.name, profile.isBlocked);
                               }}
                               style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                padding: '12px 8px',
-                                borderRadius: '16px',
-                                border: profile.isBlocked ? '1px solid rgba(69, 95, 62, 0.12)' : '1px solid rgba(146, 101, 61, 0.12)',
-                                backgroundColor: profile.isBlocked ? '#EAF2E8' : '#FAF5F0',
-                                color: profile.isBlocked ? 'var(--verde-oliva)' : '#92653D',
-                                cursor: 'pointer',
-                                transition: 'transform 0.1s ease',
-                                textAlign: 'center'
+                                flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                                backgroundColor: profile.isBlocked ? '#EAF2E8' : 'var(--bg-crema)',
+                                color: profile.isBlocked ? 'var(--verde-oliva)' : 'var(--marron-arcilla)',
+                                fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
                               }}
+                              onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                              onMouseOut={e => e.currentTarget.style.opacity = 1}
                             >
-                              {profile.isBlocked ? (
-                                <svg style={{ width: '12px', height: '12px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                                </svg>
-                              ) : (
-                                <svg style={{ width: '12px', height: '12px', color: 'currentColor' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-                                </svg>
-                              )}
-                              <span style={{ fontSize: '10px', fontWeight: '700' }}>
-                                {profile.isBlocked ? 'Reactivar' : 'Pausar'}
-                              </span>
-                            </div>
+                              {profile.isBlocked ? 'Reactivar' : 'Pausar'}
+                            </button>
 
                             {/* 2. Editar */}
-                            <div
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onEdit(st);
                               }}
                               style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                padding: '12px 8px',
-                                borderRadius: '16px',
-                                border: '1px solid rgba(43, 108, 176, 0.12)',
-                                backgroundColor: '#F3F8FC',
-                                color: '#2B6CB0',
-                                cursor: 'pointer',
-                                transition: 'transform 0.1s ease',
-                                textAlign: 'center'
+                                flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                                backgroundColor: 'var(--gris-oscuro)', color: 'var(--blanco)',
+                                fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
                               }}
+                              onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                              onMouseOut={e => e.currentTarget.style.opacity = 1}
                             >
-                              <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                              </svg>
-                              <span style={{ fontSize: '10px', fontWeight: '700' }}>Editar</span>
-                            </div>
+                              Editar
+                            </button>
 
                             {/* 3. Eliminar */}
-                            <div
+                            <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 await handleDelete(st.id, st.name);
                               }}
                               style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                padding: '12px 8px',
-                                borderRadius: '16px',
-                                border: '1px solid rgba(229, 62, 62, 0.12)',
-                                backgroundColor: '#FFF5F5',
-                                color: '#E53E3E',
-                                cursor: 'pointer',
-                                transition: 'transform 0.1s ease',
-                                textAlign: 'center'
+                                flex: 1, padding: '12px 0', borderRadius: '16px', border: 'none',
+                                backgroundColor: '#FFF5F5', color: '#E53E3E',
+                                fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
                               }}
+                              onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                              onMouseOut={e => e.currentTarget.style.opacity = 1}
                             >
-                              <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                              </svg>
-                              <span style={{ fontSize: '10px', fontWeight: '700' }}>Eliminar</span>
-                            </div>
+                              Eliminar
+                            </button>
                           </div>
                         </div>
                       )}
-
                     </div>
                   );
                 })}
@@ -541,7 +496,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
             setTelefono('');
             setInstagram('');
             setBirthdate('');
-            setBranch('CENTRO');
+            setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
             setMode('create');
           }}
           style={{

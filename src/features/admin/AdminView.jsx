@@ -5,6 +5,7 @@ import StudentsTab   from './tabs/StudentsTab';
 import TeachersTab   from './tabs/TeachersTab';
 import ClassesTab    from './tabs/ClassesTab';
 import PaymentsTab   from './tabs/PaymentsTab';
+import ConfigTab     from './tabs/ConfigTab';
 import EditUserModal from './components/EditUserModal';
 
 const TABS = [
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'teachers',  label: 'Profesores' },
   { id: 'classes',   label: 'Turnos'     },
   { id: 'payments',  label: 'Pagos'      },
+  { id: 'config',    label: 'Config'     },
 ];
 
 export default function AdminView({ activeTab = 'dashboard', setActiveTab = () => {} }) {
@@ -66,6 +68,10 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
 
       {activeTab === 'payments' && (
         <PaymentsTab showFeedback={showFeedback} />
+      )}
+
+      {activeTab === 'config' && (
+        <ConfigTab showFeedback={showFeedback} goBack={() => setActiveTab('dashboard')} />
       )}
 
       {/* Modal de edición compartido */}

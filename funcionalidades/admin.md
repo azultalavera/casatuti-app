@@ -9,7 +9,6 @@
 [x] Desinscribir alumna
 [x] Pausar alumna
 [x] Consultar alumna
-
 [x] Cambiar la sucursal a alumna 
 
 [x] Crear turnos

@@ -6,6 +6,11 @@ import ProfeView from './features/teacher/ProfeView';
 import AdminView from './features/admin/AdminView';
 import ConfigView from './features/support/ConfigView';
 import LoginView from './features/auth/LoginView';
+import PersonIcon from '@mui/icons-material/Person';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 function AppContentWrapper() {
   const { currentUser, isAuthenticated, logoutAction, users, changeUser, loading, alerts, resolveAlertAction } = useApp();
@@ -114,7 +119,10 @@ function AppContentWrapper() {
                 color: 'var(--marron-arcilla)'
               }}
             >
-              {showImpersonatorDropdown ? 'Cerrar ✕' : 'Cambiar Rol 👤'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {showImpersonatorDropdown ? 'Cerrar ✕' : 'Cambiar Rol'}
+                {!showImpersonatorDropdown && <PersonIcon style={{ fontSize: '14px' }} />}
+              </div>
             </button>
 
             {showImpersonatorDropdown && (
@@ -183,9 +191,32 @@ function AppContentWrapper() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Alertas de Negocio (Notificaciones) - Solo para Rol ADMIN */}
+          {/* Alertas y Configuración - Solo para Rol ADMIN */}
           {currentUser?.role === 'ADMIN' && (
-            <div style={{ position: 'relative' }}>
+            <>
+              {/* Botón de Configuración */}
+              <button
+                onClick={() => setAdminTab('config')}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '34px',
+                  height: '34px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--blanco)',
+                  transition: 'var(--transition-quick)',
+                  outline: adminTab === 'config' ? '2px solid var(--blanco)' : 'none'
+                }}
+                title="Configuración"
+              >
+                <SettingsIcon style={{ fontSize: '22px' }} />
+              </button>
+
+              <div style={{ position: 'relative' }}>
               <button
                 onClick={() => {
                   setShowNotificationsDropdown(!showNotificationsDropdown);
@@ -207,7 +238,7 @@ function AppContentWrapper() {
                   transition: 'var(--transition-quick)'
                 }}
               >
-                🔔
+                <NotificationsIcon style={{ fontSize: '24px' }} />
                 {alerts && alerts.filter(a => !a.resolved).length > 0 && (
                   <span
                     style={{
@@ -267,15 +298,14 @@ function AppContentWrapper() {
                   </div>
 
                   {(!alerts || alerts.filter(a => !a.resolved).length === 0) ? (
-                    <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--gris-medio)', fontSize: '12px', fontStyle: 'italic', fontFamily: 'var(--font-sans)' }}>
-                      No tienes alertas pendientes ✨
+                    <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--gris-medio)', fontSize: '12px', fontStyle: 'italic', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      No tienes alertas pendientes <AutoAwesomeIcon style={{ fontSize: '16px' }} />
                     </div>
                   ) : (
                     alerts.filter(a => !a.resolved).map(alt => (
                       <div
                         key={alt.id}
                         style={{
-                          borderLeft: `4.5px solid ${alt.type === 'NO_CREDITS' ? 'var(--rojo-alerta)' : alt.type === 'CLAY_LIMIT' ? 'var(--marron-arcilla)' : 'var(--amarillo-alerta)'}`,
                           padding: '10px',
                           backgroundColor: 'var(--bg-crema-claro)',
                           borderRadius: '10px',
@@ -329,7 +359,8 @@ function AppContentWrapper() {
                   )}
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
 
           <div style={{ position: 'relative' }}>
@@ -363,8 +394,9 @@ function AppContentWrapper() {
                     setViewOverride(null);
                     setShowHeaderDropdown(false);
                   }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  <span>🚪</span> Cerrar Sesión
+                  <LogoutIcon style={{ fontSize: '16px', color: 'var(--rojo-alerta)' }} /> <span>Cerrar Sesión</span>
                 </button>
               </div>
             )}
@@ -378,9 +410,22 @@ function AppContentWrapper() {
       </div>
 
       {/* Navbar Móvil Flotante Inferior */}
-      <div className="mobile-navbar-floating">
-        {currentUser?.role === 'ADMIN' && viewOverride === null ? (
+      {!(currentUser?.role === 'ADMIN' && adminTab === 'config') && (
+        <div className="mobile-navbar-floating">
+          {currentUser?.role === 'ADMIN' && viewOverride === null ? (
           <>
+            {/* Resumen */}
+            <button
+              onClick={() => setAdminTab('dashboard')}
+              className={`nav-item ${adminTab === 'dashboard' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+              title="Resumen"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </button>
+
             {/* Alumnas */}
             <button
               onClick={() => setAdminTab('students')}
@@ -401,19 +446,7 @@ function AppContentWrapper() {
               title="Profesores"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.9c2.785 0 5.42-.447 7.85-1.285a60.4 60.4 0 00-.49-6.348m-15.7 0L12 6.062l8.34 4.085m-16.68 0L12 14.232l8.34-4.085M21 12v5.25" />
-              </svg>
-            </button>
-
-            {/* Resumen (Al Medio) */}
-            <button
-              onClick={() => setAdminTab('dashboard')}
-              className={`nav-item ${adminTab === 'dashboard' ? 'active' : ''}`}
-              style={{ background: 'transparent', border: 'none' }}
-              title="Resumen"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '26px', height: '26px', marginBottom: 0 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6.5m7.5-6.5V17M12 14L3 9.5" />
               </svg>
             </button>
 
@@ -483,6 +516,7 @@ function AppContentWrapper() {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

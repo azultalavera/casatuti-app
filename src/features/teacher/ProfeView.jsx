@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 
 export default function ProfeView() {
   const {
@@ -143,7 +145,7 @@ export default function ProfeView() {
       {/* Banners de Notificaciones */}
       {errorMessage && (
         <div className="alert-banner danger animate-slide-up">
-          <span>⚠️ {errorMessage}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><WarningAmberIcon style={{ fontSize: '18px' }} /> {errorMessage}</span>
         </div>
       )}
       {successMessage && (
@@ -246,7 +248,7 @@ export default function ProfeView() {
                           className="btn-tuti btn-primary-clay"
                           style={{ padding: '8px 16px', fontSize: '12px', width: '100%', justifyContent: 'center' }}
                         >
-                          🎁 Entregar Bloque de 1kg
+                          <CardGiftcardIcon style={{ fontSize: '14px' }} /> Entregar Bloque de 1kg
                         </button>
                       )}
                     </div>

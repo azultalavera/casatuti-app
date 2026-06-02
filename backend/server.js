@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import crypto from 'crypto';
+
 import db from './db.js';
 
 dotenv.config();
@@ -17,7 +17,7 @@ app.use(express.json());
 const mapUserToFE = (u) => {
   if (!u) return null;
   return {
-    id: u.id_usuario,
+    id: u.id_usuarios,
     name: u.nombre && u.apellido ? `${u.nombre} ${u.apellido}` : (u.nombre || 'Usuario'),
     email: u.email,
     password: u.clave || 'tuti123',
@@ -39,11 +39,12 @@ const mapUserToFE = (u) => {
 const mapProfileToFE = (p) => {
   if (!p) return null;
   return {
-    studentId: p.id_usuario,
+    studentId: p.id_usuarios,
     classCredits: p.class_credits || 0,
     monthlyClayKg: parseFloat(p.monthly_clay_kg || 0),
     lastClayDeliveryDate: p.last_clay_delivery_date || null,
-    isBlocked: p.bl_bloqueado || false
+    isBlocked: p.bl_bloqueado || false,
+    expirationDate: p.fec_vencimiento_cuota || null
   };
 };
 
@@ -52,7 +53,7 @@ const mapBookingToFE = (b) => {
   if (!b) return null;
   const dateStr = b.date instanceof Date ? b.date.toISOString().split('T')[0] : b.date;
   return {
-    id: b.id_reserva,
+    id: b.id_inscripcion,
     studentId: b.student_id,
     studentName: b.student_name,
     classId: b.class_id,
@@ -66,7 +67,7 @@ const mapDeliveryToFE = (d) => {
   if (!d) return null;
   const dateStr = d.date instanceof Date ? d.date.toISOString().split('T')[0] : d.date;
   return {
-    id: d.id_entrega,
+    id: d.id_deudas_insumos,
     studentId: d.student_id,
     studentName: d.student_name,
     teacherId: d.teacher_id,
@@ -95,10 +96,23 @@ const mapAlertToFE = (a) => {
   if (!a) return null;
   return {
     id: a.id_alerta,
+    studentId: a.id_usuarios,
     type: a.type,
     message: a.message,
     date: a.date,
     resolved: a.resolved
+  };
+};
+
+// Helper para mapear paquetes
+const mapPackToFE = (p) => {
+  if (!p) return null;
+  return {
+    id: p.id_paquete,
+    name: p.nombre,
+    credits: p.cantidad_creditos,
+    price: p.precio,
+    active: p.activo
   };
 };
 
@@ -111,7 +125,7 @@ const mapClassToFE = (c) => {
   // Si no hay titulo, generar un nombre descriptivo a partir de sucursal + dia + horario
   const autoName = sucursal ? `${sucursal} - ${dayStr} ${timeStr}` : `${dayStr} ${timeStr}`;
   return {
-    id: c.id_clase,
+    id: c.id_clases_def,
     name: c.name || autoName,
     teacherId: c.teacher_id,
     teacherName: c.teacher_name,
@@ -119,6 +133,27 @@ const mapClassToFE = (c) => {
     time: timeStr,
     capacity: c.capacity,
     sucursal: sucursal
+  };
+};
+
+// Helper para mapear sucursales
+const mapBranchToFE = (b) => {
+  if (!b) return null;
+  return {
+    id: b.id_sucursal,
+    name: b.n_sucursal,
+    address: b.direccion,
+    maxCapacity: b.capacidad_max_creditos
+  };
+};
+
+// Helper para mapear normas (FAQs)
+const mapFaqToFE = (f) => {
+  if (!f) return null;
+  return {
+    id: f.id,
+    question: f.pregunta,
+    answer: f.respuesta
   };
 };
 
@@ -192,18 +227,15 @@ app.post('/api/users', async (req, res) => {
   const nameParts = name.trim().split(' ');
   const nombre = nameParts[0] || 'Usuario';
   const apellido = nameParts.slice(1).join(' ') || '';
-  const generatedId = crypto.randomUUID();
-
   try {
     // 1. Insertar el usuario en la tabla t_usuarios
     const userInsertQuery = `
       INSERT INTO public.t_usuarios 
-      (id_usuario, nro_documento, clave, email, nombre, apellido, telefono, instagram, fecha_nacimiento, rol, bl_cambio_pass_pte, sucursal) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      (nro_documento, clave, email, nombre, apellido, telefono, instagram, fecha_nacimiento, rol, bl_cambio_pass_pte, sucursal) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `;
     const { rows } = await db.query(userInsertQuery, [
-      generatedId,
       nro_documento ? parseInt(nro_documento) : null,
       password || 'tuti123',
       email,
@@ -222,8 +254,8 @@ app.post('/api/users', async (req, res) => {
     // 2. Si el rol es ALUMNO, crear su perfil correspondiente en t_cuenta_alumno
     if (role === 'ALUMNO') {
       await db.query(
-        'INSERT INTO public.t_cuenta_alumno (id_usuario, saldo_actual, saldo) VALUES ($1, $2, 4)',
-        [generatedId, 0]
+        'INSERT INTO public.t_cuenta_alumno (id_usuarios, saldo_actual, saldo) VALUES ($1, $2, 4)',
+        [createdUser.id_usuarios, 0]
       );
     }
 
@@ -248,7 +280,7 @@ app.put('/api/users/:id/role', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      'UPDATE public.t_usuarios SET rol = $1 WHERE id_usuario = $2 RETURNING *',
+      'UPDATE public.t_usuarios SET rol = $1 WHERE id_usuarios = $2 RETURNING *',
       [role, id]
     );
 
@@ -258,9 +290,9 @@ app.put('/api/users/:id/role', async (req, res) => {
 
     // Si cambió su rol a ALUMNO y no tenía perfil creado, crearlo ahora
     if (role === 'ALUMNO') {
-      const accountCheck = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuario = $1', [id]);
+      const accountCheck = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuarios = $1', [id]);
       if (accountCheck.rows.length === 0) {
-        await db.query('INSERT INTO public.t_cuenta_alumno (id_usuario, saldo_actual, saldo) VALUES ($1, 0, 4)', [id]);
+        await db.query('INSERT INTO public.t_cuenta_alumno (id_usuarios, saldo_actual, saldo) VALUES ($1, 0, 4)', [id]);
       }
     }
 
@@ -281,13 +313,14 @@ app.get('/api/students/profiles', async (req, res) => {
   try {
     const profileQuery = `
       SELECT 
-        ca.id_usuario AS id_usuario,
+        ca.id_usuarios AS id_usuarios,
         ca.saldo_actual AS class_credits,
         ca.bl_bloqueado AS bl_bloqueado,
+        ca.fec_vencimiento_cuota::text AS fec_vencimiento_cuota,
         COALESCE(
           (SELECT COUNT(*) 
            FROM public.t_deudas_insumos d 
-           WHERE d.id_usuario = ca.id_usuario 
+           WHERE d.id_usuarios = ca.id_usuarios 
              AND d.tipo = 'ARCILLA' 
              AND d.fec_carga >= DATE_TRUNC('month', CURRENT_DATE)
           ), 
@@ -295,7 +328,7 @@ app.get('/api/students/profiles', async (req, res) => {
         ) AS monthly_clay_kg,
         (SELECT MAX(d.fec_carga) 
          FROM public.t_deudas_insumos d 
-         WHERE d.id_usuario = ca.id_usuario 
+         WHERE d.id_usuarios = ca.id_usuarios 
            AND d.tipo = 'ARCILLA'
         ) AS last_clay_delivery_date
       FROM public.t_cuenta_alumno ca
@@ -317,7 +350,7 @@ app.put('/api/students/profiles/:id', async (req, res) => {
     const { rows } = await db.query(
       `UPDATE public.t_cuenta_alumno 
        SET saldo_actual = COALESCE($1, saldo_actual) 
-       WHERE id_usuario = $2 RETURNING id_usuario`,
+       WHERE id_usuarios = $2 RETURNING id_usuarios`,
       [classCredits, id]
     );
 
@@ -327,13 +360,13 @@ app.put('/api/students/profiles/:id', async (req, res) => {
 
     const profileQuery = `
       SELECT 
-        ca.id_usuario AS id_usuario,
+        ca.id_usuarios AS id_usuarios,
         ca.saldo_actual AS class_credits,
         ca.bl_bloqueado AS bl_bloqueado,
         COALESCE(
           (SELECT COUNT(*) 
            FROM public.t_deudas_insumos d 
-           WHERE d.id_usuario = ca.id_usuario 
+           WHERE d.id_usuarios = ca.id_usuarios 
              AND d.tipo = 'ARCILLA' 
              AND d.fec_carga >= DATE_TRUNC('month', CURRENT_DATE)
           ), 
@@ -341,11 +374,11 @@ app.put('/api/students/profiles/:id', async (req, res) => {
         ) AS monthly_clay_kg,
         (SELECT MAX(d.fec_carga) 
          FROM public.t_deudas_insumos d 
-         WHERE d.id_usuario = ca.id_usuario 
+         WHERE d.id_usuarios = ca.id_usuarios 
            AND d.tipo = 'ARCILLA'
         ) AS last_clay_delivery_date
       FROM public.t_cuenta_alumno ca
-      WHERE ca.id_usuario = $1
+      WHERE ca.id_usuarios = $1
     `;
     const profileRes = await db.query(profileQuery, [id]);
     res.json(mapProfileToFE(profileRes.rows[0]));
@@ -387,7 +420,7 @@ app.put('/api/users/:id', async (req, res) => {
         instagram = $6,
         fecha_nacimiento = $7,
         sucursal = $8
-      WHERE id_usuario = $9
+      WHERE id_usuarios = $9
       RETURNING *
     `;
     const userRes = await db.query(updateQuery, [
@@ -411,13 +444,13 @@ app.put('/api/users/:id', async (req, res) => {
 
     if (updatedUser.rol === 'ALUMNO' && sucursal) {
       const branchRes = await db.query(
-        "SELECT id FROM public.t_sucursales WHERE LOWER(n_sucursal) = LOWER($1) LIMIT 1",
+        "SELECT id_sucursal FROM public.t_sucursales WHERE LOWER(n_sucursal) = LOWER($1) LIMIT 1",
         [sucursal]
       );
       if (branchRes.rows.length > 0) {
-        const branchId = branchRes.rows[0].id;
+        const branchId = branchRes.rows[0].id_sucursal;
         await db.query(
-          "UPDATE public.t_cuenta_alumno SET id_sucursal_preferida = $1 WHERE id_usuario = $2",
+          "UPDATE public.t_cuenta_alumno SET id_sucursal = $1 WHERE id_usuarios = $2",
           [branchId, id]
         );
       }
@@ -443,28 +476,28 @@ app.delete('/api/users/:id', async (req, res) => {
     await db.query('BEGIN');
 
     // 1. Eliminar reservas en t_inscripciones asociadas a la alumna
-    await db.query('DELETE FROM public.t_inscripciones WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_inscripciones WHERE id_usuarios = $1', [id]);
 
     // 2. Eliminar lista de espera
-    await db.query('DELETE FROM public.t_lista_espera WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_lista_espera WHERE id_usuarios = $1', [id]);
 
     // 3. Eliminar notificaciones
-    await db.query('DELETE FROM public.t_notificaciones WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_notificaciones WHERE id_usuarios = $1', [id]);
 
     // 4. Eliminar deudas
-    await db.query('DELETE FROM public.t_deudas_insumos WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_deudas_insumos WHERE id_usuarios = $1', [id]);
 
     // 5. Eliminar historial de créditos
-    await db.query('DELETE FROM public.t_historial_creditos WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_historial_creditos WHERE id_usuarios = $1', [id]);
 
     // 6. Eliminar cuenta de alumno
-    await db.query('DELETE FROM public.t_cuenta_alumno WHERE id_usuario = $1', [id]);
+    await db.query('DELETE FROM public.t_cuenta_alumno WHERE id_usuarios = $1', [id]);
 
     // 7. Si es un profesor, quitar referencias en t_clases_def seteándolas a NULL
     await db.query('UPDATE public.t_clases_def SET id_profesor = NULL WHERE id_profesor = $1', [id]);
 
     // 8. Eliminar el usuario final
-    const { rowCount } = await db.query('DELETE FROM public.t_usuarios WHERE id_usuario = $1', [id]);
+    const { rowCount } = await db.query('DELETE FROM public.t_usuarios WHERE id_usuarios = $1', [id]);
 
     if (rowCount === 0) {
       await db.query('ROLLBACK');
@@ -491,7 +524,7 @@ app.put('/api/students/profiles/:id/block', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      'UPDATE public.t_cuenta_alumno SET bl_bloqueado = $1 WHERE id_usuario = $2 RETURNING id_usuario',
+      'UPDATE public.t_cuenta_alumno SET bl_bloqueado = $1 WHERE id_usuarios = $2 RETURNING id_usuarios',
       [isBlocked, id]
     );
 
@@ -516,8 +549,8 @@ app.get('/api/classes', async (req, res) => {
   try {
     const classQuery = `
       SELECT 
-        c.id AS id_clase,
-        c.titulo AS name,
+        c.id_clases_def AS id_clases_def,
+        NULL AS name,
         c.id_profesor AS teacher_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Sin profesor') AS teacher_name,
         CASE c.dia_semana
@@ -529,8 +562,8 @@ app.get('/api/classes', async (req, res) => {
         c.cupo_maximo AS capacity,
         UPPER(s.n_sucursal) AS sucursal
       FROM public.t_clases_def c
-      LEFT JOIN public.t_usuarios u ON c.id_profesor = u.id_usuario
-      LEFT JOIN public.t_sucursales s ON c.id_sucursal = s.id
+      LEFT JOIN public.t_usuarios u ON c.id_profesor = u.id_usuarios
+      LEFT JOIN public.t_sucursales s ON c.id_sucursal = s.id_sucursal
       WHERE c.bl_activa = true
       ORDER BY 
         CASE UPPER(COALESCE(s.n_sucursal, '')) WHEN 'CENTRO' THEN 1 WHEN 'ALTO VERDE' THEN 2 ELSE 3 END,
@@ -562,10 +595,10 @@ app.post('/api/classes', async (req, res) => {
     let idSucursal = null;
     if (sucursal) {
       const sucRes = await db.query(
-        "SELECT id FROM public.t_sucursales WHERE UPPER(n_sucursal) = UPPER($1) LIMIT 1",
+        "SELECT id_sucursal FROM public.t_sucursales WHERE UPPER(n_sucursal) = UPPER($1) LIMIT 1",
         [sucursal]
       );
-      if (sucRes.rows.length > 0) idSucursal = sucRes.rows[0].id;
+      if (sucRes.rows.length > 0) idSucursal = sucRes.rows[0].id_sucursal;
     }
 
     const createdClasses = [];
@@ -576,19 +609,14 @@ app.post('/api/classes', async (req, res) => {
     const hora_fin = endStr.trim();
 
     for (const d of daysToCreate) {
-      const generatedId = crypto.randomUUID();
       const dia_semana = d.replace('é', 'e').replace('á', 'a'); // 'Miércoles' -> 'Miercoles', 'Sábado' -> 'Sabado'
-      // Titulo: si no se pasa nombre, se auto-genera vacío (el front lo muestra como día + hora)
-      const titulo = name ? name.trim() : null;
 
       const query = `
-        INSERT INTO public.t_clases_def (id, titulo, dia_semana, hora_inicio, hora_fin, cupo_maximo, id_profesor, id_sucursal, bl_activa)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
-        RETURNING id
+        INSERT INTO public.t_clases_def (dia_semana, hora_inicio, hora_fin, cupo_maximo, id_profesor, id_sucursal, bl_activa)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
+        RETURNING id_clases_def
       `;
-      await db.query(query, [
-        generatedId,
-        titulo,
+      const result = await db.query(query, [
         dia_semana,
         hora_inicio,
         hora_fin,
@@ -596,10 +624,11 @@ app.post('/api/classes', async (req, res) => {
         teacherId,
         idSucursal
       ]);
+      const generatedId = result.rows[0].id_clases_def;
 
       createdClasses.push({
-        id_clase: generatedId,
-        name: titulo,
+        id_clases_def: generatedId,
+        name: null,
         teacher_id: teacherId,
         teacher_name: teacherName,
         day: d,
@@ -627,7 +656,7 @@ app.put('/api/classes/:id/teacher', async (req, res) => {
 
   try {
     const { rowCount } = await db.query(
-      'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id = $2',
+      'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id_clases_def = $2',
       [teacherId, id]
     );
 
@@ -661,7 +690,7 @@ app.put('/api/teachers/:teacherId/classes', async (req, res) => {
     // 2. Asignar las clases seleccionadas
     if (classIds.length > 0) {
       await db.query(
-        'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id = ANY($2)',
+        'UPDATE public.t_clases_def SET id_profesor = $1 WHERE id_clases_def = ANY($2)',
         [teacherId, classIds]
       );
     }
@@ -683,10 +712,10 @@ app.get('/api/bookings', async (req, res) => {
   try {
     const bookingQuery = `
       SELECT 
-        i.id AS id_reserva,
-        i.id_usuario AS student_id,
+        i.id_inscripcion AS id_inscripcion,
+        i.id_usuarios AS student_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
-        ci.id_clase_def AS class_id,
+        ci.id_clases_def AS class_id,
         ci.fecha_efectiva::text AS date,
         CASE i.estado
           WHEN 'RESERVADA' THEN 'CONFIRMED'
@@ -696,8 +725,8 @@ app.get('/api/bookings', async (req, res) => {
         END AS status,
         i.fec_reserva AS created_at
       FROM public.t_inscripciones i
-      JOIN public.t_usuarios u ON i.id_usuario = u.id_usuario
-      JOIN public.t_clases_instancia ci ON i.id_clase_instancia = ci.id
+      JOIN public.t_usuarios u ON i.id_usuarios = u.id_usuarios
+      JOIN public.t_clases_instancia ci ON i.id_clase_instancia = ci.id_clase_instancia
       ORDER BY ci.fecha_efectiva DESC, i.fec_reserva DESC
     `;
     const { rows } = await db.query(bookingQuery);
@@ -718,8 +747,8 @@ app.post('/api/bookings', async (req, res) => {
 
   try {
     // 1. Obtener perfil de créditos y datos de clase
-    const profileRes = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuario = $1', [studentId]);
-    const classRes = await db.query('SELECT * FROM public.t_clases_def WHERE id = $1', [classId]);
+    const profileRes = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuarios = $1', [studentId]);
+    const classRes = await db.query('SELECT * FROM public.t_clases_def WHERE id_clases_def = $1', [classId]);
 
     if (profileRes.rows.length === 0 || classRes.rows.length === 0) {
       return res.status(400).json({ error: 'Estudiante o clase no válidos.' });
@@ -727,7 +756,7 @@ app.post('/api/bookings', async (req, res) => {
 
     const profile = profileRes.rows[0];
     const classData = classRes.rows[0];
-    const className = classData.titulo;
+    const className = "Clase";
     const classDay = classData.dia_semana;
     const classTime = `${classData.hora_inicio} - ${classData.hora_fin}`;
 
@@ -741,8 +770,8 @@ app.post('/api/bookings', async (req, res) => {
       // Crear alerta en BD
       const alertMsg = `El alumno ${studentName} intentó reservar "${className}" (${classDay} - ${classTime}) pero no tiene créditos de clase.`;
       await db.query(
-        'INSERT INTO public.t_notificaciones (id, id_usuario, titulo, mensaje, tipo, leido, created_at) VALUES ($1, NULL, $2, $3, $4, false, NOW())',
-        [crypto.randomUUID(), 'Sin Créditos', alertMsg, 'NO_CREDITS']
+        'INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, false, NOW())',
+        ['Sin Créditos', alertMsg, 'NO_CREDITS']
       );
 
       return res.status(400).json({ error: 'No tienes créditos de clase disponibles. Contacta al administrador.' });
@@ -751,24 +780,23 @@ app.post('/api/bookings', async (req, res) => {
     // 3. Obtener o crear la instancia de la clase para esa fecha
     let instanceId;
     const instanceRes = await db.query(
-      'SELECT id FROM public.t_clases_instancia WHERE id_clase_def = $1 AND fecha_efectiva = $2',
+      'SELECT id_clase_instancia FROM public.t_clases_instancia WHERE id_clases_def = $1 AND fecha_efectiva = $2',
       [classId, date]
     );
 
     if (instanceRes.rows.length > 0) {
-      instanceId = instanceRes.rows[0].id;
+      instanceId = instanceRes.rows[0].id_clase_instancia;
     } else {
-      const newInstanceId = crypto.randomUUID();
-      await db.query(
-        'INSERT INTO public.t_clases_instancia (id, id_clase_def, fecha_efectiva, bl_cancelada) VALUES ($1, $2, $3, false)',
-        [newInstanceId, classId, date]
+      const result = await db.query(
+        'INSERT INTO public.t_clases_instancia (id_clases_def, fecha_efectiva, bl_cancelada) VALUES ($1, $2, false) RETURNING id_clase_instancia',
+        [classId, date]
       );
-      instanceId = newInstanceId;
+      instanceId = result.rows[0].id_clase_instancia;
     }
 
     // 4. Validar si ya tiene una reserva activa para esa clase en ese día
     const activeBookingRes = await db.query(
-      "SELECT * FROM public.t_inscripciones WHERE id_usuario = $1 AND id_clase_instancia = $2 AND estado != 'CANCELADA'",
+      "SELECT * FROM public.t_inscripciones WHERE id_usuarios = $1 AND id_clase_instancia = $2 AND estado != 'CANCELADA'",
       [studentId, instanceId]
     );
 
@@ -788,16 +816,17 @@ app.post('/api/bookings', async (req, res) => {
     }
 
     // 6. Crear la reserva
-    const generatedId = crypto.randomUUID();
     const insertBookingQuery = `
-      INSERT INTO public.t_inscripciones (id, id_usuario, id_clase_instancia, estado, fec_reserva)
-      VALUES ($1, $2, $3, 'RESERVADA', NOW())
+      INSERT INTO public.t_inscripciones (id_usuarios, id_clase_instancia, estado, fec_reserva)
+      VALUES ($1, $2, 'RESERVADA', NOW())
+      RETURNING id_inscripcion
     `;
-    await db.query(insertBookingQuery, [generatedId, studentId, instanceId]);
+    const bookingResult = await db.query(insertBookingQuery, [studentId, instanceId]);
+    const generatedId = bookingResult.rows[0].id_inscripcion;
 
     // 7. Debitar el crédito
     await db.query(
-      'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual - 1 WHERE id_usuario = $1',
+      'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual - 1 WHERE id_usuarios = $1',
       [studentId]
     );
 
@@ -806,8 +835,8 @@ app.post('/api/bookings', async (req, res) => {
     if (classData.cupo_maximo - newOccupancy <= 1) {
       const alertMsg = `La clase "${className}" del ${date} (${classTime}) tiene cupo crítico: solo queda ${classData.cupo_maximo - newOccupancy} lugar(es) libre(s).`;
       await db.query(
-        'INSERT INTO public.t_notificaciones (id, id_usuario, titulo, mensaje, tipo, leido, created_at) VALUES ($1, NULL, $2, $3, $4, false, NOW())',
-        [crypto.randomUUID(), 'Alta Ocupación', alertMsg, 'HIGH_OCCUPANCY']
+        'INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, false, NOW())',
+        ['Alta Ocupación', alertMsg, 'HIGH_OCCUPANCY']
       );
     }
 
@@ -837,16 +866,16 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     // 1. Obtener la reserva
     const bookingQuery = `
       SELECT 
-        i.id AS id_reserva,
-        i.id_usuario AS student_id,
+        i.id_inscripcion AS id_reserva,
+        i.id_usuarios AS student_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
-        ci.id_clase_def AS class_id,
+        ci.id_clases_def AS class_id,
         ci.fecha_efectiva AS date,
         i.estado AS status
       FROM public.t_inscripciones i
-      JOIN public.t_usuarios u ON i.id_usuario = u.id_usuario
-      JOIN public.t_clases_instancia ci ON i.id_clase_instancia = ci.id
-      WHERE i.id = $1
+      JOIN public.t_usuarios u ON i.id_usuarios = u.id_usuarios
+      JOIN public.t_clases_instancia ci ON i.id_clase_instancia = ci.id_clase_instancia
+      WHERE i.id_inscripcion = $1
     `;
     const bookingRes = await db.query(bookingQuery, [id]);
     if (bookingRes.rows.length === 0) {
@@ -855,12 +884,12 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     const booking = bookingRes.rows[0];
 
     // Obtener clase
-    const classRes = await db.query('SELECT * FROM public.t_clases_def WHERE id = $1', [booking.class_id]);
+    const classRes = await db.query('SELECT * FROM public.t_clases_def WHERE id_clases_def = $1', [booking.class_id]);
     if (classRes.rows.length === 0) {
       return res.status(400).json({ error: 'La clase no es válida.' });
     }
     const classData = classRes.rows[0];
-    const className = classData.titulo;
+    const className = "Clase";
     const classTimeStr = `${classData.hora_inicio} - ${classData.hora_fin}`;
 
     // 2. Lógica de cálculo de tiempo (2 horas antes del inicio)
@@ -879,24 +908,24 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     if (isLateCancellation) {
       // Cancelación tardía: Se cobra (se cambia a CANCELADA en la base, pero NO se reintegra el crédito)
       await db.query(
-        "UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id = $1",
+        "UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id_inscripcion = $1",
         [id]
       );
 
       // Crear alerta en t_notificaciones
       const alertMsg = `El alumno ${booking.student_name} realizó una cancelación tardía (menos de 2 horas) para "${className}" del ${booking.date.toISOString().split('T')[0]} a las ${startTimeStr}. Se debitó el crédito.`;
       await db.query(
-        'INSERT INTO public.t_notificaciones (id, id_usuario, titulo, mensaje, tipo, leido, created_at) VALUES ($1, NULL, $2, $3, $4, false, NOW())',
-        [crypto.randomUUID(), 'Cancelación Tardía', alertMsg, 'LATE_CANCELLATION']
+        'INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, false, NOW())',
+        ['Cancelación Tardía', alertMsg, 'LATE_CANCELLATION']
       );
     } else {
       // Cancelación a tiempo: Se cambia a CANCELADA y se REINTEGRA el crédito
       await db.query(
-        "UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id = $1",
+        "UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id_inscripcion = $1",
         [id]
       );
       await db.query(
-        'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + 1 WHERE id_usuario = $1',
+        'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + 1 WHERE id_usuarios = $1',
         [booking.student_id]
       );
     }
@@ -918,16 +947,16 @@ app.put('/api/bookings/:id/attendance', async (req, res) => {
   }
 
   try {
-    const bookingRes = await db.query('SELECT * FROM public.t_inscripciones WHERE id = $1', [id]);
+    const bookingRes = await db.query('SELECT * FROM public.t_inscripciones WHERE id_inscripcion = $1', [id]);
     if (bookingRes.rows.length === 0) {
       return res.status(404).json({ error: 'Reserva no encontrada.' });
     }
 
     if (status === 'ATTENDED') {
-      await db.query("UPDATE public.t_inscripciones SET estado = 'ASISTIO' WHERE id = $1", [id]);
+      await db.query("UPDATE public.t_inscripciones SET estado = 'ASISTIO' WHERE id_inscripcion = $1", [id]);
     } else {
       // Ausente: Se marca como CANCELADA en la base para liberar cupo, pero NO se le reintegra el crédito
-      await db.query("UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id = $1", [id]);
+      await db.query("UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id_inscripcion = $1", [id]);
     }
 
     res.json({ success: true });
@@ -947,15 +976,15 @@ app.get('/api/clay-deliveries', async (req, res) => {
   try {
     const clayQuery = `
       SELECT 
-        d.id AS id_entrega,
-        d.id_usuario AS student_id,
+        d.id_deudas_insumos AS id_entrega,
+        d.id_usuarios AS student_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
         NULL AS teacher_id,
         'Profesor' AS teacher_name,
         d.fec_carga::text AS date,
         1.00 AS quantity_kg
       FROM public.t_deudas_insumos d
-      JOIN public.t_usuarios u ON d.id_usuario = u.id_usuario
+      JOIN public.t_usuarios u ON d.id_usuarios = u.id_usuarios
       WHERE d.tipo = 'ARCILLA'
       ORDER BY d.fec_carga DESC
     `;
@@ -979,7 +1008,7 @@ app.post('/api/clay-deliveries', async (req, res) => {
     // Validar límite estricto de 1kg al mes (contamos registros en este mes)
     const clayCountRes = await db.query(
       `SELECT COUNT(*) FROM public.t_deudas_insumos 
-       WHERE id_usuario = $1 AND tipo = 'ARCILLA' AND fec_carga >= DATE_TRUNC('month', CURRENT_DATE)`,
+       WHERE id_usuarios = $1 AND tipo = 'ARCILLA' AND fec_carga >= DATE_TRUNC('month', CURRENT_DATE)`,
       [studentId]
     );
     const count = parseInt(clayCountRes.rows[0].count);
@@ -988,8 +1017,8 @@ app.post('/api/clay-deliveries', async (req, res) => {
       // Generar alerta de negocio para el admin
       const alertMsg = `El alumno ${studentName} intentó retirar otro bloque de arcilla de 1kg este mes, pero ya alcanzó su límite mensual.`;
       await db.query(
-        'INSERT INTO public.t_notificaciones (id, id_usuario, titulo, mensaje, tipo, leido, created_at) VALUES ($1, NULL, $2, $3, $4, false, NOW())',
-        [crypto.randomUUID(), 'Límite de Arcilla', alertMsg, 'CLAY_LIMIT']
+        'INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, false, NOW())',
+        ['Límite de Arcilla', alertMsg, 'CLAY_LIMIT']
       );
 
       return res.status(400).json({ error: 'Límite mensual de arcilla alcanzado (1kg por mes). No se puede entregar más arcilla.' });
@@ -998,10 +1027,10 @@ app.post('/api/clay-deliveries', async (req, res) => {
     // Registrar en t_deudas_insumos como entrega gratuita de arcilla mensual
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
-        (id, id_usuario, tipo, descripcion, peso_gramos, precio_total, bl_pagado, fec_carga)
+        (id_usuarios, tipo, descripcion, peso_gramos, precio_total, bl_pagado, fec_carga)
       VALUES 
-        ($1, $2, 'ARCILLA', 'Entrega de Arcilla 1kg', 1000, 0, true, NOW())`,
-      [crypto.randomUUID(), studentId]
+        ($1, 'ARCILLA', 'Entrega de Arcilla 1kg', 1000, 0, true, NOW())`,
+      [studentId]
     );
 
     res.status(201).json({ success: true });
@@ -1021,14 +1050,14 @@ app.get('/api/payments', async (req, res) => {
   try {
     const paymentQuery = `
       SELECT 
-        hc.id AS id_pago,
-        hc.id_usuario AS student_id,
-        (hc.cantidad * 2000) AS amount,
+        hc.id_historial_credito AS id_pago,
+        hc.id_usuarios AS student_id,
+        hc.monto AS amount,
         hc.fec_movimiento::text AS date,
-        'PAID' AS status,
+        hc.estado AS status,
         hc.cantidad AS class_credits_added
       FROM public.t_historial_creditos hc
-      JOIN public.t_usuarios u ON hc.id_usuario = u.id_usuario
+      JOIN public.t_usuarios u ON hc.id_usuarios = u.id_usuarios
       ORDER BY hc.fec_movimiento DESC
     `;
     const { rows } = await db.query(paymentQuery);
@@ -1039,32 +1068,39 @@ app.get('/api/payments', async (req, res) => {
   }
 });
 
-// Registrar un pago manual
+// Registrar un pago manual (Soporta múltiples alumnos y fecha custom)
 app.post('/api/payments', async (req, res) => {
-  const { studentId, amount, creditsToAdd } = req.body;
+  const { studentIds, amount, creditsToAdd, date } = req.body;
 
-  if (!studentId || !amount || !creditsToAdd) {
-    return res.status(400).json({ error: 'Faltan parámetros del pago.' });
+  if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0 || !amount || !creditsToAdd) {
+    return res.status(400).json({ error: 'Faltan parámetros del pago (studentIds array, amount, creditsToAdd).' });
   }
 
+  // Use provided date or fallback to NOW()
+  const paymentDate = date ? date : new Date().toISOString();
+
   try {
-    const profileRes = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuario = $1', [studentId]);
-    if (profileRes.rows.length === 0) {
-      return res.status(400).json({ error: 'Perfil de estudiante no encontrado.' });
+    // Begin Transaction manually if desired, but here we just loop
+    for (const sId of studentIds) {
+      const profileRes = await db.query('SELECT * FROM public.t_cuenta_alumno WHERE id_usuarios = $1', [sId]);
+      if (profileRes.rows.length === 0) {
+        console.warn(`Perfil de estudiante no encontrado para ID ${sId}`);
+        continue;
+      }
+
+      // 1. Insertar en t_historial_creditos para registro de auditoría
+      await db.query(
+        `INSERT INTO public.t_historial_creditos (id_usuarios, cantidad, motivo, fec_movimiento, estado, monto)
+         VALUES ($1, $2, 'Acreditación por Pago', $4, 'PAID', $3)`,
+        [sId, creditsToAdd, amount, paymentDate]
+      );
+
+      // 2. Acreditar créditos en t_cuenta_alumno
+      await db.query(
+        'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + $1 WHERE id_usuarios = $2',
+        [creditsToAdd, sId]
+      );
     }
-
-    // 1. Insertar en t_historial_creditos para registro de auditoría
-    await db.query(
-      `INSERT INTO public.t_historial_creditos (id, id_usuario, cantidad, motivo, fec_movimiento)
-       VALUES ($1, $2, $3, 'Acreditación por Pago', NOW())`,
-      [crypto.randomUUID(), studentId, creditsToAdd]
-    );
-
-    // 2. Acreditar créditos en t_cuenta_alumno
-    await db.query(
-      'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + $1 WHERE id_usuario = $2',
-      [creditsToAdd, studentId]
-    );
 
     res.status(201).json({ success: true });
   } catch (error) {
@@ -1083,7 +1119,8 @@ app.get('/api/alerts', async (req, res) => {
   try {
     const alertQuery = `
       SELECT 
-        id AS id_alerta,
+        id_notificacion AS id_alerta,
+        id_usuarios,
         tipo AS type,
         mensaje AS message,
         created_at::text AS date,
@@ -1107,14 +1144,12 @@ app.post('/api/alerts', async (req, res) => {
     return res.status(400).json({ error: 'Tipo y mensaje obligatorios.' });
   }
 
-  const generatedId = crypto.randomUUID();
-
   try {
     const { rows } = await db.query(
-      `INSERT INTO public.t_notificaciones (id, id_usuario, titulo, mensaje, tipo, leido, created_at)
-       VALUES ($1, NULL, $2, $3, $4, false, NOW())
-       RETURNING id AS id_alerta, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
-      [generatedId, type, message, type]
+      `INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at)
+       VALUES ($1, $2, $3, false, NOW())
+       RETURNING id_notificacion AS id_alerta, null as id_usuarios, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
+      [type, message, type]
     );
     res.status(201).json(mapAlertToFE(rows[0]));
   } catch (error) {
@@ -1129,8 +1164,8 @@ app.put('/api/alerts/:id/resolve', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      `UPDATE public.t_notificaciones SET leido = true WHERE id = $1
-       RETURNING id AS id_alerta, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
+      `UPDATE public.t_notificaciones SET leido = true WHERE id_notificacion = $1
+       RETURNING id_notificacion AS id_alerta, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
       [id]
     );
 
@@ -1150,42 +1185,15 @@ app.put('/api/alerts/:id/resolve', async (req, res) => {
 // 9. DIAS NO LABORALES (CALENDARIO)
 // ==========================================
 
-// Inicializar tabla si no existe (con auto-healing/migración)
-db.query(`
-  CREATE TABLE IF NOT EXISTS public.t_dias_no_laborales (
-    fecha DATE PRIMARY KEY,
-    tipo VARCHAR(50) NOT NULL DEFAULT 'inamovible',
-    nombre VARCHAR(255) NOT NULL DEFAULT 'Feriado / Cerrado'
-  );
-`).then(() => {
-  console.log('✓ Tabla public.t_dias_no_laborales verificada/creada con éxito.');
-}).catch(async () => {
-  // Si hay conflicto de tipos (por ejemplo, si ya existía como VARCHAR), la migramos de forma segura
-  try {
-    console.log('🔄 Migrando tabla public.t_dias_no_laborales al estándar de producción...');
-    await db.query('DROP TABLE IF EXISTS public.t_dias_no_laborales CASCADE');
-    await db.query(`
-      CREATE TABLE public.t_dias_no_laborales (
-        fecha DATE PRIMARY KEY,
-        tipo VARCHAR(50) NOT NULL DEFAULT 'inamovible',
-        nombre VARCHAR(255) NOT NULL DEFAULT 'Feriado / Cerrado'
-      );
-    `);
-    console.log('✓ Tabla public.t_dias_no_laborales migrada con éxito.');
-  } catch (err) {
-    console.error('❌ Error al migrar tabla de días no laborales:', err);
-  }
-});
+
 
 // Listar días no laborales
 app.get('/api/non-working-days', async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT 
-        TO_CHAR(fecha, 'YYYY-MM-DD') AS fecha, 
-        tipo, 
-        nombre, 
-        nombre AS motivo 
+        TO_CHAR(fecha, 'YYYY-MM-DD') AS date, 
+        nombre AS reason 
       FROM public.t_dias_no_laborales 
       ORDER BY fecha ASC
     `);
@@ -1198,23 +1206,110 @@ app.get('/api/non-working-days', async (req, res) => {
 
 // Agregar o actualizar día no laboral
 app.post('/api/non-working-days', async (req, res) => {
-  const { fecha, motivo, nombre, tipo } = req.body;
+  // FE envía { fecha, motivo }
+  const { fecha, motivo } = req.body;
   if (!fecha) {
     return res.status(400).json({ error: 'La fecha es obligatoria.' });
   }
   try {
-    const valNombre = nombre || motivo || 'Feriado / Cerrado';
-    const valTipo = tipo || 'inamovible';
+    const valNombre = motivo || 'Feriado / Cerrado';
     await db.query(
-      `INSERT INTO public.t_dias_no_laborales (fecha, tipo, nombre)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (fecha) DO UPDATE SET nombre = EXCLUDED.nombre, tipo = EXCLUDED.tipo`,
-      [fecha, valTipo, valNombre]
+      `INSERT INTO public.t_dias_no_laborales (fecha, nombre)
+       VALUES ($1, $2)
+       ON CONFLICT (fecha) DO UPDATE SET nombre = EXCLUDED.nombre`,
+      [fecha, valNombre]
     );
-    res.status(201).json({ success: true, fecha, nombre: valNombre, tipo: valTipo, motivo: valNombre });
+    res.status(201).json({ success: true, date: fecha, reason: valNombre });
   } catch (error) {
     console.error('Error al guardar día no laboral:', error);
     res.status(500).json({ error: 'Error al registrar día no laboral.' });
+  }
+});
+
+// Solicitar pago pendiente (por parte de la alumna)
+app.post('/api/payments/request', async (req, res) => {
+  const { studentId, amount, creditsToAdd } = req.body;
+
+  if (!studentId || !amount || !creditsToAdd) {
+    return res.status(400).json({ error: 'Faltan parámetros de la solicitud de pago.' });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO public.t_historial_creditos (id_usuarios, cantidad, motivo, fec_movimiento, estado, monto)
+       VALUES ($1, $2, 'Solicitud de Pago', NOW(), 'PENDING', $3)
+       RETURNING id_historial_credito AS id`,
+      [studentId, creditsToAdd, amount]
+    );
+
+    res.json({ success: true, paymentId: rows[0].id });
+  } catch (error) {
+    console.error('Error al solicitar pago:', error);
+    res.status(500).json({ error: 'Error al solicitar el pago.' });
+  }
+});
+
+// Confirmar un pago pendiente (por parte del admin)
+app.put('/api/payments/:id/confirm', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const paymentRes = await db.query('SELECT * FROM public.t_historial_creditos WHERE id_historial_credito = $1', [id]);
+    if (paymentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Pago pendiente no encontrado.' });
+    }
+    
+    const payment = paymentRes.rows[0];
+    if (payment.estado === 'PAID') {
+      return res.status(400).json({ error: 'El pago ya se encuentra confirmado.' });
+    }
+
+    // Acreditar los créditos
+    await db.query(
+      'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + $1 WHERE id_usuarios = $2',
+      [payment.cantidad, payment.id_usuarios]
+    );
+
+    // Cambiar estado a PAID
+    await db.query(
+      'UPDATE public.t_historial_creditos SET estado = $1, motivo = $2 WHERE id_historial_credito = $3',
+      ['PAID', 'Acreditación por Pago Confirmado', id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error al confirmar pago:', error);
+    res.status(500).json({ error: 'Error al confirmar el pago.' });
+  }
+});
+
+// Notificar a alumna sobre pago pendiente
+app.post('/api/payments/:id/notify', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const paymentRes = await db.query('SELECT * FROM public.t_historial_creditos WHERE id_historial_credito = $1', [id]);
+    if (paymentRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Pago pendiente no encontrado.' });
+    }
+    
+    const payment = paymentRes.rows[0];
+
+    // Enviar notificación (se usa id_usuario en t_notificaciones si existiera la columna, 
+    // pero si las alertas son genéricas por ahora le mandamos el mensaje).
+    // Nota: Como no tenemos una columna 'id_usuario' segura en t_notificaciones según el esquema anterior,
+    // usaremos la estructura existente e incluiremos el nombre de la alumna en el mensaje si es necesario.
+    // Revisando `POST /api/alerts`, se insertan en `t_notificaciones` con `tipo`, `mensaje`, `fecha_notificacion`.
+    await db.query(
+      `INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at, id_usuarios) 
+       VALUES ($1, $2, $3, false, NOW(), $4)`,
+      ['Recordatorio de Pago', `Recordatorio: Tienes una transferencia pendiente por la compra de ${payment.cantidad} créditos.`, 'TRANSFER_REMINDER', payment.id_usuarios]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error al notificar pago:', error);
+    res.status(500).json({ error: 'Error al notificar el pago.' });
   }
 });
 
@@ -1227,6 +1322,243 @@ app.delete('/api/non-working-days/:fecha', async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar día no laboral:', error);
     res.status(500).json({ error: 'Error al eliminar día no laboral.' });
+  }
+});
+
+
+// ==========================================
+// 9. ENDPOINTS DE PAQUETES (PACKS)
+// ==========================================
+
+app.get('/api/packs', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM public.t_paquetes_creditos ORDER BY cantidad_creditos ASC');
+    res.json(rows.map(mapPackToFE));
+  } catch (error) {
+    console.error('Error al listar paquetes:', error);
+    res.status(500).json({ error: 'Error al obtener paquetes.' });
+  }
+});
+
+app.post('/api/packs', async (req, res) => {
+  const { name, credits, price } = req.body;
+  if (!name || !credits || !price) {
+    return res.status(400).json({ error: 'Faltan datos requeridos (name, credits, price).' });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO public.t_paquetes_creditos (nombre, cantidad_creditos, precio)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [name, credits, price]
+    );
+    res.status(201).json(mapPackToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al crear paquete:', error);
+    res.status(500).json({ error: 'Error al crear paquete.' });
+  }
+});
+
+app.put('/api/packs/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, credits, price, active } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      `UPDATE public.t_paquetes_creditos 
+       SET nombre = COALESCE($1, nombre),
+           cantidad_creditos = COALESCE($2, cantidad_creditos),
+           precio = COALESCE($3, precio),
+           activo = COALESCE($4, activo)
+       WHERE id_paquete = $5
+       RETURNING *`,
+      [name, credits, price, active, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Paquete no encontrado.' });
+    }
+
+    res.json(mapPackToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar paquete:', error);
+    res.status(500).json({ error: 'Error al actualizar paquete.' });
+  }
+});
+
+app.delete('/api/packs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await db.query(
+      'DELETE FROM public.t_paquetes_creditos WHERE id_paquete = $1 RETURNING *',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Paquete no encontrado.' });
+    }
+    res.json({ success: true, deleted: rows[0].id_paquete });
+  } catch (error) {
+    console.error('Error al eliminar paquete:', error);
+    res.status(500).json({ error: 'Error al eliminar paquete.' });
+  }
+});
+
+
+// ==========================================
+// 10. ENDPOINTS DE SUCURSALES (BRANCHES)
+// ==========================================
+
+app.get('/api/branches', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM public.t_sucursales ORDER BY n_sucursal ASC');
+    res.json(rows.map(mapBranchToFE));
+  } catch (error) {
+    console.error('Error al listar sucursales:', error);
+    res.status(500).json({ error: 'Error al obtener sucursales.' });
+  }
+});
+
+app.post('/api/branches', async (req, res) => {
+  const { name, address, maxCapacity } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'El nombre es obligatorio.' });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO public.t_sucursales (n_sucursal, direccion, capacidad_max_creditos)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [name, address || null, maxCapacity || null]
+    );
+    res.status(201).json(mapBranchToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al crear sucursal:', error);
+    res.status(500).json({ error: 'Error al crear sucursal.' });
+  }
+});
+
+app.put('/api/branches/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, address, maxCapacity } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      `UPDATE public.t_sucursales 
+       SET n_sucursal = COALESCE($1, n_sucursal),
+           direccion = COALESCE($2, direccion),
+           capacidad_max_creditos = COALESCE($3, capacidad_max_creditos)
+       WHERE id_sucursal = $4
+       RETURNING *`,
+      [name, address, maxCapacity, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Sucursal no encontrada.' });
+    }
+
+    res.json(mapBranchToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar sucursal:', error);
+    res.status(500).json({ error: 'Error al actualizar sucursal.' });
+  }
+});
+
+app.delete('/api/branches/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await db.query(
+      'DELETE FROM public.t_sucursales WHERE id_sucursal = $1 RETURNING *',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Sucursal no encontrada.' });
+    }
+    res.json({ success: true, deleted: rows[0].id_sucursal });
+  } catch (error) {
+    console.error('Error al eliminar sucursal:', error);
+    res.status(500).json({ error: 'Error al eliminar sucursal.' });
+  }
+});
+
+
+// ==========================================
+// 11. ENDPOINTS DE NORMAS (FAQS)
+// ==========================================
+
+app.get('/api/faqs', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM public.t_faqs ORDER BY created_at ASC');
+    res.json(rows.map(mapFaqToFE));
+  } catch (error) {
+    console.error('Error al listar faqs:', error);
+    res.status(500).json({ error: 'Error al obtener faqs.' });
+  }
+});
+
+app.post('/api/faqs', async (req, res) => {
+  const { question, answer } = req.body;
+  if (!question || !answer) {
+    return res.status(400).json({ error: 'Pregunta y respuesta son obligatorias.' });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO public.t_faqs (pregunta, respuesta)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [question, answer]
+    );
+    res.status(201).json(mapFaqToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al crear faq:', error);
+    res.status(500).json({ error: 'Error al crear faq.' });
+  }
+});
+
+app.put('/api/faqs/:id', async (req, res) => {
+  const { id } = req.params;
+  const { question, answer } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      `UPDATE public.t_faqs 
+       SET pregunta = COALESCE($1, pregunta),
+           respuesta = COALESCE($2, respuesta)
+       WHERE id = $3
+       RETURNING *`,
+      [question, answer, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Norma no encontrada.' });
+    }
+
+    res.json(mapFaqToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar faq:', error);
+    res.status(500).json({ error: 'Error al actualizar faq.' });
+  }
+});
+
+app.delete('/api/faqs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await db.query(
+      'DELETE FROM public.t_faqs WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Norma no encontrada.' });
+    }
+    res.json({ success: true, deleted: rows[0].id });
+  } catch (error) {
+    console.error('Error al eliminar faq:', error);
+    res.status(500).json({ error: 'Error al eliminar faq.' });
   }
 });
 
