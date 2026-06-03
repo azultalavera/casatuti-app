@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
 // Helper para procesar la respuesta HTTP
 const handleResponse = async (response) => {
@@ -129,6 +129,22 @@ export const apiService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ teacherId })
+    });
+    return handleResponse(res);
+  },
+
+  updateClass: async (classId, classData) => {
+    const res = await fetch(`${API_URL}/classes/${classId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(classData)
+    });
+    return handleResponse(res);
+  },
+
+  deleteClass: async (classId) => {
+    const res = await fetch(`${API_URL}/classes/${classId}`, {
+      method: 'DELETE'
     });
     return handleResponse(res);
   },

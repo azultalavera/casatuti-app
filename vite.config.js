@@ -8,7 +8,7 @@ export default defineConfig({
     host: true, // Expone el servidor de desarrollo a la red local (Wi-Fi)
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5005',
         changeOrigin: true,
       }
     }

@@ -427,7 +427,8 @@ export const AppProvider = ({ children }) => {
             teacherName: classData.teacherName,
             day: day,
             time: classData.time,
-            capacity: classData.capacity
+            capacity: classData.capacity,
+            sucursal: classData.sucursal
           });
           generatedClasses.push(newCls);
         }
@@ -439,7 +440,8 @@ export const AppProvider = ({ children }) => {
           teacherName: classData.teacherName,
           day: classData.day,
           time: classData.time,
-          capacity: classData.capacity
+          capacity: classData.capacity,
+          sucursal: classData.sucursal
         });
         generatedClasses.push(newCls);
       }
@@ -457,6 +459,28 @@ export const AppProvider = ({ children }) => {
     setLoading(true);
     try {
       await mockService.updateClassTeacher(classId, teacherId);
+      const loadedClasses = await mockService.getClasses();
+      setClasses(loadedClasses);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTurn = async (classId, classData) => {
+    setLoading(true);
+    try {
+      await mockService.updateClass(classId, classData);
+      const loadedClasses = await mockService.getClasses();
+      setClasses(loadedClasses);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTurn = async (classId) => {
+    setLoading(true);
+    try {
+      await mockService.deleteClass(classId);
       const loadedClasses = await mockService.getClasses();
       setClasses(loadedClasses);
     } finally {
@@ -679,6 +703,8 @@ export const AppProvider = ({ children }) => {
         requestStudentPayment,
         createNewTurn,
         changeClassTeacher,
+        updateTurn,
+        deleteTurn,
         bulkAssignClasses,
         createNewUserAction,
         updateUserAction,

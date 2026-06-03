@@ -55,7 +55,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-serif)', margin: 0 }}>
-            {isTeacher ? 'Modificar Profesor/a' : 'Modificar Alumna'}
+            {isTeacher ? 'Modificar Profesor/a' : 'Modificar alumno/a'}
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--gris-medio)' }}>✕</button>
         </div>
@@ -74,7 +74,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
             <input type="email" className="input-tuti" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%' }} />
           </div>
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>DNI / Documento *</label>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>DNI *</label>
             <input type="number" className="input-tuti" value={documento} onChange={e => setDocumento(e.target.value)} required style={{ width: '100%' }} />
           </div>
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -86,7 +86,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
             <input type="text" className="input-tuti" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: '100%' }} />
           </div>
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha Nacimiento</label>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha de nacimiento</label>
             <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
           </div>
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -98,8 +98,8 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} className="btn-tuti btn-secondary" style={{ flex: 1, padding: '12px' }}>Cancelar</button>
-            <button type="submit" className="btn-tuti btn-primary-clay" style={{ flex: 1, padding: '12px' }}>Guardar Cambios</button>
+            <button type="button" onClick={onClose} className="btn-tuti btn-danger-soft" style={{ flex: 1, padding: '12px' }}>Cancelar</button>
+            <button type="submit" className="btn-tuti btn-success-soft" style={{ flex: 1, padding: '12px' }}>Guardar</button>
           </div>
         </form>
       </div>

@@ -223,6 +223,44 @@ input {
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
 }
 
+.btn-success-soft {
+  background-color: var(--verde-oliva);
+  color: var(--blanco);
+  border: 1px solid var(--verde-oliva);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-success-soft:hover {
+  background-color: var(--verde-oliva-dark);
+  border-color: var(--verde-oliva-dark);
+}
+
+.btn-success-soft:active {
+  background-color: var(--verde-oliva-light) !important;
+  color: var(--verde-oliva-dark) !important;
+  border-color: var(--verde-oliva-light) !important;
+  transform: scale(0.97);
+}
+
+.btn-danger-soft {
+  background-color: var(--rojo-alerta);
+  color: var(--blanco);
+  border: 1px solid var(--rojo-alerta);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-danger-soft:hover {
+  background-color: #A3360B;
+  border-color: #A3360B;
+}
+
+.btn-danger-soft:active {
+  background-color: var(--rojo-alerta-light) !important;
+  color: var(--rojo-alerta) !important;
+  border-color: var(--rojo-alerta-light) !important;
+  transform: scale(0.97);
+}
+
 .btn-disabled {
   background-color: var(--bg-crema-claro);
   border: 1px solid var(--gris-claro);
@@ -806,4 +844,245 @@ input {
   display: flex;
   flex-direction: column;
   border: var(--border-glass);
+}
+
+/* Config Grid & Cards */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.config-card {
+  background-color: var(--blanco);
+  padding: 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  min-height: 160px;
+  width: 100%;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.config-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Card Specific Colors - Always Colored Borders */
+.config-card.card-calendar {
+  border: 1.5px solid var(--card-mustard);
+}
+.config-card.card-calendar:hover {
+  border-color: #f59e0b;
+}
+
+.config-card.card-packs {
+  border: 1.5px solid var(--card-rust);
+}
+.config-card.card-packs:hover {
+  border-color: #d97706;
+}
+
+.config-card.card-branches {
+  border: 1.5px solid var(--card-sage);
+}
+.config-card.card-branches:hover {
+  border-color: #65a30d;
+}
+
+.config-card.card-faqs {
+  border: 1.5px solid var(--card-olive);
+}
+.config-card.card-faqs:hover {
+  border-color: #15803d;
+}
+
+/* Icon Container */
+.config-card-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card-calendar .config-card-icon-wrapper {
+  background-color: rgba(226, 172, 90, 0.1);
+  color: var(--card-mustard);
+}
+.card-calendar:hover .config-card-icon-wrapper {
+  background-color: rgba(226, 172, 90, 0.2);
+}
+
+.card-packs .config-card-icon-wrapper {
+  background-color: rgba(204, 122, 66, 0.1);
+  color: var(--card-rust);
+}
+.card-packs:hover .config-card-icon-wrapper {
+  background-color: rgba(204, 122, 66, 0.2);
+}
+
+.card-branches .config-card-icon-wrapper {
+  background-color: rgba(129, 152, 117, 0.1);
+  color: var(--card-sage);
+}
+.card-branches:hover .config-card-icon-wrapper {
+  background-color: rgba(129, 152, 117, 0.2);
+}
+
+.card-faqs .config-card-icon-wrapper {
+  background-color: rgba(70, 89, 64, 0.1);
+  color: var(--card-olive);
+}
+.card-faqs:hover .config-card-icon-wrapper {
+  background-color: rgba(70, 89, 64, 0.2);
+}
+
+/* Titles */
+.config-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-oscuro);
+  margin-top: 12px;
+  transition: color 0.3s ease;
+}
+
+/* Action link at the bottom */
+.config-card-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gris-medio);
+  margin-top: 12px;
+  transition: color 0.3s ease;
+}
+
+.config-card-action svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.3s ease;
+}
+
+.card-calendar:hover .config-card-action {
+  color: var(--card-mustard);
+}
+.card-calendar:hover .config-card-action svg {
+  transform: translateX(3px);
+}
+
+.card-packs:hover .config-card-action {
+  color: var(--card-rust);
+}
+.card-packs:hover .config-card-action svg {
+  transform: translateX(3px);
+}
+
+.card-branches:hover .config-card-action {
+  color: var(--card-sage);
+}
+.card-branches:hover .config-card-action svg {
+  transform: translateX(3px);
+}
+
+.card-faqs:hover .config-card-action {
+  color: var(--card-olive);
+}
+.card-faqs:hover .config-card-action svg {
+  transform: translateX(3px);
+}
+
+/* Responsive Day Selector in ClassesTab */
+.days-selector-wrapper {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.day-card-btn {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 40px;
+  height: 80px;
+}
+
+@media (max-width: 375px) {
+  .days-selector-wrapper {
+    gap: 4px;
+  }
+  .day-card-btn {
+    padding: 8px 2px;
+    min-width: 36px;
+    border-radius: 16px;
+  }
+  .day-card-btn span {
+    font-size: 12px !important;
+  }
+}
+
+/* Responsive Day Selector in AlumnoView */
+.alumno-days-wrapper {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  width: 100%;
+}
+
+.alumno-day-btn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 54px;
+  height: 80px;
+}
+
+@media (max-width: 375px) {
+  .alumno-days-wrapper {
+    gap: 6px;
+  }
+  .alumno-day-btn {
+    min-width: 44px;
+    padding: 10px 4px;
+    border-radius: 18px;
+  }
+  .alumno-day-btn span:first-child {
+    font-size: 9px !important;
+  }
+  .alumno-day-btn span:nth-child(2) {
+    font-size: 16px !important;
+  }
 }

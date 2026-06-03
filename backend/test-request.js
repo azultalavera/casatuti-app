@@ -1,6 +1,6 @@
 async function run() {
   try {
-    const resUsers = await fetch('http://127.0.0.1:5000/api/users');
+    const resUsers = await fetch('http://127.0.0.1:5005/api/users');
     const users = await resUsers.json();
     const student = users.find(u => u.role === 'ALUMNO');
     
@@ -11,7 +11,7 @@ async function run() {
     
     console.log("Found student:", student.name, student.id);
     
-    const resReq = await fetch('http://127.0.0.1:5000/api/payments/request', {
+    const resReq = await fetch('http://127.0.0.1:5005/api/payments/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -24,7 +24,7 @@ async function run() {
     const result = await resReq.json();
     console.log("Payment request result:", result);
     
-    const resPay = await fetch('http://127.0.0.1:5000/api/payments');
+    const resPay = await fetch('http://127.0.0.1:5005/api/payments');
     const payments = await resPay.json();
     const pending = payments.filter(p => p.status === 'PENDING');
     console.log("Pending payments:", pending);

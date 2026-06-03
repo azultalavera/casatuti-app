@@ -7,11 +7,22 @@ import db from './db.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5005;
 
 // Habilitar CORS para permitir peticiones del frontend (Vite)
 app.use(cors());
 app.use(express.json());
+
+// Helper para unificar mayúsculas en la primera letra de cada palabra de nombres y apellidos
+const capitalizeName = (str) => {
+  if (!str) return '';
+  return str
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 // Helper para mapear usuario de la BD al formato del Frontend
 const mapUserToFE = (u) => {
@@ -224,7 +235,8 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ error: 'Faltan campos obligatorios (email, name, role).' });
   }
 
-  const nameParts = name.trim().split(' ');
+  const formattedName = capitalizeName(name);
+  const nameParts = formattedName.split(' ');
   const nombre = nameParts[0] || 'Usuario';
   const apellido = nameParts.slice(1).join(' ') || '';
   try {
@@ -423,9 +435,12 @@ app.put('/api/users/:id', async (req, res) => {
       WHERE id_usuarios = $9
       RETURNING *
     `;
+    const formattedNombre = capitalizeName(nombre);
+    const formattedApellido = capitalizeName(apellido);
+
     const userRes = await db.query(updateQuery, [
-      nombre,
-      apellido || '',
+      formattedNombre,
+      formattedApellido || '',
       email,
       parseInt(nro_documento),
       telefono ? parseInt(telefono) : null,
@@ -642,6 +657,121 @@ app.post('/api/classes', async (req, res) => {
   } catch (error) {
     console.error('Error al crear clases:', error);
     res.status(500).json({ error: 'Error al crear turnos de clase.' });
+  }
+});
+
+// Modificar datos de una clase (Turno)
+app.put('/api/classes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { teacherId, teacherName, day, time, capacity, sucursal } = req.body;
+
+  if (!teacherId || !time || !capacity || !day) {
+    return res.status(400).json({ error: 'Faltan campos requeridos para actualizar el turno.' });
+  }
+
+  try {
+    // Obtener id_sucursal si se pasa nombre de sucursal
+    let idSucursal = null;
+    if (sucursal) {
+      const sucRes = await db.query(
+        "SELECT id_sucursal FROM public.t_sucursales WHERE UPPER(n_sucursal) = UPPER($1) LIMIT 1",
+        [sucursal]
+      );
+      if (sucRes.rows.length > 0) idSucursal = sucRes.rows[0].id_sucursal;
+    }
+
+    const [startStr, endStr] = time.split(' - ');
+    const hora_inicio = startStr.trim();
+    const hora_fin = endStr.trim();
+    const dia_semana = day.replace('é', 'e').replace('á', 'a'); // 'Miércoles' -> 'Miercoles', 'Sábado' -> 'Sabado'
+
+    const query = `
+      UPDATE public.t_clases_def
+      SET dia_semana = $1, hora_inicio = $2, hora_fin = $3, cupo_maximo = $4, id_profesor = $5, id_sucursal = $6
+      WHERE id_clases_def = $7
+      RETURNING *
+    `;
+    const { rows } = await db.query(query, [
+      dia_semana,
+      hora_inicio,
+      hora_fin,
+      Number(capacity),
+      teacherId,
+      idSucursal,
+      id
+    ]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Turno no encontrado.' });
+    }
+
+    // Cargar la clase con JOINs para devolver la información completa al Front
+    const classQuery = `
+      SELECT 
+        c.id_clases_def AS id_clases_def,
+        NULL AS name,
+        c.id_profesor AS teacher_id,
+        COALESCE(u.nombre || ' ' || u.apellido, 'Sin profesor') AS teacher_name,
+        CASE c.dia_semana
+          WHEN 'Miercoles' THEN 'Miércoles'
+          WHEN 'Sabado' THEN 'Sábado'
+          ELSE c.dia_semana
+        END AS day,
+        TO_CHAR(c.hora_inicio, 'HH24:MI') || ' - ' || TO_CHAR(c.hora_fin, 'HH24:MI') AS time,
+        c.cupo_maximo AS capacity,
+        UPPER(s.n_sucursal) AS sucursal
+      FROM public.t_clases_def c
+      LEFT JOIN public.t_usuarios u ON c.id_profesor = u.id_usuarios
+      LEFT JOIN public.t_sucursales s ON c.id_sucursal = s.id_sucursal
+      WHERE c.id_clases_def = $1
+    `;
+    const detailRes = await db.query(classQuery, [id]);
+
+    res.json(mapClassToFE(detailRes.rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar clase:', error);
+    res.status(500).json({ error: 'Error al actualizar el turno de clase.' });
+  }
+});
+
+// Eliminar un turno (Clase) en cascada
+app.delete('/api/classes/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await db.query('BEGIN');
+
+    // 1. Eliminar reservas en t_inscripciones de instancias asociadas
+    await db.query(
+      `DELETE FROM public.t_inscripciones 
+       WHERE id_clase_instancia IN (SELECT id_clase_instancia FROM public.t_clases_instancia WHERE id_clases_def = $1)`,
+      [id]
+    );
+
+    // 2. Eliminar de t_lista_espera
+    await db.query(
+      `DELETE FROM public.t_lista_espera 
+       WHERE id_clase_instancia IN (SELECT id_clase_instancia FROM public.t_clases_instancia WHERE id_clases_def = $1)`,
+      [id]
+    );
+
+    // 3. Eliminar de t_clases_instancia
+    await db.query('DELETE FROM public.t_clases_instancia WHERE id_clases_def = $1', [id]);
+
+    // 4. Eliminar de t_clases_def
+    const { rowCount } = await db.query('DELETE FROM public.t_clases_def WHERE id_clases_def = $1', [id]);
+
+    if (rowCount === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Turno no encontrado.' });
+    }
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: 'Turno eliminado con éxito.' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    console.error('Error al eliminar clase:', error);
+    res.status(500).json({ error: 'Error interno al eliminar el turno.' });
   }
 });
 

@@ -287,7 +287,7 @@ export default function AlumnoView() {
         </div>
 
         {/* Mini-cards de días */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div className="alumno-days-wrapper">
           {weekDays.map(({ day, date, available, hasTurns }) => {
             const isSelected = selectedDay === day;
             const isPast = !available;
@@ -295,16 +295,8 @@ export default function AlumnoView() {
               <button
                 key={day}
                 onClick={() => available && setSelectedDay(day)}
+                className="alumno-day-btn"
                 style={{
-                  flex: '0 0 auto',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px',
-                  padding: '12px',
-                  borderRadius: '24px',
-                  border: 'none',
                   backgroundColor: isSelected
                     ? 'var(--card-rust)'
                     : isPast
@@ -317,10 +309,7 @@ export default function AlumnoView() {
                       : 'var(--gris-oscuro)',
                   cursor: isPast ? 'default' : 'pointer',
                   opacity: isPast ? 0.5 : 1,
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                   boxShadow: isSelected ? '0 8px 24px rgba(204, 122, 66, 0.3)' : (isPast ? 'none' : '0 4px 16px rgba(0,0,0,0.03)'),
-                  minWidth: '60px',
-                  height: '80px'
                 }}
               >
                 {/* Abreviatura del día */}

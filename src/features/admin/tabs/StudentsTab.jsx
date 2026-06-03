@@ -9,6 +9,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ACTIVE'); // 'ACTIVE' | 'INACTIVE'
+  const [filterZeroCredits, setFilterZeroCredits] = useState(false); // toggle zero credits
   const [expandedStudentId, setExpandedStudentId] = useState(null);
 
   const [nombre, setNombre] = useState('');
@@ -21,14 +22,15 @@ export default function StudentsTab({ showFeedback, onEdit }) {
   const [branch, setBranch] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
 
   const filteredStudents = students.filter(st => {
-    const profile = studentProfiles.find(p => p.studentId === st.id) || { isBlocked: false };
+    const profile = studentProfiles.find(p => p.studentId === st.id) || { isBlocked: false, classCredits: 0 };
     const matchesSearch = st.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       st.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBranch = selectedBranch === 'ALL' || (st.sucursal || '').toUpperCase() === selectedBranch;
     const matchesStatus = selectedStatus === 'ALL' ||
       (selectedStatus === 'ACTIVE' && !profile.isBlocked) ||
       (selectedStatus === 'INACTIVE' && profile.isBlocked);
-    return matchesSearch && matchesBranch && matchesStatus;
+    const matchesCredits = !filterZeroCredits || profile.classCredits === 0;
+    return matchesSearch && matchesBranch && matchesStatus && matchesCredits;
   });
 
   const handleCreate = async (e) => {
@@ -106,10 +108,10 @@ export default function StudentsTab({ showFeedback, onEdit }) {
               fontFamily: 'Outfit, sans-serif'
             }}
           >
-            ← Volver al Listado
+            ←
           </button>
-          
-          <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Dar de Alta Nueva Alumna</h3>
+
+          <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Nuevo/a alumno/a</h3>
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Nombre *</label>
@@ -127,7 +129,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
             </div>
 
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>DNI / Documento *</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>DNI *</label>
               <input type="number" placeholder="12345678" className="input-tuti" value={documento} onChange={e => setDocumento(e.target.value)} style={{ width: '100%' }} />
             </div>
 
@@ -155,7 +157,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
               </select>
             </div>
 
-            <button type="submit" className="btn-tuti btn-secondary" style={{ marginTop: '8px', fontSize: '14px', padding: '14px', width: '100%', fontWeight: '700' }}>
+            <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '8px', fontSize: '14px', padding: '14px', width: '100%', fontWeight: '700' }}>
               + Registrar Alumna
             </button>
           </form>
@@ -168,9 +170,9 @@ export default function StudentsTab({ showFeedback, onEdit }) {
 
           {/* Cabecera con Contador al principio */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <h2 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0, fontFamily: 'Geist, Outfit, sans-serif', letterSpacing: '-0.8px' }}>Alumnas</h2>
+            <h2 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0, fontFamily: 'Geist, Outfit, sans-serif', letterSpacing: '-0.8px' }}>Alumnos/as</h2>
             <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gris-medio)', backgroundColor: 'rgba(0,0,0,0.05)', padding: '4px 10px', borderRadius: '12px' }}>
-              {filteredStudents.length} {filteredStudents.length === 1 ? 'alumna' : 'alumnas'}
+              {filteredStudents.length} {filteredStudents.length === 1 ? 'alumna' : 'alumnos/as'}
             </span>
           </div>
 
@@ -189,11 +191,33 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: 'none', borderRadius: '20px', height: '42px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               />
             </div>
+            {/* Filtro Sin Clases */}
+            <div style={{ backgroundColor: '#F6F8F5', border: '1px solid #EFEFEF', padding: '12px', borderRadius: '18px', display: 'flex', alignItems: 'center' }}>
+              <button
+                onClick={() => setFilterZeroCredits(!filterZeroCredits)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  backgroundColor: 'var(--blanco)', border: filterZeroCredits ? '1px solid var(--marron-arcilla)' : '1px solid #F1E5DF',
+                  padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: '800', color: 'var(--marron-arcilla)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--marron-arcilla)' }}></div>
+                Sin clases ({students.filter(st => {
+                  const p = studentProfiles.find(x => x.studentId === st.id) || { classCredits: 0 };
+                  return p.classCredits === 0;
+                }).length})
+              </button>
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' }}>
               {/* Sucursales */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '4px' }}>Sucursal:</span>
+              <div style={{ display: 'flex', overflowX: 'auto', gap: '8px', alignItems: 'center', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '4px' }}>
+                  <svg style={{ width: '14px', height: '14px', color: 'var(--marron-arcilla)' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal:</span>
+                </div>
                 {[{ id: 'all', name: 'ALL' }, ...branches].map(br => {
                   const isActive = selectedBranch === br.name;
                   return (
@@ -201,16 +225,15 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                       key={br.id}
                       onClick={() => setSelectedBranch(br.name)}
                       style={{
-                        padding: '6px 14px',
-                        borderRadius: '16px',
+                        padding: '8px 16px',
+                        borderRadius: '20px',
                         border: isActive ? 'none' : '1px solid var(--gris-claro)',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        fontWeight: '700',
                         cursor: 'pointer',
-                        backgroundColor: isActive ? 'rgba(69, 95, 62, 0.12)' : 'var(--blanco)',
-                        color: isActive ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                        backgroundColor: isActive ? '#C3CDBE' : 'var(--blanco)',
+                        color: isActive ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
                         transition: 'all 0.15s ease',
-                        whiteSpace: 'nowrap'
                       }}
                     >
                       {br.name === 'ALL' ? 'Todas' : br.name}
@@ -219,69 +242,52 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 })}
               </div>
 
-              {/* Estado Switch (Mockup) */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '14px' }}>Estado:</span>
-                
-                {/* Switch Deslizable Container */}
+              {/* Estado Switch */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '14px' }}>
+                  <svg style={{ width: '14px', height: '14px', color: 'var(--marron-arcilla)' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gris-medio)' }}>Estado:</span>
+                </div>
                 <div style={{
                   position: 'relative',
                   display: 'flex',
                   width: '180px',
-                  height: '34px',
+                  height: '40px',
                   backgroundColor: 'rgba(0,0,0,0.04)',
                   borderRadius: '20px',
                   padding: '2px',
-                  border: 'none',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  cursor: 'pointer',
-                  userSelect: 'none'
+                  border: '1px solid var(--gris-claro)',
                 }}>
-                  {/* Slider Backdrop */}
                   <div style={{
                     position: 'absolute',
-                    top: '2px',
                     left: selectedStatus === 'ACTIVE' ? '2px' : 'calc(50% + 1px)',
-                    width: 'calc(50% - 3px)',
-                    height: '30px',
+                    top: '2px',
+                    width: 'calc(50% - 4px)',
+                    height: 'calc(100% - 4px)',
                     backgroundColor: 'var(--blanco)',
                     borderRadius: '18px',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-                    zIndex: 1
+                    zIndex: 1,
                   }} />
-
-                  {/* Opción Activas */}
-                  <div 
+                  <div
                     onClick={() => setSelectedStatus('ACTIVE')}
                     style={{
-                      flex: 1,
-                      zIndex: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      color: selectedStatus === 'ACTIVE' ? 'var(--verde-oliva)' : 'var(--gris-medio)',
-                      transition: 'color 0.2s ease'
+                      flex: 1, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: '800',
+                      color: selectedStatus === 'ACTIVE' ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
+                      transition: 'color 0.2s ease', cursor: 'pointer',
                     }}
                   >
                     Activas
                   </div>
-
-                  {/* Opción Inactivas */}
-                  <div 
+                  <div
                     onClick={() => setSelectedStatus('INACTIVE')}
                     style={{
-                      flex: 1,
-                      zIndex: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      color: selectedStatus === 'INACTIVE' ? 'var(--marron-arcilla)' : 'var(--gris-medio)',
-                      transition: 'color 0.2s ease'
+                      flex: 1, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: '800',
+                      color: selectedStatus === 'INACTIVE' ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
+                      transition: 'color 0.2s ease', cursor: 'pointer',
                     }}
                   >
                     Inactivas
@@ -289,6 +295,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 </div>
               </div>
             </div>
+
           </div>
 
           <div>
@@ -317,8 +324,8 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                         opacity: profile.isBlocked ? 0.6 : 1,
                         cursor: 'pointer',
                         transition: 'transform 0.2s ease',
-                        border: 'none',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                        border: '1px solid #EAEAEA',
+                        boxShadow: 'none'
                       }}
                     >
                       {/* Fila Principal de Información */}
@@ -328,12 +335,13 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                           width: '48px',
                           height: '48px',
                           borderRadius: '50%',
-                          backgroundColor: 'var(--bg-crema)',
+                          backgroundColor: '#F6F8F5',
+                          border: '1px solid #EAEAEA',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: '800',
-                          color: 'var(--marron-arcilla)',
+                          color: 'var(--gris-oscuro)',
                           fontSize: '15px',
                           flexShrink: 0
                         }}>
@@ -352,38 +360,60 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                               </span>
                             )}
                           </div>
-
-                          {/* Removed Email and Branch to make it cleaner */}
+                          {/* Branch Chip */}
+                          <div style={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                            <span style={{
+                              fontSize: '9px',
+                              fontWeight: '700',
+                              backgroundColor: 'transparent',
+                              color: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--gris-medio)' : 'var(--marron-arcilla)',
+                              border: `1px solid ${(st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--gris-claro)' : '#F1E5DF'}`,
+                              padding: '2px 8px',
+                              borderRadius: '12px'
+                            }}>
+                              {(st.sucursal || 'CENTRO').toUpperCase()}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Clases, Barra Indicadora y Chevron de despliegue */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gris-medio)', letterSpacing: '0.5px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--marron-arcilla)', letterSpacing: '0.5px' }}>
                               CLASES
                             </span>
-                            <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gris-oscuro)', lineHeight: '1' }}>
-                              {profile.classCredits}
-                            </span>
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              backgroundColor: profile.classCredits === 0 ? '#FCF9F7' : '#D1D7CD',
+                              border: profile.classCredits === 0 ? '1px solid #F1E5DF' : 'none',
+                              padding: '4px 10px', borderRadius: '14px'
+                            }}>
+                              {profile.classCredits === 0 && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--marron-arcilla)' }}></div>}
+                              <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
+                                {profile.classCredits} disp.
+                              </span>
+                            </div>
                           </div>
 
                           {/* Chevron indicador de colapso */}
-                          <svg
-                            style={{
-                              width: '16px',
-                              height: '16px',
-                              color: 'var(--gris-medio)',
-                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                              transition: 'transform 0.25s ease',
-                              flexShrink: 0
-                            }}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
-                          </svg>
+                          <div style={{ backgroundColor: '#F6F8F5', border: '1px solid #EAEAEA', borderRadius: '8px', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                color: 'var(--gris-medio)',
+                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.25s ease',
+                                flexShrink: 0
+                              }}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                          </div>
                         </div>
                       </div>
 
@@ -402,23 +432,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                             animation: 'fadeInAcc 0.2s ease-out'
                           }}
                         >
-                          {/* Detalles Extras */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{st.email}</span>
-                              <span style={{
-                                fontSize: '9px', fontWeight: '800', letterSpacing: '0.4px', padding: '2px 8px', borderRadius: '12px',
-                                backgroundColor: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--card-sage)' : 'var(--bg-crema-claro)',
-                                color: (st.sucursal || 'CENTRO').toUpperCase() === 'CENTRO' ? 'var(--blanco)' : 'var(--marron-arcilla)'
-                              }}>
-                                {(st.sucursal || 'CENTRO').toUpperCase()}
-                              </span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gris-medio)', letterSpacing: '0.5px' }}>ARCILLA</span>
-                              <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gris-oscuro)' }}>{profile.monthlyClayKg} <span style={{fontSize: '10px'}}>kg</span></span>
-                            </div>
-                          </div>
+                          {/* Details removed */}
 
                           {/* Botones de acción */}
                           <div style={{ display: 'flex', gap: '8px' }}>
@@ -518,7 +532,6 @@ export default function StudentsTab({ showFeedback, onEdit }) {
             cursor: 'pointer',
             zIndex: 100,
             transition: 'all 0.2s ease',
-            lineHeight: '52px',
             animation: 'popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
           }}
         >

@@ -417,7 +417,7 @@ export default function PaymentsTab({ showFeedback }) {
               </div>
             </div>
 
-            <button type="submit" className="btn-tuti btn-primary-clay" style={{ marginTop: '10px', fontSize: '16px', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
+            <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '10px', fontSize: '16px', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
               Guardar
             </button>
           </form>

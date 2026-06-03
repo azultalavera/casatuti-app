@@ -174,7 +174,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                 ))}
               </select>
             </div>
-            <button type="submit" className="btn-tuti btn-secondary" style={{ marginTop: '8px', fontSize: '14px', padding: '12px' }}>
+            <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '8px', fontSize: '14px', padding: '12px' }}>
               + Registrar Profesor
             </button>
           </form>
@@ -534,7 +534,6 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             cursor: 'pointer',
             zIndex: 100,
             transition: 'all 0.2s ease',
-            lineHeight: '52px',
             animation: 'popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
           }}
         >
@@ -676,8 +675,8 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="btn-tuti btn-secondary"
-                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800', border: 'none', color: 'var(--gris-medio)', backgroundColor: 'transparent' }}
+                className="btn-tuti btn-danger-soft"
+                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800' }}
               >
                 Cancelar
               </button>
@@ -692,8 +691,8 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                     showFeedback('Error al guardar asignaciones de turnos.', 'danger');
                   }
                 }}
-                className="btn-tuti btn-secondary"
-                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800', backgroundColor: 'var(--verde-oliva)', color: 'var(--blanco)' }}
+                className="btn-tuti btn-success-soft"
+                style={{ flex: 1, padding: '12px', fontSize: '13px', fontWeight: '800' }}
               >
                 Guardar Cambios
               </button>
