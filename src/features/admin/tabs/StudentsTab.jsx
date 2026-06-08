@@ -350,13 +350,13 @@ export default function StudentsTab({ showFeedback, onEdit }) {
 
                         {/* Nombre y Detalles */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, wordBreak: 'break-word' }}>
                               {st.name}
                             </h4>
                             {profile.isBlocked && (
-                              <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '2px 8px', borderRadius: '8px' }}>
-                                PAUSA
+                              <span style={{ flexShrink: 0, marginTop: '2px', fontSize: '9px', fontWeight: '800', backgroundColor: 'var(--rojo-alerta-light)', color: 'var(--rojo-alerta)', padding: '2px 8px', borderRadius: '8px' }}>
+                                Pausa
                               </span>
                             )}
                           </div>
@@ -371,7 +371,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                               padding: '2px 8px',
                               borderRadius: '12px'
                             }}>
-                              {(st.sucursal || 'CENTRO').toUpperCase()}
+                              {(st.sucursal || 'Centro').charAt(0).toUpperCase() + (st.sucursal || 'Centro').slice(1).toLowerCase()}
                             </span>
                           </div>
                         </div>
@@ -379,8 +379,8 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                         {/* Clases, Barra Indicadora y Chevron de despliegue */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--marron-arcilla)', letterSpacing: '0.5px' }}>
-                              CLASES
+                            <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--marron-arcilla)', letterSpacing: '0.5px' }}>
+                              Clases
                             </span>
                             <div style={{
                               display: 'flex', alignItems: 'center', gap: '6px',

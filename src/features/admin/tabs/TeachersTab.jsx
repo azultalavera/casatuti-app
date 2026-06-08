@@ -418,7 +418,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                               CERÁMICA
                             </span>
                           </div>
-                        {/* Botón Asignar Turnos (Principal) */}
+                        {/* Botón Asignar turnos (Principal) */}
                         <button
                           type="button"
                           onClick={() => {
@@ -435,7 +435,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Asignar Turnos
+                          Asignar turnos
                         </button>
 
                         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -573,7 +573,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                  Asignar Turnos a:
+                  Asignar turnos a:
                 </h3>
                 <span style={{ fontSize: '13px', color: 'var(--verde-oliva)', fontWeight: '700' }}>
                   {assignModalTeacher.name}

@@ -195,7 +195,7 @@ export default function PaymentsTab({ showFeedback }) {
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  {branch.name === 'ALL' ? 'Todas' : branch.name}
+                  {branch.name === 'ALL' ? 'Todas' : branch.name.charAt(0).toUpperCase() + branch.name.slice(1).toLowerCase()}
                 </button>
               );
             })}
@@ -329,7 +329,7 @@ export default function PaymentsTab({ showFeedback }) {
 
             {/* Selector de Alumnas */}
             <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Alumnas:</label>
+              <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Alumnas:</label>
               <div
                 onClick={() => setShowSelectStudentsModal(true)}
                 style={{
@@ -357,7 +357,7 @@ export default function PaymentsTab({ showFeedback }) {
 
             {/* Selector de Créditos */}
             <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Créditos:</label>
+              <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Créditos:</label>
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {packs.map(p => {
                   const isSelected = selectedPackId === String(p.id);
@@ -391,7 +391,7 @@ export default function PaymentsTab({ showFeedback }) {
 
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <div className="form-group" style={{ flex: '1 1 120px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Monto ($):</label>
+                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Monto ($):</label>
                 <div style={{ position: 'relative', marginTop: '4px' }}>
                   <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 'bold', color: 'var(--marron-arcilla)' }}>$</span>
                   <input
@@ -406,7 +406,7 @@ export default function PaymentsTab({ showFeedback }) {
               </div>
 
               <div className="form-group" style={{ flex: '1 1 150px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Fecha:</label>
+                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Fecha:</label>
                 <input
                   type="date"
                   className="input-tuti"

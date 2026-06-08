@@ -210,9 +210,9 @@ export default function ConfigTab({ showFeedback, goBack }) {
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0 }}>
             {view === 'menu' ? 'Configuración' :
-              view === 'calendar' ? 'Calendario y Feriados' :
-                view === 'packs' ? 'Tipificar Cupos' :
-                  view === 'branches' ? 'Sucursales' : 'Normas de Convivencia'}
+              view === 'calendar' ? 'Calendarios y feriados' :
+                view === 'packs' ? 'Tipificar cupos' :
+                  view === 'branches' ? 'Sucursales' : 'Normas de convivencia'}
           </h2>
         </div>
       </div>
@@ -230,7 +230,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
             </div>
-            <h4 className="config-card-title">Calendario y feriados</h4>
+            <h4 className="config-card-title">Calendarios y feriados</h4>
             <div className="config-card-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
