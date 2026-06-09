@@ -221,6 +221,8 @@ export const AppProvider = ({ children }) => {
       setBookings(loadedBookings);
       const loadedAlerts = await mockService.getAlerts();
       setAlerts(loadedAlerts);
+      const loadedProfiles = await mockService.getStudentProfiles();
+      setStudentProfiles(loadedProfiles);
 
       return newBooking;
     } finally {

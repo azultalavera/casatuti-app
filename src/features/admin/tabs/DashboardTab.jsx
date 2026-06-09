@@ -8,7 +8,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SettingsIcon from '@mui/icons-material/Settings';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
-export default function DashboardTab({ classes, bookings, students, studentProfiles, setAdminTab, navigateToStudents }) {
+export default function DashboardTab({ classes, bookings, students, studentProfiles, payments, setAdminTab, navigateToStudents }) {
   const { branches } = useApp();
   const [selectedBranch, setSelectedBranch] = useState('ALL');
 
@@ -39,6 +39,25 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
     return !p || p.classCredits === 0;
   }).length;
   const deudaTotal = unpaidCount * 8000;
+
+  // Alertas resúmenes
+  const alumnasConUnCredito = filteredStudentProfiles.filter(p => p.classCredits === 1).length;
+  
+  const expiringProfiles = filteredStudentProfiles.filter(p => {
+    if (!p.expirationDate) return false;
+    const expDate = new Date(p.expirationDate);
+    const diffTime = expDate - new Date();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  });
+  const proximosVencimientosCount = expiringProfiles.length;
+
+  const pendingPaymentsCount = (payments || []).filter(p => {
+    if (p.status !== 'PENDING') return false;
+    if (selectedBranch === 'ALL') return true;
+    const st = students.find(s => s.id === p.studentId);
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch;
+  }).length;
 
   return (
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -150,61 +169,27 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <WarningAmberIcon style={{ color: 'var(--rojo)' }} /> Alertas
         </summary>
-        <div style={{ padding: '0 16px 16px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
+        <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          
           {/* Alumnas con 1 crédito */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--naranja-tierra)', marginBottom: '8px' }}>
-              1 crédito restante
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filteredStudentProfiles.filter(p => p.classCredits === 1).length === 0 ? (
-                <p style={{ fontStyle: 'italic', fontSize: '13px', color: 'var(--gris-medio)' }}>Sin alertas.</p>
-              ) : (
-                filteredStudentProfiles.filter(p => p.classCredits === 1).map(p => {
-                  const st = students.find(s => s.id === p.studentId);
-                  return (
-                    <div key={p.studentId} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: 'var(--blanco)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--gris-claro)' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600 }}>{st?.name || 'Alumna'}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--naranja-tierra)', fontWeight: 'bold' }}>1 clase restante</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+          <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--amarillo-alerta)', lineHeight: 1 }}>{alumnasConUnCredito}</span>
+            <span style={{ fontSize: '13px', color: 'var(--gris-oscuro)', fontWeight: 600, marginTop: '8px' }}>Alumnas con 1 crédito</span>
+          </div>
+
+          {/* Pagos Pendientes */}
+          <div 
+            onClick={() => setAdminTab('payments')}
+            style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+          >
+            <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--rojo-alerta)', lineHeight: 1 }}>{pendingPaymentsCount}</span>
+            <span style={{ fontSize: '13px', color: 'var(--gris-oscuro)', fontWeight: 600, marginTop: '8px' }}>Pagos por confirmar</span>
           </div>
 
           {/* Alumnas con vencimiento cercano (<= 7 días) */}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--rojo)', marginBottom: '8px' }}>
-              Próximos vencimientos
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {(() => {
-                const expiringProfiles = filteredStudentProfiles.filter(p => {
-                  if (!p.expirationDate || p.classCredits === 0) return false;
-                  const daysLeft = (new Date(p.expirationDate) - new Date()) / (1000 * 60 * 60 * 24);
-                  return daysLeft >= 0 && daysLeft <= 7;
-                });
-
-                if (expiringProfiles.length === 0) {
-                  return <p style={{ fontStyle: 'italic', fontSize: '13px', color: 'var(--gris-medio)' }}>Sin alertas.</p>;
-                }
-
-                return expiringProfiles.map(p => {
-                  const st = students.find(s => s.id === p.studentId);
-                  const daysLeft = Math.ceil((new Date(p.expirationDate) - new Date()) / (1000 * 60 * 60 * 24));
-                  return (
-                    <div key={p.studentId} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: 'var(--blanco)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--gris-claro)' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600 }}>{st?.name || 'Alumna'}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--rojo)', fontWeight: 'bold' }}>
-                        Vence en {daysLeft} día{daysLeft !== 1 ? 's' : ''} ({p.classCredits} clases)
-                      </span>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
+          <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--rojo)', lineHeight: 1 }}>{proximosVencimientosCount}</span>
+            <span style={{ fontSize: '13px', color: 'var(--gris-oscuro)', fontWeight: 600, marginTop: '8px' }}>Vencimientos próximos</span>
           </div>
 
         </div>

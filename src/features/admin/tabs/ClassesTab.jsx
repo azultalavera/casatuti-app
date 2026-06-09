@@ -188,30 +188,31 @@ export default function ClassesTab({ showFeedback }) {
 
       {/* 1. VISTA DE CREACIÓN / REGISTRO */}
       {mode === 'create' && (
-        <div className="clay-card animate-slide-up" style={{ padding: '24px' }}>
-          {/* Botón de volver */}
-          <button
-            onClick={() => setMode('list')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: 'none',
-              background: 'transparent',
-              fontSize: '12px',
-              fontWeight: '800',
-              color: 'var(--gris-medio)',
-              cursor: 'pointer',
-              padding: '0 0 16px 0',
-              fontFamily: 'Outfit, sans-serif'
-            }}
-          >
-            <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-
-          <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Agregar turno semanal</h3>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px'
+        }}>
+          <div className="clay-card animate-slide-up" style={{
+            width: '100%', maxWidth: '460px', backgroundColor: 'var(--blanco)', padding: '24px',
+            maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>
+                Agregar turno semanal
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMode('list')}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gris-medio)' }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -343,36 +344,37 @@ export default function ClassesTab({ showFeedback }) {
               + Crear turno(s)
             </button>
           </form>
+          </div>
         </div>
       )}
 
       {/* 2. VISTA DE EDICIÓN */}
       {mode === 'edit' && (
-        <div className="clay-card animate-slide-up" style={{ padding: '24px' }}>
-          {/* Botón de volver */}
-          <button
-            onClick={() => { setMode('list'); setEditingClass(null); }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: 'none',
-              background: 'transparent',
-              fontSize: '12px',
-              fontWeight: '800',
-              color: 'var(--gris-medio)',
-              cursor: 'pointer',
-              padding: '0 0 16px 0',
-              fontFamily: 'Outfit, sans-serif'
-            }}
-          >
-            <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Volver al Listado
-          </button>
-
-          <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Editar turno semanal</h3>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px'
+        }}>
+          <div className="clay-card animate-slide-up" style={{
+            width: '100%', maxWidth: '460px', backgroundColor: 'var(--blanco)', padding: '24px',
+            maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>
+                Editar turno semanal
+              </h3>
+              <button
+                type="button"
+                onClick={() => { setMode('list'); setEditingClass(null); }}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gris-medio)' }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
           <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -471,12 +473,12 @@ export default function ClassesTab({ showFeedback }) {
               Guardar Cambios
             </button>
           </form>
+          </div>
         </div>
       )}
 
       {/* 3. VISTA DE CONSULTA / LISTADO */}
-      {mode === 'list' && (
-        <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Header de la Tab y Filtros */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
@@ -602,7 +604,7 @@ export default function ClassesTab({ showFeedback }) {
                             flexDirection: 'column',
                             backgroundColor: 'var(--blanco)',
                             border: 'none',
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08)',
                             transition: 'transform 0.2s ease',
                             cursor: 'pointer'
                           }}
@@ -770,7 +772,6 @@ export default function ClassesTab({ showFeedback }) {
           )}
 
         </div>
-      )}
 
       {/* Botón Flotante "+" para Crear Turnos */}
       {mode === 'list' && (
@@ -809,7 +810,9 @@ export default function ClassesTab({ showFeedback }) {
           }}
           title="Agregar Turno Semanal"
         >
-          +
+          <svg style={{ width: '28px', height: '28px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
         </button>
       )}
 

@@ -85,7 +85,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
         fecha_nacimiento: birthdate || null,
         sucursal: branch
       });
-      alert(`¡Profesor/a "${fullName}" registrado con éxito!`);
+      showFeedback(`¡Profesor/a "${fullName}" registrado con éxito!`, 'success');
       setNombre(''); setApellido(''); setEmail(''); setDocumento('');
       setTelefono(''); setInstagram(''); setBirthdate(''); setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
       setMode('list'); // Regresa al listado después de crear
@@ -115,28 +115,31 @@ export default function TeachersTab({ showFeedback, onEdit }) {
 
       {/* Vista de Registro / Alta */}
       {mode === 'create' && (
-        <div className="clay-card animate-slide-up" style={{ padding: '24px' }}>
-          {/* Botón de volver */}
-          <button
-            onClick={() => setMode('list')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: 'none',
-              background: 'transparent',
-              fontSize: '12px',
-              fontWeight: '800',
-              color: 'var(--gris-medio)',
-              cursor: 'pointer',
-              padding: '0 0 16px 0',
-              fontFamily: 'Outfit, sans-serif'
-            }}
-          >
-            ← Volver al Listado
-          </button>
-
-          <h3 style={{ fontSize: '18px', marginBottom: '18px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Dar de Alta Nuevo Profesor</h3>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px'
+        }}>
+          <div className="clay-card animate-slide-up" style={{
+            width: '100%', maxWidth: '460px', backgroundColor: 'var(--blanco)', padding: '24px',
+            maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>
+                Dar de Alta Nuevo Profesor
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMode('list')}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gris-medio)' }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Nombre *</label>
@@ -178,12 +181,12 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               + Registrar Profesor
             </button>
           </form>
+          </div>
         </div>
       )}
 
       {/* Vista de Listado */}
-      {mode === 'list' && (
-        <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Cabecera con Contador */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <h2 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0, fontFamily: 'Geist, Outfit, sans-serif', letterSpacing: '-0.8px' }}>Profesores</h2>
@@ -334,7 +337,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                       cursor: 'pointer',
                       transition: 'transform 0.2s ease',
                       border: 'none',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08)'
                     }}
                   >
                     {/* Fila Principal */}
@@ -499,10 +502,9 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             )}
           </div>
         </div>
-      )}
 
       {/* Botón Flotante "+" para Registrar Profesor */}
-      {mode === 'list' && (
+      {mode !== 'create' && (
         <button
           onClick={() => {
             setNombre('');
@@ -536,9 +538,11 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             transition: 'all 0.2s ease',
             animation: 'popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
           }}
-        >
-          +
-        </button>
+      >
+        <svg style={{ width: '28px', height: '28px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
       )}
 
       {/* 4. MODAL POPUP PARA ASIGNAR MULTIPLES TURNOS */}

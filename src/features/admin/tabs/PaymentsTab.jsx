@@ -4,6 +4,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 
 export default function PaymentsTab({ showFeedback }) {
   const {
@@ -39,6 +40,24 @@ export default function PaymentsTab({ showFeedback }) {
     return st && (st.sucursal || '').toUpperCase() === selectedBranch;
   });
 
+  // Filtro de Meses para Pagos Confirmados
+  const [selectedMonths, setSelectedMonths] = useState([]);
+
+  // Extraer meses únicos en formato YYYY-MM
+  const allMonths = Array.from(new Set(
+    payments.filter(p => p.status === 'PAID').map(p => p.date.substring(0, 7))
+  )).sort((a, b) => b.localeCompare(a)); // Descendente
+
+  // Filtrar pagos confirmados según los meses seleccionados (si no hay ninguno, se muestran todos)
+  const filteredConfirmed = confirmedPayments.filter(p => {
+    if (selectedMonths.length === 0) return true;
+    const m = p.date.substring(0, 7);
+    return selectedMonths.includes(m);
+  });
+
+  // Total recaudado de los pagos confirmados filtrados
+  const totalAmount = filteredConfirmed.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
   // Formulario Manual
   const [manualStudentIds, setManualStudentIds] = useState([]);
   const [searchStudent, setSearchStudent] = useState('');
@@ -52,10 +71,10 @@ export default function PaymentsTab({ showFeedback }) {
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
-  // Acordeones
+  // Acordeones y Modales
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(pendingPayments.length > 0);
-  const [manualOpen, setManualOpen] = useState(false);
+  const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
 
   React.useEffect(() => {
     if (pendingPayments.length > 0) setPendingOpen(true);
@@ -99,7 +118,7 @@ export default function PaymentsTab({ showFeedback }) {
       setSelectedPackId('');
       setPaymentDate(new Date().toISOString().split('T')[0]);
 
-      setManualOpen(false);
+      setShowManualPaymentModal(false);
       setHistoryOpen(true);
     } catch (err) {
       showFeedback(err.message, 'danger');
@@ -209,7 +228,7 @@ export default function PaymentsTab({ showFeedback }) {
         open={pendingOpen}
         onToggle={(e) => setPendingOpen(e.target.open)}
         className="stat-card-modern"
-        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
+        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}
       >
         <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -314,136 +333,218 @@ export default function PaymentsTab({ showFeedback }) {
         </div>
       </details>
 
-      {/* Registrar Pago Externo */}
-      <details
-        open={manualOpen}
-        onToggle={(e) => setManualOpen(e.target.open)}
-        className="stat-card-modern"
-        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
-      >
-        <summary style={{ padding: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--marron-arcilla)' }}>
-          Pago Manual
-        </summary>
-        <div style={{ padding: '0 16px 16px 16px' }}>
-          <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingTop: '8px' }}>
 
-            {/* Selector de Alumnas */}
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Alumnas:</label>
-              <div
-                onClick={() => setShowSelectStudentsModal(true)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  backgroundColor: 'var(--bg-crema)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '8px 8px 8px 16px',
-                  cursor: 'pointer',
-                  marginTop: '4px'
-                }}
+
+      {/* Modal de Pago Manual */}
+      {showManualPaymentModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px'
+        }}>
+          <div className="clay-card animate-slide-up" style={{
+            width: '100%', maxWidth: '460px', backgroundColor: 'var(--blanco)', padding: '24px',
+            maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
+                Cargar Pago Manual
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowManualPaymentModal(false)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gris-medio)' }}
               >
-                <span style={{ fontStyle: 'italic', fontSize: '14px', color: manualStudentIds.length > 0 ? 'var(--gris-oscuro)' : 'var(--marron-arcilla)' }}>
-                  {manualStudentIds.length > 0 ? `${manualStudentIds.length} seleccionada(s)` : 'Toca para buscar y seleccionar'}
-                </span>
-                <button type="button" style={{ background: 'transparent', border: 'none', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--marron-arcilla)' }}>
-                  <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-                  </svg>
-                </button>
-              </div>
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-
-            {/* Selector de Créditos */}
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Créditos:</label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
-                {packs.map(p => {
-                  const isSelected = selectedPackId === String(p.id);
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => handlePackChange({ target: { value: String(p.id) } })}
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        backgroundColor: isSelected ? 'var(--marron-arcilla)' : 'var(--bg-crema)',
-                        color: isSelected ? 'var(--blanco)' : 'var(--gris-oscuro)',
-                        border: isSelected ? 'none' : '1px solid var(--gris-claro)'
-                      }}
-                    >
-                      {p.credits}
-                    </div>
-                  );
-                })}
-
+            
+            <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingTop: '8px' }}>
+              {/* Selector de Alumnas */}
+              <div className="form-group">
+                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Alumnas:</label>
+                <div
+                  onClick={() => setShowSelectStudentsModal(true)}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: 'var(--radius-lg)',
+                    padding: '8px 8px 8px 16px', cursor: 'pointer', marginTop: '4px'
+                  }}
+                >
+                  <span style={{ fontStyle: 'italic', fontSize: '14px', color: manualStudentIds.length > 0 ? 'var(--gris-oscuro)' : 'var(--marron-arcilla)' }}>
+                    {manualStudentIds.length > 0 ? `${manualStudentIds.length} seleccionada(s)` : 'Toca para buscar y seleccionar'}
+                  </span>
+                  <button type="button" style={{ background: 'transparent', border: 'none', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--marron-arcilla)' }}>
+                    <svg focusable="false" aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                      <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <div className="form-group" style={{ flex: '1 1 120px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Monto ($):</label>
-                <div style={{ position: 'relative', marginTop: '4px' }}>
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 'bold', color: 'var(--marron-arcilla)' }}>$</span>
+              {/* Selector de Créditos */}
+              <div className="form-group">
+                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Créditos:</label>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  {packs.map(p => {
+                    const isSelected = selectedPackId === String(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => handlePackChange({ target: { value: String(p.id) } })}
+                        style={{
+                          width: '56px', height: '56px', borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
+                          backgroundColor: isSelected ? 'var(--marron-arcilla)' : 'var(--bg-crema)',
+                          color: isSelected ? 'var(--blanco)' : 'var(--gris-oscuro)',
+                          border: isSelected ? 'none' : '1px solid var(--gris-claro)'
+                        }}
+                      >
+                        {p.credits}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ flex: '1 1 120px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Monto ($):</label>
+                  <div style={{ position: 'relative', marginTop: '4px' }}>
+                    <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 'bold', color: 'var(--marron-arcilla)' }}>$</span>
+                    <input
+                      type="number" className="input-tuti" value={manualAmount}
+                      onChange={(e) => setManualAmount(e.target.value)} placeholder="0"
+                      style={{ paddingLeft: '32px', backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ flex: '1 1 150px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Fecha:</label>
                   <input
-                    type="number"
-                    className="input-tuti"
-                    value={manualAmount}
-                    onChange={(e) => setManualAmount(e.target.value)}
-                    placeholder="0"
-                    style={{ paddingLeft: '32px', backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                    type="date" className="input-tuti" value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    style={{ marginTop: '4px', backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: '20px', fontWeight: 'bold', color: 'var(--marron-arcilla)' }}
                   />
                 </div>
               </div>
 
-              <div className="form-group" style={{ flex: '1 1 150px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', color: 'var(--gris-oscuro)' }}>Fecha:</label>
-                <input
-                  type="date"
-                  className="input-tuti"
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  style={{ marginTop: '4px', backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: '20px', fontWeight: 'bold', color: 'var(--marron-arcilla)' }}
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '10px', fontSize: '16px', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
-              Guardar
-            </button>
-          </form>
+              <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '10px', fontSize: '16px', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
+                Guardar
+              </button>
+            </form>
+          </div>
         </div>
-      </details>
+      )}
 
-      {/* Historial */}
+      {/* Pagos del mes (Total y por separado) */}
       <details
         open={historyOpen}
         onToggle={(e) => setHistoryOpen(e.target.open)}
         className="stat-card-modern"
-        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}
+        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}
       >
         <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <ReceiptLongIcon style={{ color: 'var(--marron-arcilla)' }} /> Historial de Pagos
+          <ReceiptLongIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos Confirmados
         </summary>
         <div style={{ padding: '0 16px 16px 16px' }}>
+          
+          {/* Filtro de Meses */}
+          {allMonths.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '8px', scrollbarWidth: 'none' }}>
+              <button
+                onClick={() => setSelectedMonths([])}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  backgroundColor: selectedMonths.length === 0 ? 'var(--marron-arcilla)' : 'var(--bg-crema)',
+                  color: selectedMonths.length === 0 ? 'var(--blanco)' : 'var(--gris-oscuro)',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Todos
+              </button>
+              {allMonths.map(m => {
+                const isSelected = selectedMonths.includes(m);
+                // Convertir YYYY-MM a algo más legible, ej: 2026-05 -> Mayo 2026
+                const dateObj = new Date(`${m}-02`); // Evitar desfase horario
+                const monthName = dateObj.toLocaleString('es-ES', { month: 'short' });
+                const label = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${dateObj.getFullYear()}`;
+                
+                return (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedMonths(selectedMonths.filter(x => x !== m));
+                      } else {
+                        setSelectedMonths([...selectedMonths, m]);
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '16px',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      backgroundColor: isSelected ? 'var(--marron-arcilla)' : 'var(--bg-crema)',
+                      color: isSelected ? 'var(--blanco)' : 'var(--gris-oscuro)',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Tarjeta de Resumen Total */}
+          <div style={{
+            backgroundColor: 'var(--verde-oliva)',
+            padding: '20px',
+            borderRadius: '20px',
+            marginBottom: '20px',
+            color: 'var(--blanco)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            boxShadow: '0 4px 12px rgba(85, 107, 47, 0.2)'
+          }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>
+              Total Recaudado {selectedMonths.length === 0 ? '(Todos los meses)' : '(Selección)'}
+            </span>
+            <span style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-1px' }}>
+              ${totalAmount.toLocaleString('es-AR')}
+            </span>
+          </div>
+
+          <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '12px', paddingLeft: '4px' }}>
+            Pagos por separado
+          </h4>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {confirmedPayments.length === 0 ? (
+            {filteredConfirmed.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
                 <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No hay registros de pagos confirmados.</p>
               </div>
-            ) : confirmedPayments.map(pay => {
+            ) : filteredConfirmed.map(pay => {
               const st = baseStudents.find(u => u.id === pay.studentId);
               return (
-                <div key={pay.id} className="stat-card-modern animate-slide-up" style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'var(--blanco)', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+                <div key={pay.id} className="stat-card-modern animate-slide-up" style={{ padding: '16px 20px', borderRadius: '20px', backgroundColor: 'var(--bg-crema-claro)', border: 'none', boxShadow: 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>{st?.name || 'Alumno'}</h4>
@@ -451,7 +552,7 @@ export default function PaymentsTab({ showFeedback }) {
                         {pay.date.split(' ')[0]} • +{pay.classCreditsAdded} clases
                       </p>
                     </div>
-                    <span className="badge badge-clay" style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>
                       ${pay.amount.toLocaleString('es-AR')}
                     </span>
                   </div>
@@ -589,6 +690,52 @@ export default function PaymentsTab({ showFeedback }) {
           </div>
         </div>
       )}
+
+      {/* Botón Flotante "+" para Registrar Pago */}
+      <button
+        onClick={() => {
+          setManualStudentIds([]);
+          setSearchStudent('');
+          setManualAmount('');
+          setSelectedPackId('');
+          setPaymentDate(new Date().toISOString().split('T')[0]);
+          setShowManualPaymentModal(true);
+        }}
+        style={{
+          position: 'fixed',
+          bottom: '96px',
+          right: '24px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--verde-oliva)',
+          color: 'var(--blanco)',
+          border: 'none',
+          boxShadow: '0 4px 18px rgba(69, 95, 62, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '32px',
+          fontWeight: '300',
+          cursor: 'pointer',
+          zIndex: 100,
+          transition: 'all 0.2s ease',
+          animation: 'popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+        }}
+      >
+        <svg style={{ width: '28px', height: '28px' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* Estilos CSS Inyectados */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes popIn {
+          from { transform: scale(0.7); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}} />
 
     </div>
   );

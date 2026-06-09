@@ -64,7 +64,7 @@ export default function LoginView() {
         <img src={logoH} alt="Logo Casa Tuti" style={{ width: '180px', height: 'auto', margin: '0 auto 16px auto', display: 'block' }} />
         <h1 className="brand-title" style={{ fontSize: '32px', color: 'var(--verde-oliva)', fontWeight: 900 }}>Casa Tuti</h1>
         <p style={{ color: 'var(--gris-medio)', fontSize: '14px', marginTop: '6px' }}>
-          eslogan de casa tuti
+          Espacio Creativo
         </p>
       </div>
 

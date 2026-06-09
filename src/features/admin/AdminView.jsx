@@ -20,7 +20,7 @@ const TABS = [
 ];
 
 export default function AdminView({ activeTab = 'dashboard', setActiveTab = () => {} }) {
-  const { users, studentProfiles, classes, bookings } = useApp();
+  const { users, studentProfiles, classes, bookings, payments } = useApp();
 
   const [alertMsg, setAlertMsg]       = useState({ text: '', type: '' });
   const [editUserId, setEditUserId]   = useState(null); // null = modal cerrado
@@ -39,9 +39,8 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-      {/* Feedback banner */}
       {alertMsg.text && (
-        <div className={`alert-banner ${alertMsg.type === 'danger' ? 'danger' : 'info'} animate-slide-up`}>
+        <div className={`alert-banner ${alertMsg.type === 'danger' ? 'danger' : 'info'}`}>
           <span>{alertMsg.text}</span>
         </div>
       )}
@@ -53,6 +52,7 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
           bookings={bookings}
           students={students}
           studentProfiles={studentProfiles}
+          payments={payments}
           setAdminTab={setActiveTab}
           navigateToStudents={(filter) => {
             setStudentsFilter(filter);

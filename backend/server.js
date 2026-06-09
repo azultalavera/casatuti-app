@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import db from './db.js';
-import { sendRecoveryEmail } from './email.js';
+import { sendRecoveryEmail, sendWelcomeEmail } from './email.js';
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ const mapProfileToFE = (p) => {
   if (!p) return null;
   return {
     studentId: p.id_usuarios,
-    classCredits: p.class_credits || 0,
+    classCredits: Number(p.class_credits) || 0,
     monthlyClayKg: parseFloat(p.monthly_clay_kg || 0),
     lastClayDeliveryDate: p.last_clay_delivery_date || null,
     isBlocked: p.bl_bloqueado || false,
@@ -305,6 +305,19 @@ app.post('/api/users', async (req, res) => {
         'INSERT INTO public.t_cuenta_alumno (id_usuarios, saldo_actual, saldo) VALUES ($1, $2, 4)',
         [createdUser.id_usuarios, 0]
       );
+
+      // Enviar mail de bienvenida con normas de convivencia (FAQs)
+      try {
+        const { rows: faqs } = await db.query('SELECT pregunta, respuesta FROM public.t_faqs ORDER BY created_at ASC');
+        let rulesHtml = faqs.map(f => `<p style="margin-bottom: 4px;"><strong>${f.pregunta}</strong></p><p style="margin-top: 0;">${f.respuesta}</p>`).join('');
+        if (!rulesHtml) rulesHtml = '<p>No hay normas registradas en este momento.</p>';
+        const tempPassword = password || 'tuti123';
+        
+        // Disparamos el correo en background para no bloquear la respuesta
+        sendWelcomeEmail(email, nombre, tempPassword, rulesHtml).catch(err => console.error("Error enviando email:", err));
+      } catch (emailErr) {
+        console.error('Error al armar o enviar el email de bienvenida:', emailErr);
+      }
     }
 
     res.status(201).json(mapUserToFE(createdUser));
