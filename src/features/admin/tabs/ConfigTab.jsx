@@ -300,8 +300,8 @@ export default function ConfigTab({ showFeedback, goBack }) {
           </div>
 
           {/* Tarjeta Tipificar Cupos NUEVA */}
-          <div className="config-card" style={{ background: 'var(--bg-crema-claro)', border: '1px solid var(--marron-arcilla)' }} onClick={() => setView('capacities')}>
-            <div className="config-card-icon-wrapper" style={{ background: 'var(--marron-arcilla)', color: 'white' }}>
+          <div className="config-card card-capacities" style={{ border: '1px solid #D9B382' }} onClick={() => setView('capacities')}>
+            <div className="config-card-icon-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>

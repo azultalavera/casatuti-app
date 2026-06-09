@@ -948,6 +948,14 @@ input {
   background-color: rgba(70, 89, 64, 0.2);
 }
 
+.card-capacities .config-card-icon-wrapper {
+  background-color: rgba(217, 179, 130, 0.15);
+  color: #D9B382;
+}
+.card-capacities:hover .config-card-icon-wrapper {
+  background-color: rgba(217, 179, 130, 0.25);
+}
+
 /* Titles */
 .config-card-title {
   font-size: 13px;
