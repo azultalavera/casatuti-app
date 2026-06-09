@@ -71,14 +71,9 @@ export default function PaymentsTab({ showFeedback }) {
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
-  // Acordeones y Modales
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [pendingOpen, setPendingOpen] = useState(pendingPayments.length > 0);
+  // Tabs y Modales
+  const [activeTab, setActiveTab] = useState(pendingPayments.length > 0 ? 'PENDING' : 'CONFIRMED');
   const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
-
-  React.useEffect(() => {
-    if (pendingPayments.length > 0) setPendingOpen(true);
-  }, [pendingPayments.length]);
 
   const handlePackChange = (e) => {
     const pId = e.target.value;
@@ -119,7 +114,7 @@ export default function PaymentsTab({ showFeedback }) {
       setPaymentDate(new Date().toISOString().split('T')[0]);
 
       setShowManualPaymentModal(false);
-      setHistoryOpen(true);
+      setActiveTab('CONFIRMED');
     } catch (err) {
       showFeedback(err.message, 'danger');
     }
@@ -158,8 +153,7 @@ export default function PaymentsTab({ showFeedback }) {
     setSelectedPayments([]);
     if (successCount > 0) {
       showFeedback(`Se confirmaron ${successCount} pagos exitosamente.`, 'info');
-      setPendingOpen(false);
-      setHistoryOpen(true);
+      setActiveTab('CONFIRMED');
     }
   };
 
@@ -223,23 +217,37 @@ export default function PaymentsTab({ showFeedback }) {
         </div>
       </div>
 
-      {/* Pagos Pendientes */}
-      <details
-        open={pendingOpen}
-        onToggle={(e) => setPendingOpen(e.target.open)}
-        className="stat-card-modern"
-        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}
-      >
-        <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}>
+      {/* Segmented Control / Tabs */}
+      <div style={{ display: 'flex', backgroundColor: 'var(--bg-crema-claro)', borderRadius: '16px', padding: '4px', marginBottom: '16px', border: '1px solid var(--bg-crema)' }}>
+        <button
+          onClick={() => setActiveTab('PENDING')}
+          style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'PENDING' ? 'var(--blanco)' : 'transparent', color: activeTab === 'PENDING' ? 'var(--gris-oscuro)' : 'var(--gris-medio)', fontWeight: 800, fontSize: '14px', boxShadow: activeTab === 'PENDING' ? '0 2px 8px rgba(0,0,0,0.04)' : 'none', transition: 'all 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
+        >
+          <HourglassEmptyIcon style={{ fontSize: '18px', color: activeTab === 'PENDING' ? 'var(--marron-arcilla)' : 'inherit' }} /> Pendientes
+          {pendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '10px', padding: '2px 6px', marginLeft: '4px' }}>{pendingPayments.length}</span>}
+        </button>
+        <button
+          onClick={() => setActiveTab('CONFIRMED')}
+          style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'CONFIRMED' ? 'var(--blanco)' : 'transparent', color: activeTab === 'CONFIRMED' ? 'var(--gris-oscuro)' : 'var(--gris-medio)', fontWeight: 800, fontSize: '14px', boxShadow: activeTab === 'CONFIRMED' ? '0 2px 8px rgba(0,0,0,0.04)' : 'none', transition: 'all 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
+        >
+          <ReceiptLongIcon style={{ fontSize: '18px', color: activeTab === 'CONFIRMED' ? 'var(--marron-arcilla)' : 'inherit' }} /> Confirmados
+        </button>
+      </div>
+
+      {/* Contenido Pagos Pendientes */}
+      {activeTab === 'PENDING' && (
+      <div className="animate-slide-up stat-card-modern" style={{ padding: '0', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}>
+        <div style={{ padding: '16px', fontWeight: 700, fontSize: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <HourglassEmptyIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos Pendientes
+            <HourglassEmptyIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos pendientes
             {pendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '11px', padding: '2px 6px' }}>{pendingPayments.length}</span>}
           </div>
-
-          {pendingPayments.length > 0 && (
+        </div>
+        {pendingPayments.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 12px' }}>
             <div
               onClick={toggleSelectAll}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-crema)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-crema-claro)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
             >
               <input
                 type="checkbox"
@@ -247,10 +255,10 @@ export default function PaymentsTab({ showFeedback }) {
                 readOnly
                 style={{ cursor: 'pointer', accentColor: 'var(--marron-arcilla)', margin: 0 }}
               />
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--gris-oscuro)', whiteSpace: 'nowrap' }}>Sel. Todos</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gris-oscuro)', whiteSpace: 'nowrap' }}>Sel. Todos</span>
             </div>
-          )}
-        </summary>
+          </div>
+        )}
         <div style={{ padding: '0 16px 16px 16px' }}>
           {pendingPayments.length === 0 ? (
             <p style={{ fontStyle: 'italic', fontSize: '13px', color: 'var(--gris-medio)' }}>No hay pagos pendientes.</p>
@@ -297,8 +305,7 @@ export default function PaymentsTab({ showFeedback }) {
                             try {
                               await confirmPendingPayment(pay.id);
                               showFeedback(`Pago de ${st?.name} confirmado con éxito.`, 'info');
-                              setPendingOpen(false);
-                              setHistoryOpen(true);
+                              setActiveTab('CONFIRMED');
                             } catch (err) {
                               showFeedback(err.message, 'danger');
                             }
@@ -331,7 +338,8 @@ export default function PaymentsTab({ showFeedback }) {
             </div>
           )}
         </div>
-      </details>
+      </div>
+      )}
 
 
 
@@ -350,7 +358,7 @@ export default function PaymentsTab({ showFeedback }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                Cargar Pago Manual
+                Cargar pago manual
               </h3>
               <button
                 type="button"
@@ -443,16 +451,12 @@ export default function PaymentsTab({ showFeedback }) {
         </div>
       )}
 
-      {/* Pagos del mes (Total y por separado) */}
-      <details
-        open={historyOpen}
-        onToggle={(e) => setHistoryOpen(e.target.open)}
-        className="stat-card-modern"
-        style={{ padding: '0', overflow: 'hidden', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}
-      >
-        <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <ReceiptLongIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos Confirmados
-        </summary>
+      {/* Contenido Pagos Confirmados */}
+      {activeTab === 'CONFIRMED' && (
+      <div className="animate-slide-up stat-card-modern" style={{ padding: '0', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)' }}>
+        <div style={{ padding: '16px', fontWeight: 700, fontSize: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <ReceiptLongIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos confirmados
+        </div>
         <div style={{ padding: '0 16px 16px 16px' }}>
           
           {/* Filtro de Meses */}
@@ -525,7 +529,7 @@ export default function PaymentsTab({ showFeedback }) {
             boxShadow: '0 4px 12px rgba(85, 107, 47, 0.2)'
           }}>
             <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>
-              Total Recaudado {selectedMonths.length === 0 ? '(Todos los meses)' : '(Selección)'}
+              Total recaudado {selectedMonths.length === 0 ? '(Todos los meses)' : '(Selección)'}
             </span>
             <span style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-1px' }}>
               ${totalAmount.toLocaleString('es-AR')}
@@ -536,32 +540,59 @@ export default function PaymentsTab({ showFeedback }) {
             Pagos por separado
           </h4>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {filteredConfirmed.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
                 <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No hay registros de pagos confirmados.</p>
               </div>
-            ) : filteredConfirmed.map(pay => {
-              const st = baseStudents.find(u => u.id === pay.studentId);
-              return (
-                <div key={pay.id} className="stat-card-modern animate-slide-up" style={{ padding: '16px 20px', borderRadius: '20px', backgroundColor: 'var(--bg-crema-claro)', border: 'none', boxShadow: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>{st?.name || 'Alumno'}</h4>
-                      <p style={{ fontSize: '11px', color: 'var(--gris-medio)', marginTop: '2px' }}>
-                        {pay.date.split(' ')[0]} • +{pay.classCreditsAdded} clases
-                      </p>
-                    </div>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>
-                      ${pay.amount.toLocaleString('es-AR')}
-                    </span>
+            ) : (() => {
+              // Agrupar por mes
+              const grouped = {};
+              filteredConfirmed.forEach(pay => {
+                const m = pay.date.substring(0, 7);
+                if (!grouped[m]) grouped[m] = [];
+                grouped[m].push(pay);
+              });
+              
+              // Ordenar meses descendente
+              const sortedMonths = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+              
+              return sortedMonths.map(month => {
+                const dateObj = new Date(`${month}-02`);
+                const monthName = dateObj.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+                const monthLabel = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                
+                return (
+                  <div key={month} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h5 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gris-oscuro)', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '8px', marginBottom: '4px', marginTop: '0' }}>
+                      {monthLabel}
+                    </h5>
+                    {grouped[month].map(pay => {
+                      const st = baseStudents.find(u => u.id === pay.studentId);
+                      return (
+                        <div key={pay.id} className="stat-card-modern animate-slide-up" style={{ padding: '16px 20px', borderRadius: '20px', backgroundColor: 'var(--bg-crema-claro)', border: 'none', boxShadow: 'none' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>{st?.name || 'Alumno'}</h4>
+                              <p style={{ fontSize: '11px', color: 'var(--gris-medio)', marginTop: '2px', marginBottom: 0 }}>
+                                {pay.date.split(' ')[0]} • +{pay.classCreditsAdded} clases
+                              </p>
+                            </div>
+                            <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>
+                              ${pay.amount.toLocaleString('es-AR')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
-      </details>
+      </div>
+      )}
 
 
       {/* Modal Seleccionar Alumnas */}
@@ -571,7 +602,7 @@ export default function PaymentsTab({ showFeedback }) {
 
             <div style={{ padding: '24px 24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--blanco)' }}>
               <div>
-                <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)', margin: '0 0 4px' }}>Seleccionar Alumnas</h2>
+                <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)', margin: '0 0 4px' }}>Seleccionar alumnas</h2>
                 <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: 0 }}>Tildá todas las que correspondan al pago masivo</p>
               </div>
               <button
