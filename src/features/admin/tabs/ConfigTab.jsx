@@ -13,13 +13,14 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function ConfigTab({ showFeedback, goBack }) {
   const {
+    classes, updateTurn,
     nonWorkingDays, addNonWorkingDay, deleteNonWorkingDay,
     packs, createPack, updatePack, deletePack,
     branches, createBranch, updateBranch, deleteBranch,
     faqs, createFaq, updateFaq, deleteFaq
   } = useApp();
 
-  const [view, setView] = useState('menu'); // 'menu', 'calendar', 'packs', 'branches', 'faqs'
+  const [view, setView] = useState('menu'); // 'menu', 'calendar', 'packs', 'branches', 'faqs', 'capacities'
 
   // --- CALENDAR STATES ---
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth());
@@ -47,6 +48,12 @@ export default function ConfigTab({ showFeedback, goBack }) {
   const [faqQuestion, setFaqQuestion] = useState('');
   const [faqAnswer, setFaqAnswer] = useState('');
   const [editingFaqId, setEditingFaqId] = useState(null);
+
+  // --- CAPACITIES STATES ---
+  const [capacitiesBranch, setCapacitiesBranch] = useState(branches.length > 0 ? branches[0].name : '');
+  const [selectedClassIds, setSelectedClassIds] = useState([]);
+  const [newMaxCapacity, setNewMaxCapacity] = useState('');
+
 
   // --- CALENDAR HELPERS ---
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
@@ -190,6 +197,41 @@ export default function ConfigTab({ showFeedback, goBack }) {
     }
   };
 
+  // --- CAPACITIES HANDLERS ---
+  const handleApplyCapacities = async () => {
+    if (selectedClassIds.length === 0) {
+      alert("Selecciona al menos un turno.");
+      return;
+    }
+    if (!newMaxCapacity || isNaN(newMaxCapacity) || Number(newMaxCapacity) < 1) {
+      alert("Ingresa un cupo máximo válido.");
+      return;
+    }
+    
+    try {
+      // Execute updateTurn for all selected classes
+      await Promise.all(selectedClassIds.map(id => {
+        const c = classes.find(cls => cls.id === id);
+        if (c) {
+          return updateTurn(c.id, {
+            teacherId: c.teacherId,
+            teacherName: c.teacherName,
+            day: c.day,
+            time: c.time,
+            capacity: Number(newMaxCapacity),
+            sucursal: c.sucursal
+          });
+        }
+        return Promise.resolve();
+      }));
+      showFeedback("Cupos actualizados exitosamente.", "info");
+      setSelectedClassIds([]);
+      setNewMaxCapacity('');
+    } catch (err) {
+      showFeedback(err.message || "Error al actualizar cupos.", "danger");
+    }
+  };
+
   return (
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '20px' }}>
 
@@ -211,8 +253,9 @@ export default function ConfigTab({ showFeedback, goBack }) {
           <h2 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0 }}>
             {view === 'menu' ? 'Configuración' :
               view === 'calendar' ? 'Calendarios y feriados' :
-                view === 'packs' ? 'Tipificar cupos' :
-                  view === 'branches' ? 'Sucursales' : 'Normas de convivencia'}
+                view === 'packs' ? 'Tipos de abonos' :
+                  view === 'capacities' ? 'Tipificar cupos' :
+                    view === 'branches' ? 'Sucursales' : 'Normas de convivencia'}
           </h2>
         </div>
       </div>
@@ -245,6 +288,25 @@ export default function ConfigTab({ showFeedback, goBack }) {
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </div>
+            <h4 className="config-card-title">Tipos de abonos</h4>
+            <div className="config-card-action">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          {/* Tarjeta Tipificar Cupos NUEVA */}
+          <div className="config-card" style={{ background: 'var(--bg-crema-claro)', border: '1px solid var(--marron-arcilla)' }} onClick={() => setView('capacities')}>
+            <div className="config-card-icon-wrapper" style={{ background: 'var(--marron-arcilla)', color: 'white' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
             <h4 className="config-card-title">Tipificar cupos</h4>
@@ -438,6 +500,134 @@ export default function ConfigTab({ showFeedback, goBack }) {
               </div>
             ))}
             {packs.length === 0 && <p style={{ fontSize: '12px', color: 'var(--gris-medio)', textAlign: 'center' }}>No hay packs configurados.</p>}
+          </div>
+        </div>
+      )}
+
+      {view === 'capacities' && (
+        <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--gris-medio)' }}>Seleccionar Sucursal:</label>
+              <select 
+                className="input-tuti" 
+                value={capacitiesBranch} 
+                onChange={(e) => {
+                  setCapacitiesBranch(e.target.value);
+                  setSelectedClassIds([]); // Reset selection when changing branch
+                }}
+                style={{ maxWidth: '250px', marginTop: '6px' }}
+              >
+                <option value="">Todas</option>
+                {branches.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                type="button" 
+                onClick={() => {
+                  const filteredIds = classes.filter(c => (!capacitiesBranch || (c.sucursal || '').toUpperCase() === capacitiesBranch.toUpperCase())).map(c => c.id);
+                  setSelectedClassIds(filteredIds);
+                }}
+                className="btn-tuti" 
+                style={{ padding: '8px 16px', fontSize: '12px', backgroundColor: 'var(--bg-crema)', color: 'var(--gris-oscuro)' }}
+              >
+                Seleccionar Todos
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setSelectedClassIds([])}
+                className="btn-tuti btn-secondary" 
+                style={{ padding: '8px 16px', fontSize: '12px' }}
+              >
+                Deseleccionar
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+            {/* Agrupar clases por día */}
+            {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map(day => {
+              const dayClasses = classes.filter(c => 
+                c.day === day && 
+                (!capacitiesBranch || (c.sucursal || '').toUpperCase() === capacitiesBranch.toUpperCase())
+              ).sort((a, b) => a.time.localeCompare(b.time));
+
+              if (dayClasses.length === 0) return null;
+
+              return (
+                <div key={day} style={{ border: '1px solid var(--gris-claro)', borderRadius: '16px', padding: '16px', backgroundColor: 'var(--bg-crema-claro)' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: 'var(--marron-arcilla)' }}>{day}</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {dayClasses.map(c => {
+                      const isSelected = selectedClassIds.includes(c.id);
+                      return (
+                        <div 
+                          key={c.id} 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '12px', 
+                            padding: '12px', 
+                            backgroundColor: isSelected ? '#e8f5e9' : 'var(--blanco)', 
+                            borderRadius: '8px', 
+                            border: isSelected ? '1px solid var(--verde-oliva)' : '1px solid transparent',
+                            cursor: 'pointer',
+                            flexWrap: 'wrap'
+                          }}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedClassIds(selectedClassIds.filter(id => id !== c.id));
+                            } else {
+                              setSelectedClassIds([...selectedClassIds, c.id]);
+                            }
+                          }}
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected} 
+                            onChange={() => {}} // Handled by div onClick
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--verde-oliva)', cursor: 'pointer', flexShrink: 0 }}
+                          />
+                          <div style={{ flex: '1 1 120px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>{c.time}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '2px' }}>Prof: {c.teacherName}</div>
+                          </div>
+                          <div style={{ flexShrink: 0 }}>
+                            <span className="badge badge-clay" style={{ fontSize: '12px' }}>
+                              Cupo actual: {c.capacity}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--gris-claro)', paddingTop: '20px', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: '1 1 120px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Nuevo Cupo Máximo</label>
+              <input 
+                type="number" 
+                className="input-tuti" 
+                value={newMaxCapacity} 
+                onChange={e => setNewMaxCapacity(e.target.value)} 
+                placeholder="Ej. 10" 
+              />
+            </div>
+            <button 
+              type="button" 
+              onClick={handleApplyCapacities}
+              className="btn-tuti btn-primary-clay" 
+              style={{ padding: '12px 24px', flex: '1 1 auto', justifyContent: 'center' }}
+              disabled={selectedClassIds.length === 0}
+            >
+              Aplicar a {selectedClassIds.length} turnos
+            </button>
           </div>
         </div>
       )}

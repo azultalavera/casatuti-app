@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import db from './db.js';
+import { sendRecoveryEmail } from './email.js';
 
 dotenv.config();
 
@@ -201,6 +202,41 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Recuperación de Contraseña
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Por favor ingresa tu correo electrónico.' });
+  }
+
+  try {
+    const query = 'SELECT * FROM public.t_usuarios WHERE LOWER(email) = LOWER($1)';
+    const { rows } = await db.query(query, [email]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No existe una cuenta con ese correo electrónico.' });
+    }
+
+    const user = rows[0];
+    
+    // Generar contraseña temporal de 8 caracteres
+    const tempPassword = Math.random().toString(36).slice(-8);
+
+    // Actualizar en base de datos
+    await db.query(
+      'UPDATE public.t_usuarios SET clave = $1, bl_cambio_pass_pte = true WHERE id_usuarios = $2',
+      [tempPassword, user.id_usuarios]
+    );
+
+    // Enviar correo
+    await sendRecoveryEmail(user.email, tempPassword);
+
+    res.json({ success: true, message: 'Correo de recuperación enviado.' });
+  } catch (error) {
+    console.error('Error en forgot-password:', error);
+    res.status(500).json({ error: 'Error del servidor al procesar la recuperación.' });
+  }
+});
 
 // ==========================================
 // 2. ENDPOINTS DE USUARIOS
@@ -665,7 +701,7 @@ app.put('/api/classes/:id', async (req, res) => {
   const { id } = req.params;
   const { teacherId, teacherName, day, time, capacity, sucursal } = req.body;
 
-  if (!teacherId || !time || !capacity || !day) {
+  if (!time || !capacity || !day) {
     return res.status(400).json({ error: 'Faltan campos requeridos para actualizar el turno.' });
   }
 
@@ -1167,6 +1203,65 @@ app.post('/api/clay-deliveries', async (req, res) => {
   } catch (error) {
     console.error('Error al entregar arcilla:', error);
     res.status(500).json({ error: 'Error al registrar la entrega de arcilla.' });
+  }
+});
+
+// ==========================================
+// 8. HORNEADOS (BAKES)
+// ==========================================
+
+// Obtener todos los horneados
+app.get('/api/bakes', async (req, res) => {
+  try {
+    const bakeQuery = `
+      SELECT 
+        d.id_deudas_insumos AS id,
+        d.id_usuarios AS student_id,
+        COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
+        d.fec_carga::text AS date,
+        d.precio_total AS price,
+        d.metodo_pago_pte AS payment_method
+      FROM public.t_deudas_insumos d
+      JOIN public.t_usuarios u ON d.id_usuarios = u.id_usuarios
+      WHERE d.tipo = 'HORNO'
+      ORDER BY d.fec_carga DESC
+    `;
+    const { rows } = await db.query(bakeQuery);
+    res.json(rows.map(r => ({
+      id: r.id,
+      studentId: r.student_id,
+      studentName: r.student_name,
+      date: r.date,
+      price: parseFloat(r.price),
+      paymentMethod: r.payment_method
+    })));
+  } catch (error) {
+    console.error('Error al listar horneados:', error);
+    res.status(500).json({ error: 'Error al obtener horneados.' });
+  }
+});
+
+// Registrar un horneado
+app.post('/api/bakes', async (req, res) => {
+  const { studentId, price, paymentMethod } = req.body;
+
+  if (!studentId || price === undefined || !paymentMethod) {
+    return res.status(400).json({ error: 'Faltan parámetros de horneado requeridos.' });
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO public.t_deudas_insumos 
+        (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
+      VALUES 
+        ($1, 'HORNO', 'Servicio de horneado', $2, $3, true, NOW())`,
+      [studentId, price, paymentMethod]
+    );
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    console.error('Error al registrar horneado:', error);
+    res.status(500).json({ error: 'Error al registrar el horneado.' });
   }
 });
 

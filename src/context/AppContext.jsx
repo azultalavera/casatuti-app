@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
   const [classes, setClasses] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [clayDeliveries, setClayDeliveries] = useState([]);
+  const [bakes, setBakes] = useState([]);
   const [payments, setPayments] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [nonWorkingDays, setNonWorkingDays] = useState([]);
@@ -37,6 +38,7 @@ export const AppProvider = ({ children }) => {
       const loadedClasses = await mockService.getClasses();
       const loadedBookings = await mockService.getBookings();
       const loadedDeliveries = await mockService.getClayDeliveries();
+      const loadedBakes = await mockService.getBakes().catch(() => []);
       const loadedPayments = await mockService.getPayments();
       const loadedAlerts = await mockService.getAlerts();
       const loadedNonWorkingDays = await mockService.getNonWorkingDays().catch(() => []);
@@ -49,6 +51,7 @@ export const AppProvider = ({ children }) => {
       setClasses(loadedClasses);
       setBookings(loadedBookings);
       setClayDeliveries(loadedDeliveries);
+      setBakes(loadedBakes);
       setPayments(loadedPayments);
       setAlerts(loadedAlerts);
       setNonWorkingDays(loadedNonWorkingDays || []);
@@ -85,6 +88,16 @@ export const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
       sessionStorage.setItem('tuti_session_user_id', user.id);
       return user;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Forgot Password Acción
+  const forgotPasswordAction = async (email) => {
+    setLoading(true);
+    try {
+      return await mockService.forgotPassword(email);
     } finally {
       setLoading(false);
     }
@@ -499,6 +512,16 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const createBake = async (bakeData) => {
+    setLoading(true);
+    try {
+      await mockService.createBake(bakeData);
+      setBakes(await mockService.getBakes());
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 7. Crear un nuevo estudiante o profesor por el ADMIN
   const createNewUserAction = async (userData) => {
     setLoading(true);
@@ -681,6 +704,7 @@ export const AppProvider = ({ children }) => {
         classes,
         bookings,
         clayDeliveries,
+        bakes,
         payments,
         alerts,
         nonWorkingDays,
@@ -689,6 +713,7 @@ export const AppProvider = ({ children }) => {
         faqs,
         loading,
         loginAction,
+        forgotPasswordAction,
         logoutAction,
         changeUserRole,
         changeUser,
@@ -697,6 +722,7 @@ export const AppProvider = ({ children }) => {
         cancelBooking,
         takeAttendance,
         deliverClayToStudent,
+        createBake,
         recordStudentPayment,
         confirmPendingPayment,
         sendTransferReminder,

@@ -6,6 +6,7 @@ import TeachersTab   from './tabs/TeachersTab';
 import ClassesTab    from './tabs/ClassesTab';
 import PaymentsTab   from './tabs/PaymentsTab';
 import ConfigTab     from './tabs/ConfigTab';
+import ReportsTab    from './tabs/ReportsTab';
 import EditUserModal from './components/EditUserModal';
 
 const TABS = [
@@ -14,6 +15,7 @@ const TABS = [
   { id: 'teachers',  label: 'Profesores' },
   { id: 'classes',   label: 'Turnos'     },
   { id: 'payments',  label: 'Pagos'      },
+  { id: 'reports',   label: 'Reportes'   },
   { id: 'config',    label: 'Config'     },
 ];
 
@@ -22,6 +24,7 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
 
   const [alertMsg, setAlertMsg]       = useState({ text: '', type: '' });
   const [editUserId, setEditUserId]   = useState(null); // null = modal cerrado
+  const [studentsFilter, setStudentsFilter] = useState(null);
 
   const students = users.filter(u => u.role === 'ALUMNO');
 
@@ -51,11 +54,20 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
           students={students}
           studentProfiles={studentProfiles}
           setAdminTab={setActiveTab}
+          navigateToStudents={(filter) => {
+            setStudentsFilter(filter);
+            setActiveTab('students');
+          }}
         />
       )}
 
       {activeTab === 'students' && (
-        <StudentsTab showFeedback={showFeedback} onEdit={openEdit} />
+        <StudentsTab 
+          showFeedback={showFeedback} 
+          onEdit={openEdit} 
+          initialFilter={studentsFilter} 
+          onClearFilter={() => setStudentsFilter(null)} 
+        />
       )}
 
       {activeTab === 'teachers' && (
@@ -72,6 +84,10 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
 
       {activeTab === 'config' && (
         <ConfigTab showFeedback={showFeedback} goBack={() => setActiveTab('dashboard')} />
+      )}
+
+      {activeTab === 'reports' && (
+        <ReportsTab goBack={() => setActiveTab('dashboard')} />
       )}
 
       {/* Modal de edición compartido */}

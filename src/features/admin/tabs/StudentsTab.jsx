@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 
-export default function StudentsTab({ showFeedback, onEdit }) {
+export default function StudentsTab({ showFeedback, onEdit, initialFilter, onClearFilter }) {
   const { users, studentProfiles, createNewUserAction, deleteUserAction, toggleStudentBlockAction, branches } = useApp();
   const students = users.filter(u => u.role === 'ALUMNO');
 
@@ -10,6 +10,7 @@ export default function StudentsTab({ showFeedback, onEdit }) {
   const [selectedBranch, setSelectedBranch] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ACTIVE'); // 'ACTIVE' | 'INACTIVE'
   const [filterZeroCredits, setFilterZeroCredits] = useState(false); // toggle zero credits
+  const [filterActivePacks, setFilterActivePacks] = useState(false); // toggle active packs
   const [expandedStudentId, setExpandedStudentId] = useState(null);
 
   const [nombre, setNombre] = useState('');
@@ -21,6 +22,14 @@ export default function StudentsTab({ showFeedback, onEdit }) {
   const [birthdate, setBirthdate] = useState('');
   const [branch, setBranch] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
 
+  React.useEffect(() => {
+    if (initialFilter === 'ACTIVE_PACKS') {
+      setFilterActivePacks(true);
+      setFilterZeroCredits(false);
+      if (onClearFilter) onClearFilter();
+    }
+  }, [initialFilter, onClearFilter]);
+
   const filteredStudents = students.filter(st => {
     const profile = studentProfiles.find(p => p.studentId === st.id) || { isBlocked: false, classCredits: 0 };
     const matchesSearch = st.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,7 +39,8 @@ export default function StudentsTab({ showFeedback, onEdit }) {
       (selectedStatus === 'ACTIVE' && !profile.isBlocked) ||
       (selectedStatus === 'INACTIVE' && profile.isBlocked);
     const matchesCredits = !filterZeroCredits || profile.classCredits === 0;
-    return matchesSearch && matchesBranch && matchesStatus && matchesCredits;
+    const matchesActive = !filterActivePacks || profile.classCredits >= 1;
+    return matchesSearch && matchesBranch && matchesStatus && matchesCredits && matchesActive;
   });
 
   const handleCreate = async (e) => {
@@ -191,33 +201,53 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                 style={{ width: '100%', paddingLeft: '40px', fontSize: '13px', backgroundColor: '#fcfcfc', border: 'none', borderRadius: '20px', height: '42px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               />
             </div>
-            {/* Filtro Sin Clases */}
-            <div style={{ backgroundColor: '#F6F8F5', border: '1px solid #EFEFEF', padding: '12px', borderRadius: '18px', display: 'flex', alignItems: 'center' }}>
+            {/* Filtros de Clases */}
+            <div style={{ backgroundColor: '#F6F8F5', border: '1px solid #EFEFEF', padding: '12px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
-                onClick={() => setFilterZeroCredits(!filterZeroCredits)}
+                onClick={() => {
+                  setFilterZeroCredits(!filterZeroCredits);
+                  if (!filterZeroCredits) setFilterActivePacks(false);
+                }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   backgroundColor: 'var(--blanco)', border: filterZeroCredits ? '1px solid var(--marron-arcilla)' : '1px solid #F1E5DF',
                   padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
-                  fontSize: '12px', fontWeight: '800', color: 'var(--marron-arcilla)',
+                  fontSize: '12px', fontWeight: '800', color: filterZeroCredits ? 'var(--marron-arcilla)' : 'var(--gris-medio)',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
                 }}
               >
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--marron-arcilla)' }}></div>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: filterZeroCredits ? 'var(--marron-arcilla)' : 'var(--gris-claro)' }}></div>
                 Sin clases ({students.filter(st => {
                   const p = studentProfiles.find(x => x.studentId === st.id) || { classCredits: 0 };
                   return p.classCredits === 0;
                 }).length})
               </button>
+
+              <button
+                onClick={() => {
+                  setFilterActivePacks(!filterActivePacks);
+                  if (!filterActivePacks) setFilterZeroCredits(false);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  backgroundColor: 'var(--blanco)', border: filterActivePacks ? '1px solid var(--verde-oliva)' : '1px solid #F1E5DF',
+                  padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: '800', color: filterActivePacks ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: filterActivePacks ? 'var(--verde-oliva)' : 'var(--gris-claro)' }}></div>
+                Con clases ({students.filter(st => {
+                  const p = studentProfiles.find(x => x.studentId === st.id) || { classCredits: 0 };
+                  return p.classCredits >= 1;
+                }).length})
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
               {/* Sucursales */}
-              <div style={{ display: 'flex', overflowX: 'auto', gap: '8px', alignItems: 'center', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '4px' }}>
-                  <svg style={{ width: '14px', height: '14px', color: 'var(--marron-arcilla)' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal:</span>
-                </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '4px' }}>Sucursal:</span>
                 {[{ id: 'all', name: 'ALL' }, ...branches].map(br => {
                   const isActive = selectedBranch === br.name;
                   return (
@@ -225,15 +255,16 @@ export default function StudentsTab({ showFeedback, onEdit }) {
                       key={br.id}
                       onClick={() => setSelectedBranch(br.name)}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '20px',
+                        padding: '6px 14px',
+                        borderRadius: '16px',
                         border: isActive ? 'none' : '1px solid var(--gris-claro)',
-                        fontSize: '12px',
-                        fontWeight: '700',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
                         cursor: 'pointer',
-                        backgroundColor: isActive ? '#C3CDBE' : 'var(--blanco)',
-                        color: isActive ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
+                        backgroundColor: isActive ? 'rgba(69, 95, 62, 0.12)' : 'var(--blanco)',
+                        color: isActive ? 'var(--verde-oliva)' : 'var(--gris-medio)',
                         transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {br.name === 'ALL' ? 'Todas' : br.name}
@@ -243,51 +274,68 @@ export default function StudentsTab({ showFeedback, onEdit }) {
               </div>
 
               {/* Estado Switch */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '14px' }}>
-                  <svg style={{ width: '14px', height: '14px', color: 'var(--marron-arcilla)' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gris-medio)' }}>Estado:</span>
-                </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--gris-medio)', marginRight: '14px' }}>Estado:</span>
+                
+                {/* Switch Deslizable Container */}
                 <div style={{
                   position: 'relative',
                   display: 'flex',
                   width: '180px',
-                  height: '40px',
+                  height: '34px',
                   backgroundColor: 'rgba(0,0,0,0.04)',
                   borderRadius: '20px',
                   padding: '2px',
-                  border: '1px solid var(--gris-claro)',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                  cursor: 'pointer',
+                  userSelect: 'none'
                 }}>
+                  {/* Slider Backdrop */}
                   <div style={{
                     position: 'absolute',
-                    left: selectedStatus === 'ACTIVE' ? '2px' : 'calc(50% + 1px)',
                     top: '2px',
-                    width: 'calc(50% - 4px)',
-                    height: 'calc(100% - 4px)',
+                    left: selectedStatus === 'ACTIVE' ? '2px' : 'calc(50% + 1px)',
+                    width: 'calc(50% - 3px)',
+                    height: '30px',
                     backgroundColor: 'var(--blanco)',
                     borderRadius: '18px',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                     transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-                    zIndex: 1,
+                    zIndex: 1
                   }} />
-                  <div
+
+                  {/* Opción Activas */}
+                  <div 
                     onClick={() => setSelectedStatus('ACTIVE')}
                     style={{
-                      flex: 1, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '12px', fontWeight: '800',
-                      color: selectedStatus === 'ACTIVE' ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
-                      transition: 'color 0.2s ease', cursor: 'pointer',
+                      flex: 1,
+                      zIndex: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      color: selectedStatus === 'ACTIVE' ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                      transition: 'color 0.2s ease'
                     }}
                   >
                     Activas
                   </div>
-                  <div
+
+                  {/* Opción Inactivas */}
+                  <div 
                     onClick={() => setSelectedStatus('INACTIVE')}
                     style={{
-                      flex: 1, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '12px', fontWeight: '800',
-                      color: selectedStatus === 'INACTIVE' ? 'var(--gris-oscuro)' : 'var(--gris-medio)',
-                      transition: 'color 0.2s ease', cursor: 'pointer',
+                      flex: 1,
+                      zIndex: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      color: selectedStatus === 'INACTIVE' ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                      transition: 'color 0.2s ease'
                     }}
                   >
                     Inactivas

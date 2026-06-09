@@ -6,8 +6,9 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SettingsIcon from '@mui/icons-material/Settings';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
-export default function DashboardTab({ classes, bookings, students, studentProfiles, setAdminTab }) {
+export default function DashboardTab({ classes, bookings, students, studentProfiles, setAdminTab, navigateToStudents }) {
   const { branches } = useApp();
   const [selectedBranch, setSelectedBranch] = useState('ALL');
 
@@ -120,7 +121,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
 
         {/* Card 3: Bottom Right (Paquetes activos) */}
-        <div className="stat-card-modern" style={{ backgroundColor: 'var(--card-olive)' }} onClick={() => setAdminTab('students')}>
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--card-olive)' }} onClick={() => navigateToStudents ? navigateToStudents('ACTIVE_PACKS') : setAdminTab('students')}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div className="stat-card-modern-content">
               <div className="stat-card-modern-number">{paquetesActivos}</div>
@@ -133,7 +134,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
 
         {/* Card 4: Full Width Bottom (Deuda total) */}
-        <div className="stat-card-modern" style={{ backgroundColor: 'var(--card-sage)', gridColumn: 'span 2', flexDirection: 'row', alignItems: 'center' }} onClick={() => setAdminTab('students')}>
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--card-sage)', gridColumn: 'span 2', flexDirection: 'row', alignItems: 'center' }} onClick={() => setAdminTab('payments')}>
           <div className="stat-card-modern-icon" style={{ width: '48px', height: '48px' }}>
             <WaterDropIcon style={{ fontSize: '26px', color: '#fff' }} />
           </div>
@@ -145,7 +146,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
       </div>
 
       {/* Alertas de Alumnas: Créditos y Vencimientos */}
-      <details className="stat-card-modern" style={{ padding: '0', overflow: 'hidden', marginTop: '10px', backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }} open>
+      <details className="stat-card-modern" style={{ padding: '0', overflow: 'hidden', marginTop: '10px', backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px' }} open>
         <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <WarningAmberIcon style={{ color: 'var(--rojo)' }} /> Alertas
         </summary>
@@ -209,9 +210,42 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
       </details>
 
-      {/* Botón/Card de Configuración de la Academia */}
-      <div 
-        className="stat-card-modern" 
+      {/* Botón/Card de Reportes */}
+      <div
+        className="stat-card-modern"
+        onClick={() => setAdminTab('reports')}
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '20px',
+          background: 'var(--blanco)',
+          border: 'none',
+          borderRadius: '24px',
+          cursor: 'pointer',
+          marginTop: '6px'
+        }}
+      >
+        <div className="stat-card-icon-container" style={{ color: 'var(--verde-oliva)', margin: 0, width: '40px', height: '40px', background: 'rgba(69, 95, 62, 0.1)', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <BarChartIcon style={{ fontSize: '22px' }} />
+        </div>
+        <div style={{ flex: 1, textAlign: 'left' }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', fontFamily: 'var(--font-sans)', marginBottom: '4px' }}>
+            Reportes y estadísticas
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--gris-medio)', lineHeight: '1.4' }}>
+            Accedé a métricas, informes financieros y rendimiento de la academia.
+          </div>
+        </div>
+        <div style={{ fontSize: '18px', color: 'var(--gris-medio)', fontWeight: 'bold' }}>
+          ➔
+        </div>
+      </div>
+
+      {/* Botón/Card de Configuración */}
+      <div
+        className="stat-card-modern"
         onClick={() => setAdminTab('config')}
         style={{
           display: 'flex',
@@ -221,7 +255,6 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
           padding: '20px',
           background: 'var(--blanco)',
           border: 'none',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
           borderRadius: '24px',
           cursor: 'pointer'
         }}
@@ -231,7 +264,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
         <div style={{ flex: 1, textAlign: 'left' }}>
           <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', fontFamily: 'var(--font-sans)', marginBottom: '4px' }}>
-            Configuración de la academia
+            Configuración
           </div>
           <div style={{ fontSize: '12px', color: 'var(--gris-medio)', lineHeight: '1.4' }}>
             Gestioná el calendario (feriados, días no laborables y días especiales), sucursales y normas de convivencia.

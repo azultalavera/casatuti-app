@@ -54,6 +54,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  forgotPassword: async (email) => {
+    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return handleResponse(res);
+  },
+
   updateUserRole: async (userId, newRole) => {
     const res = await fetch(`${API_URL}/users/${userId}/role`, {
       method: 'PUT',
@@ -217,6 +226,25 @@ export const apiService = {
         studentName: deliveryData.studentName,
         teacherId: deliveryData.teacherId,
         teacherName: deliveryData.teacherName
+      })
+    });
+    return handleResponse(res);
+  },
+
+  // --- HORNEADOS (BAKES) ---
+  getBakes: async () => {
+    const res = await fetch(`${API_URL}/bakes`);
+    return handleResponse(res);
+  },
+
+  createBake: async (bakeData) => {
+    const res = await fetch(`${API_URL}/bakes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: bakeData.studentId,
+        price: bakeData.price,
+        paymentMethod: bakeData.paymentMethod
       })
     });
     return handleResponse(res);

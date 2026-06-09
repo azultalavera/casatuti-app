@@ -10,13 +10,17 @@ export default function ProfeView() {
     bookings,
     studentProfiles,
     takeAttendance,
-    deliverClayToStudent
+    deliverClayToStudent,
+    createBake
   } = useApp();
 
   const [activeClassId, setActiveClassId] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Estado para el modal de horneado
+  const [bakeModal, setBakeModal] = useState({ isOpen: false, studentId: null, studentName: null, price: '', paymentMethod: 'CONTADO' });
 
   // Filtrar las clases asignadas a este profesor
   const myClasses = classes.filter(c => c.teacherId === currentUser.id);
@@ -66,6 +70,31 @@ export default function ProfeView() {
       await deliverClayToStudent(studentId, studentName, currentUser.id, currentUser.name);
       setSuccessMessage(`¡Se registró la entrega de 1kg de arcilla a ${studentName}!`);
       setTimeout(() => setSuccessMessage(''), 4000);
+    } catch (err) {
+      setErrorMessage(err.message);
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  };
+
+  const handleRegisterBake = async (e) => {
+    e.preventDefault();
+    if (!bakeModal.price || isNaN(bakeModal.price)) {
+      setErrorMessage('Por favor, ingresa un precio válido.');
+      setTimeout(() => setErrorMessage(''), 4000);
+      return;
+    }
+    
+    try {
+      setErrorMessage('');
+      setSuccessMessage('');
+      await createBake({
+        studentId: bakeModal.studentId,
+        price: parseFloat(bakeModal.price),
+        paymentMethod: bakeModal.paymentMethod
+      });
+      setSuccessMessage(`¡Se registró el horneado para ${bakeModal.studentName}!`);
+      setTimeout(() => setSuccessMessage(''), 4000);
+      setBakeModal({ isOpen: false, studentId: null, studentName: null, price: '', paymentMethod: 'CONTADO' });
     } catch (err) {
       setErrorMessage(err.message);
       setTimeout(() => setErrorMessage(''), 5000);
@@ -252,6 +281,17 @@ export default function ProfeView() {
                         </button>
                       )}
                     </div>
+                    
+                    {/* Botón de Horneado */}
+                    <div style={{ marginTop: '8px' }}>
+                      <button
+                        onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, price: '', paymentMethod: 'CONTADO' })}
+                        className="btn-tuti btn-secondary"
+                        style={{ padding: '8px 16px', fontSize: '12px', width: '100%', justifyContent: 'center' }}
+                      >
+                        Registrar Horneado
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -259,6 +299,48 @@ export default function ProfeView() {
           </div>
         )}
       </div>
+
+      {/* Modal de Registro de Horneado */}
+      {bakeModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Registrar Horneado</h3>
+            <p style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '16px' }}>Alumno: <strong>{bakeModal.studentName}</strong></p>
+            
+            <form onSubmit={handleRegisterBake} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Precio Total ($) *</label>
+                <input 
+                  type="number" 
+                  className="input-tuti" 
+                  placeholder="Ej. 1500" 
+                  value={bakeModal.price} 
+                  onChange={(e) => setBakeModal({...bakeModal, price: e.target.value})} 
+                  required 
+                />
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Método de Pago *</label>
+                <select 
+                  className="input-tuti" 
+                  value={bakeModal.paymentMethod} 
+                  onChange={(e) => setBakeModal({...bakeModal, paymentMethod: e.target.value})}
+                >
+                  <option value="CONTADO">Efectivo / Contado</option>
+                  <option value="TRANSF">Transferencia</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setBakeModal({ ...bakeModal, isOpen: false })} className="btn-tuti btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button type="submit" className="btn-tuti btn-primary-clay" style={{ flex: 1 }}>Confirmar Registro</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
