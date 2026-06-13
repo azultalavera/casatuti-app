@@ -25,8 +25,8 @@ export default function ReportBirthdays() {
     }
     return false;
   }).sort((a, b) => {
-    const dayA = parseInt(a.fecha_nacimiento.split('-')[2], 10) || 0;
-    const dayB = parseInt(b.fecha_nacimiento.split('-')[2], 10) || 0;
+    const dayA = parseInt((a.fecha_nacimiento.split('T')[0] || '').split('-')[2], 10) || 0;
+    const dayB = parseInt((b.fecha_nacimiento.split('T')[0] || '').split('-')[2], 10) || 0;
     return dayA - dayB; // Ordenar por día del mes
   });
 
@@ -37,7 +37,7 @@ export default function ReportBirthdays() {
     }
     
     const exportData = birthdayUsers.map(u => ({
-      "Día": u.fecha_nacimiento.split('-')[2],
+      "Día": (u.fecha_nacimiento.split('T')[0] || '').split('-')[2],
       "Mes": months.find(m => m.id === selectedMonth)?.name || '',
       "Alumna": `${u.name} ${u.lastname || ''}`.trim(),
       "Email": u.email,
@@ -83,7 +83,7 @@ export default function ReportBirthdays() {
             </thead>
             <tbody>
               {birthdayUsers.map(u => {
-                const day = u.fecha_nacimiento.split('-')[2];
+                const day = (u.fecha_nacimiento.split('T')[0] || '').split('-')[2];
                 return (
                   <tr key={u.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                     <td style={{ padding: '12px 8px', fontSize: '16px', fontWeight: 'bold', color: 'var(--verde-oliva)' }}>{day}</td>

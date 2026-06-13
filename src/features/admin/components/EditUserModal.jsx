@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
-
+import { Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
 export default function EditUserModal({ userId, onClose, showFeedback }) {
   const { users, updateUserAction, branches } = useApp();
   const user = users.find(u => u.id === userId);
@@ -15,7 +15,9 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
   const [telefono, setTelefono]   = useState(user?.telefono || '');
   const [instagram, setInstagram] = useState(user?.instagram || '');
   const [birthdate, setBirthdate] = useState((user?.fecha_nacimiento || '').split('T')[0] || '');
-  const [branch, setBranch]       = useState(user?.sucursal || (branches.length > 0 ? branches[0].name : 'CENTRO'));
+  const [selectedBranches, setSelectedBranches] = useState(
+    user?.sucursal ? user.sucursal.split(',').map(s => s.trim()) : (branches.length > 0 ? [branches[0].name] : ['CENTRO'])
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
         telefono: telefono || null,
         instagram: instagram.trim() || null,
         fecha_nacimiento: birthdate || null,
-        sucursal: branch
+        sucursal: selectedBranches.join(', ')
       });
       showFeedback(isTeacher ? '¡Profesor/a modificado con éxito!' : '¡Alumna modificada con éxito!', 'info');
       onClose();
@@ -90,12 +92,75 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
             <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
           </div>
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
-            <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
-              {branches.map(b => (
-                <option key={b.id} value={b.name}>{b.name}</option>
-              ))}
-            </select>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal{isTeacher && 'es'}</label>
+            {isTeacher ? (
+              <>
+                <Select 
+                  multiple 
+                  displayEmpty
+                  value={selectedBranches} 
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    if (value.includes('ALL_SELECT')) {
+                      if (selectedBranches.length === branches.length) {
+                        setSelectedBranches([]);
+                      } else {
+                        setSelectedBranches(branches.map(b => b.name));
+                      }
+                      return;
+                    }
+                    setSelectedBranches(typeof value === 'string' ? value.split(',') : value);
+                  }} 
+                  input={<OutlinedInput />}
+                  renderValue={(selected) => {
+                    if (selected.length === 0) return <span style={{ color: 'var(--gris-medio)' }}>Ninguna seleccionada</span>;
+                    if (selected.length === branches.length) return 'Todas seleccionadas';
+                    return selected.join(', ');
+                  }}
+                  sx={{
+                    backgroundColor: '#fcfcfc',
+                    borderRadius: '12px',
+                    minHeight: '44px',
+                    fontSize: '14px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--gris-claro)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--gris-medio)' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--verde-oliva)', borderWidth: '2px' }
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 224,
+                        width: 250,
+                        borderRadius: '16px'
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="ALL_SELECT" style={{ fontSize: '14px' }}>
+                    <Checkbox 
+                      checked={selectedBranches.length === branches.length && branches.length > 0} 
+                      indeterminate={selectedBranches.length > 0 && selectedBranches.length < branches.length} 
+                      size="small" 
+                      sx={{ color: 'var(--gris-medio)', '&.Mui-checked, &.MuiCheckbox-indeterminate': { color: 'var(--verde-oliva)' } }} 
+                    />
+                    <ListItemText primary="Seleccionar todas" primaryTypographyProps={{ fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' }} />
+                  </MenuItem>
+                  {branches.map(b => (
+                    <MenuItem key={b.id} value={b.name} style={{ fontSize: '14px' }}>
+                      <Checkbox checked={selectedBranches.indexOf(b.name) > -1} size="small" sx={{ color: 'var(--gris-medio)', '&.Mui-checked': { color: 'var(--verde-oliva)' } }} />
+                      <ListItemText primary={b.name} primaryTypographyProps={{ fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </>
+            ) : (
+              <select className="input-tuti" value={selectedBranches[0] || ''} onChange={e => setSelectedBranches([e.target.value])} style={{ width: '100%', cursor: 'pointer' }}>
+                {branches.map(b => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button type="button" onClick={onClose} className="btn-tuti btn-danger-soft" style={{ flex: 1, padding: '12px' }}>Cancelar</button>

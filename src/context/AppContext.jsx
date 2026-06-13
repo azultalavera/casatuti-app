@@ -163,6 +163,11 @@ export const AppProvider = ({ children }) => {
         throw new Error("Datos incorrectos");
       }
 
+      // Validar si la clase está pausada para esta fecha
+      if (classData.pausedDates && classData.pausedDates.includes(dateStr)) {
+        throw new Error("Este turno se encuentra pausado para la fecha seleccionada.");
+      }
+
       // Validar si la cuenta está pausada
       if (profile.isBlocked) {
         throw new Error("Tu cuenta está pausada. No puedes realizar nuevas reservas.");
@@ -503,6 +508,23 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const toggleClassPauseAction = async (classId, dateStr, isPaused) => {
+    setLoading(true);
+    try {
+      await mockService.toggleClassPause(classId, dateStr, isPaused);
+      
+      // Recargar clases y reservas porque si se pausó, se cancelaron reservas
+      const loadedClasses = await mockService.getClasses();
+      setClasses(loadedClasses);
+      const loadedBookings = await mockService.getBookings();
+      setBookings(loadedBookings);
+      const loadedProfiles = await mockService.getStudentProfiles();
+      setStudentProfiles(loadedProfiles);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const bulkAssignClasses = async (teacherId, classIds) => {
     setLoading(true);
     try {
@@ -733,6 +755,7 @@ export const AppProvider = ({ children }) => {
         changeClassTeacher,
         updateTurn,
         deleteTurn,
+        toggleClassPauseAction,
         bulkAssignClasses,
         createNewUserAction,
         updateUserAction,

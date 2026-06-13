@@ -144,7 +144,8 @@ const mapClassToFE = (c) => {
     day: dayStr,
     time: timeStr,
     capacity: c.capacity,
-    sucursal: sucursal
+    sucursal: sucursal,
+    pausedDates: c.paused_dates || []
   };
 };
 
@@ -624,7 +625,12 @@ app.get('/api/classes', async (req, res) => {
         END AS day,
         TO_CHAR(c.hora_inicio, 'HH24:MI') || ' - ' || TO_CHAR(c.hora_fin, 'HH24:MI') AS time,
         c.cupo_maximo AS capacity,
-        UPPER(s.n_sucursal) AS sucursal
+        UPPER(s.n_sucursal) AS sucursal,
+        (
+          SELECT COALESCE(json_agg(TO_CHAR(i.fecha_efectiva, 'YYYY-MM-DD')), '[]')
+          FROM public.t_clases_instancia i
+          WHERE i.id_clases_def = c.id_clases_def AND i.bl_cancelada = true
+        ) AS paused_dates
       FROM public.t_clases_def c
       LEFT JOIN public.t_usuarios u ON c.id_profesor = u.id_usuarios
       LEFT JOIN public.t_sucursales s ON c.id_sucursal = s.id_sucursal
@@ -768,7 +774,12 @@ app.put('/api/classes/:id', async (req, res) => {
         END AS day,
         TO_CHAR(c.hora_inicio, 'HH24:MI') || ' - ' || TO_CHAR(c.hora_fin, 'HH24:MI') AS time,
         c.cupo_maximo AS capacity,
-        UPPER(s.n_sucursal) AS sucursal
+        UPPER(s.n_sucursal) AS sucursal,
+        (
+          SELECT COALESCE(json_agg(TO_CHAR(i.fecha_efectiva, 'YYYY-MM-DD')), '[]')
+          FROM public.t_clases_instancia i
+          WHERE i.id_clases_def = c.id_clases_def AND i.bl_cancelada = true
+        ) AS paused_dates
       FROM public.t_clases_def c
       LEFT JOIN public.t_usuarios u ON c.id_profesor = u.id_usuarios
       LEFT JOIN public.t_sucursales s ON c.id_sucursal = s.id_sucursal
@@ -780,6 +791,76 @@ app.put('/api/classes/:id', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar clase:', error);
     res.status(500).json({ error: 'Error al actualizar el turno de clase.' });
+  }
+});
+
+// Pausar o reanudar un turno en una fecha específica
+app.post('/api/classes/:id/pause', async (req, res) => {
+  const { id } = req.params;
+  const { date, isPaused } = req.body;
+
+  if (!date) {
+    return res.status(400).json({ error: 'La fecha es obligatoria.' });
+  }
+
+  try {
+    await db.query('BEGIN');
+
+    // 1. Asegurar que exista la instancia de clase para esa fecha
+    let instQuery = await db.query(
+      'SELECT id_clase_instancia FROM public.t_clases_instancia WHERE id_clases_def = $1 AND fecha_efectiva = $2 LIMIT 1',
+      [id, date]
+    );
+
+    let idInstancia;
+    if (instQuery.rows.length === 0) {
+      // Crear instancia si no existe
+      const createInst = await db.query(
+        'INSERT INTO public.t_clases_instancia (id_clases_def, fecha_efectiva, bl_cancelada) VALUES ($1, $2, $3) RETURNING id_clase_instancia',
+        [id, date, isPaused]
+      );
+      idInstancia = createInst.rows[0].id_clase_instancia;
+    } else {
+      idInstancia = instQuery.rows[0].id_clase_instancia;
+      // Actualizar instancia existente
+      await db.query(
+        'UPDATE public.t_clases_instancia SET bl_cancelada = $1 WHERE id_clase_instancia = $2',
+        [isPaused, idInstancia]
+      );
+    }
+
+    // 2. Si se está pausando, cancelar las inscripciones de esa fecha y devolver créditos
+    if (isPaused) {
+      const inscripciones = await db.query(
+        "SELECT i.id_inscripcion, i.id_usuarios FROM public.t_inscripciones i WHERE i.id_clase_instancia = $1 AND i.estado IN ('CONFIRMADA', 'ASISTIO')",
+        [idInstancia]
+      );
+
+      for (const inscripcion of inscripciones.rows) {
+        // Cancelar inscripcion
+        await db.query(
+          "UPDATE public.t_inscripciones SET estado = 'CANCELADA' WHERE id_inscripcion = $1",
+          [inscripcion.id_inscripcion]
+        );
+        // Devolver credito
+        await db.query(
+          "UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + 1 WHERE id_usuarios = $1",
+          [inscripcion.id_usuarios]
+        );
+        // Opcional: registrar en historial de créditos
+        await db.query(
+          "INSERT INTO public.t_historial_creditos (id_usuarios, movimiento, origen_movimiento) VALUES ($1, 1, 'Cancelación por Administrador (Turno Pausado)')",
+          [inscripcion.id_usuarios]
+        );
+      }
+    }
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: isPaused ? 'Turno pausado.' : 'Turno reanudado.' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    console.error('Error al pausar/reanudar turno:', error);
+    res.status(500).json({ error: 'Error interno al cambiar estado del turno.' });
   }
 });
 

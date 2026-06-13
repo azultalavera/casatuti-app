@@ -33,7 +33,8 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
   const filteredStudents = students.filter(st => {
     const profile = studentProfiles.find(p => p.studentId === st.id) || { isBlocked: false, classCredits: 0 };
     const matchesSearch = st.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      st.email.toLowerCase().includes(searchTerm.toLowerCase());
+      st.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (st.nro_documento && String(st.nro_documento).includes(searchTerm));
     const matchesBranch = selectedBranch === 'ALL' || (st.sucursal || '').toUpperCase() === selectedBranch;
     const matchesStatus = selectedStatus === 'ALL' ||
       (selectedStatus === 'ACTIVE' && !profile.isBlocked) ||
@@ -197,7 +198,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
               </svg>
               <input
                 type="text"
-                placeholder="Buscar por nombre o email..."
+                placeholder="Buscar por nombre, email o DNI..."
                 className="input-tuti"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}

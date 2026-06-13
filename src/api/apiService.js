@@ -167,6 +167,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  toggleClassPause: async (classId, date, isPaused) => {
+    const res = await fetch(`${API_URL}/classes/${classId}/pause`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, isPaused })
+    });
+    return handleResponse(res);
+  },
+
   // --- RESERVAS ---
   getBookings: async () => {
     const res = await fetch(`${API_URL}/bookings`);
