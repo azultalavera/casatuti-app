@@ -17,7 +17,7 @@ export default function ReportAuditing() {
     const exportData = pendingPayments.map(p => {
       const user = users.find(u => u.id === p.studentId);
       return {
-        "Fecha_Pago": p.date ? p.date.split('T')[0] : 'N/A',
+        "Fecha_Pago": p.date ? p.date.split('T')[0].split(' ')[0] : 'N/A',
         "Alumna": user ? `${user.name} ${user.lastname || ''}`.trim() : 'Desconocida',
         "Documento": user ? user.nro_documento : 'N/A',
         "Monto_Adeudado": p.amount,
@@ -71,7 +71,7 @@ export default function ReportAuditing() {
                 const user = users.find(u => u.id === p.studentId);
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{p.date ? p.date.split('T')[0] : '-'}</td>
+                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{p.date ? p.date.split('T')[0].split(' ')[0] : '-'}</td>
                     <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }}>
                       {user ? `${user.name} ${user.lastname || ''}` : 'Desconocida'}
                     </td>

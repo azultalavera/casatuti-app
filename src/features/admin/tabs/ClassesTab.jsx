@@ -4,8 +4,20 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DAY_ABBR = { Lunes: 'LUN', Martes: 'MAR', 'Miércoles': 'MIÉ', Jueves: 'JUE', Viernes: 'VIE', Sábado: 'SÁB' };
+const getMonday = (d) => {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
+  return new Date(date.setDate(diff));
+};
+
+const formatDateToLocal = (date) => {
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return (new Date(date.getTime() - tzOffset)).toISOString().split('T')[0];
+};
+
 export default function ClassesTab({ showFeedback }) {
-  const { users, classes, createNewTurn, changeClassTeacher, updateTurn, deleteTurn, branches } = useApp();
+  const { users, classes, createNewTurn, changeClassTeacher, updateTurn, deleteTurn, toggleClassPauseAction, branches, bookings = [] } = useApp();
   const teachers = users.filter(u => u.role === 'PROFE');
 
   const [mode, setMode] = useState('list'); // 'list', 'create', or 'edit'
@@ -13,12 +25,30 @@ export default function ClassesTab({ showFeedback }) {
   const [expandedClassId, setExpandedClassId] = useState(null);
   const [editingClass, setEditingClass] = useState(null);
 
+  const [currentWeekMonday, setCurrentWeekMonday] = useState(() => getMonday(new Date()));
+
   // Calcular día actual por defecto
   const todayNum = new Date().getDay(); // 0=Dom, 1=Lun, 2=Mar...
   const defaultIdx = (todayNum === 0 || todayNum === 6) ? 0 : todayNum - 1;
   const defaultDay = DAYS[defaultIdx] || 'Lunes';
   const [selectedDay, setSelectedDay] = useState(defaultDay);
   const [selectedBranchFilter, setSelectedBranchFilter] = useState('ALL');
+
+  const handlePrevWeek = () => {
+    const prev = new Date(currentWeekMonday);
+    prev.setDate(prev.getDate() - 7);
+    setCurrentWeekMonday(prev);
+  };
+  const handleNextWeek = () => {
+    const next = new Date(currentWeekMonday);
+    next.setDate(next.getDate() + 7);
+    setCurrentWeekMonday(next);
+  };
+
+  const selectedDayIndex = DAYS.indexOf(selectedDay);
+  const selectedDate = new Date(currentWeekMonday);
+  if (selectedDayIndex !== -1) selectedDate.setDate(selectedDate.getDate() + selectedDayIndex);
+  const selectedDateString = formatDateToLocal(selectedDate);
 
   const [sucursal, setSucursal] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
   const [teacherId, setTeacherId] = useState('');
@@ -174,6 +204,22 @@ export default function ClassesTab({ showFeedback }) {
       await deleteTurn(classId);
       showFeedback('¡Turno eliminado con éxito!', 'info');
       setExpandedClassId(null);
+    } catch (err) {
+      showFeedback(err.message, 'danger');
+    }
+  };
+
+  const handleTogglePause = async (classId, isCurrentlyPaused) => {
+    const actionName = isCurrentlyPaused ? 'reanudar' : 'pausar';
+    let confirmMsg = `¿Estás seguro de que querés ${actionName} el turno del día ${selectedDay} ${selectedDateString}?`;
+    if (!isCurrentlyPaused) {
+      confirmMsg += `\n\nATENCIÓN: Se cancelarán todas las reservas confirmadas de las alumnas para esta fecha, y se les devolverá el crédito a su perfil.`;
+    }
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await toggleClassPauseAction(classId, selectedDateString, !isCurrentlyPaused);
+      showFeedback(`Turno ${isCurrentlyPaused ? 'reanudado' : 'pausado'} con éxito.`, 'info');
     } catch (err) {
       showFeedback(err.message, 'danger');
     }
@@ -481,8 +527,26 @@ export default function ClassesTab({ showFeedback }) {
       <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Header de la Tab y Filtros */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '26px', fontWeight: 900, color: 'var(--gris-oscuro)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>Turnos</h2>
+              
+              {/* Controles de Semana */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#f5f3f0', padding: '4px 12px', borderRadius: '16px' }}>
+                <button onClick={handlePrevWeek} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--verde-oliva)', display: 'flex', alignItems: 'center' }}>
+                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gris-oscuro)' }}>
+                  {(() => {
+                    const endOfWeek = new Date(currentWeekMonday);
+                    endOfWeek.setDate(endOfWeek.getDate() + 5);
+                    const fmt = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
+                    return `Semana ${fmt(currentWeekMonday)} al ${fmt(endOfWeek)}`;
+                  })()}
+                </span>
+                <button onClick={handleNextWeek} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--verde-oliva)', display: 'flex', alignItems: 'center' }}>
+                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
             </div>
 
             {/* Filtro Sucursal */}
@@ -515,10 +579,14 @@ export default function ClassesTab({ showFeedback }) {
 
           {/* Mini-cards de Días (Estilo Alumna) */}
           <div className="days-selector-wrapper">
-            {DAYS.map(day => {
+            {DAYS.map((day, idx) => {
               const isSelected = selectedDay === day;
               const dayClasses = classes.filter(c => c.day === day);
               const hasTurns = dayClasses.length > 0;
+
+              const dateForDay = new Date(currentWeekMonday);
+              dateForDay.setDate(dateForDay.getDate() + idx);
+              const dateNum = dateForDay.getDate();
 
               return (
                 <button
@@ -534,10 +602,17 @@ export default function ClassesTab({ showFeedback }) {
                       ? 'var(--blanco)'
                       : 'var(--gris-oscuro)',
                     boxShadow: isSelected ? '0 8px 24px rgba(204, 122, 66, 0.3)' : '0 4px 16px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px'
                   }}
                 >
-                  <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'Outfit, sans-serif' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, opacity: isSelected ? 0.9 : 0.6 }}>
                     {DAY_ABBR[day]}
+                  </span>
+                  <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'Outfit, sans-serif' }}>
+                    {dateNum}
                   </span>
                   {hasTurns && (
                     <span style={{
@@ -592,21 +667,24 @@ export default function ClassesTab({ showFeedback }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {branchClasses.map(c => {
                       const isExpanded = expandedClassId === c.id;
+                      const isPaused = c.pausedDates && c.pausedDates.includes(selectedDateString);
+
                       return (
                         <div
                           key={c.id}
                           onClick={() => setExpandedClassId(isExpanded ? null : c.id)}
-                          className="stat-card-modern animate-slide-up"
+                          className={`stat-card-modern animate-slide-up ${isPaused ? 'paused-card' : ''}`}
                           style={{
                             padding: '20px',
                             borderRadius: '24px',
                             display: 'flex',
                             flexDirection: 'column',
-                            backgroundColor: 'var(--blanco)',
-                            border: 'none',
+                            backgroundColor: isPaused ? '#fff9f9' : 'var(--blanco)',
+                            border: isPaused ? '1px solid #ffebeb' : 'none',
                             boxShadow: '0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08)',
                             transition: 'transform 0.2s ease',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            opacity: isPaused ? 0.7 : 1
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -692,7 +770,12 @@ export default function ClassesTab({ showFeedback }) {
                             </div>
 
                             {/* Cupo Badge */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                              {isPaused && (
+                                <span className="badge badge-danger" style={{ fontSize: '10px', padding: '3px 8px', fontWeight: '800', backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                                  PAUSADA
+                                </span>
+                              )}
                               <span className="badge badge-oliva" style={{ fontSize: '10px', padding: '3px 8px', fontWeight: '800' }}>
                                 Cupo: {c.capacity}
                               </span>
@@ -700,68 +783,118 @@ export default function ClassesTab({ showFeedback }) {
                           </div>
 
                           {/* Seccion Expandida con Acciones */}
-                          {isExpanded && (
-                            <div
-                              onClick={e => e.stopPropagation()}
-                              style={{
-                                width: '100%',
-                                marginTop: '12px',
-                                borderTop: '1px solid rgba(0,0,0,0.04)',
-                                paddingTop: '12px',
-                                display: 'flex',
-                                gap: '8px',
-                                animation: 'fadeInAcc 0.2s ease-out'
-                              }}
-                            >
-                              <button
-                                onClick={() => handleStartEdit(c)}
-                                className="btn-tuti"
+                          {isExpanded && (() => {
+                            const enrolled = bookings.filter(b => b.classId === c.id && b.date === selectedDateString && (b.status === 'CONFIRMED' || b.status === 'ATTENDED'));
+                            
+                            return (
+                              <div
+                                onClick={e => e.stopPropagation()}
                                 style={{
-                                  flex: 1,
-                                  padding: '8px 0',
-                                  borderRadius: '12px',
-                                  fontSize: '12px',
-                                  fontWeight: '800',
-                                  cursor: 'pointer',
-                                  backgroundColor: 'var(--gris-oscuro)',
-                                  color: 'var(--blanco)',
-                                  border: 'none',
+                                  width: '100%',
+                                  marginTop: '12px',
+                                  borderTop: '1px solid rgba(0,0,0,0.04)',
+                                  paddingTop: '12px',
                                   display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px'
+                                  flexDirection: 'column',
+                                  gap: '12px',
+                                  animation: 'fadeInAcc 0.2s ease-out'
                                 }}
                               >
-                                <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                </svg>
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => handleDeleteClass(c.id, c.time, c.day)}
-                                style={{
-                                  flex: 1,
-                                  padding: '8px 0',
-                                  borderRadius: '12px',
-                                  fontSize: '12px',
-                                  fontWeight: '800',
-                                  cursor: 'pointer',
-                                  backgroundColor: '#FFF5F5',
-                                  color: '#E53E3E',
-                                  border: 'none',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px'
-                                }}
-                              >
-                                <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Eliminar
-                              </button>
-                            </div>
-                          )}
+                                {/* Lista de Alumnas Inscriptas */}
+                                <div>
+                                  <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gris-medio)', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    Alumnas Inscriptas ({enrolled.length}/{c.capacity})
+                                  </h4>
+                                  {isPaused ? (
+                                    <p style={{ fontSize: '13px', color: '#E53E3E', fontStyle: 'italic', margin: 0, fontWeight: 500 }}>Este turno fue pausado en esta fecha.</p>
+                                  ) : enrolled.length === 0 ? (
+                                    <p style={{ fontSize: '13px', color: 'var(--gris-claro)', fontStyle: 'italic', margin: 0 }}>No hay reservas para esta fecha.</p>
+                                  ) : (
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                      {enrolled.map(booking => (
+                                        <li key={booking.id} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gris-oscuro)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--verde-oliva)', display: 'inline-block' }}></span>
+                                          {booking.studentName}
+                                          {booking.status === 'ATTENDED' && <span className="badge badge-success" style={{ fontSize: '9px', padding: '1px 4px', marginLeft: '4px' }}>Presente</span>}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                  <button
+                                    onClick={() => handleTogglePause(c.id, isPaused)}
+                                    className="btn-tuti"
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 0',
+                                      borderRadius: '12px',
+                                      fontSize: '12px',
+                                      fontWeight: '800',
+                                      cursor: 'pointer',
+                                      backgroundColor: isPaused ? '#E6F4EA' : '#FFF5F5',
+                                      color: isPaused ? '#1E8E3E' : '#E53E3E',
+                                      border: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    {isPaused ? 'Reanudar' : 'Pausar'} Fecha
+                                  </button>
+                                  <button
+                                    onClick={() => handleStartEdit(c)}
+                                    className="btn-tuti"
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 0',
+                                      borderRadius: '12px',
+                                      fontSize: '12px',
+                                      fontWeight: '800',
+                                      cursor: 'pointer',
+                                      backgroundColor: 'var(--gris-oscuro)',
+                                      color: 'var(--blanco)',
+                                      border: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                    </svg>
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClass(c.id, c.time, c.day)}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 0',
+                                      borderRadius: '12px',
+                                      fontSize: '12px',
+                                      fontWeight: '800',
+                                      cursor: 'pointer',
+                                      backgroundColor: '#FFF5F5',
+                                      color: '#E53E3E',
+                                      border: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}
