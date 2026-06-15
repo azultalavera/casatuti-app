@@ -557,6 +557,16 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const updateUserPasswordAction = async (userId, currentPassword, newPassword) => {
+    setLoading(true);
+    try {
+      await mockService.updateUserPassword(userId, currentPassword, newPassword);
+      return true;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const deleteUserAction = async (userId) => {
     setLoading(true);
     try {
@@ -736,6 +746,7 @@ export const AppProvider = ({ children }) => {
         bulkAssignClasses,
         createNewUserAction,
         updateUserAction,
+        updateUserPasswordAction,
         deleteUserAction,
         toggleStudentBlockAction,
         resolveAlertAction,

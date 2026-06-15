@@ -81,6 +81,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  updateUserPassword: async (userId, currentPassword, newPassword) => {
+    const res = await fetch(`${API_URL}/users/${userId}/password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    return handleResponse(res);
+  },
+
   deleteUser: async (userId) => {
     const res = await fetch(`${API_URL}/users/${userId}`, {
       method: 'DELETE'
