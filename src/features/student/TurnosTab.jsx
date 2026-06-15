@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EventIcon from '@mui/icons-material/Event';
 
@@ -16,7 +16,12 @@ export default function TurnosTab({
   onBook,
   bookingError,
   successMessage,
+  waitlist = [],
+  onJoinWaitlist,
+  currentUser,
 }) {
+  const [expandedClassId, setExpandedClassId] = useState(null);
+
   const getOccupancyInfo = (classId, dateStr) => {
     const cd = classes.find(c => c.id === classId);
     if (!cd || !dateStr) return { occupied: 0, free: cd?.capacity || 0 };
@@ -122,65 +127,147 @@ export default function TurnosTab({
                   );
                   const occ = getOccupancyInfo(c.id, selectedDate);
                   const full = occ.free <= 0;
+                  const isWaitlisted = waitlist.some(
+                    w => w.studentId === currentUser?.id && w.classId === c.id && w.date === selectedDate && !w.notified
+                  );
                   return (
                     <div
                       key={c.id}
                       style={{
-                        padding: '18px 20px',
                         borderRadius: '24px',
                         backgroundColor: 'var(--blanco)',
-                        border: 'none',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
-                        opacity: full ? 0.6 : 1,
+                        padding: '18px 20px',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        transition: 'transform 0.2s ease'
+                        flexDirection: 'column',
+                        gap: '12px',
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      <div style={{ flex: 1, paddingRight: '12px' }}>
-                        <span style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--gris-oscuro)', letterSpacing: '-0.5px' }}>
-                          {c.time}
-                        </span>
-                        <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600, marginBottom: '4px' }}>
-                          Prof. {c.teacherName}
-                        </p>
-                        {classBookings.length > 0 && (
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: 'var(--verde-oliva-dark)', 
-                            backgroundColor: '#EBF1ED',
-                            padding: '4px 10px',
-                            borderRadius: '12px',
-                            display: 'inline-block',
-                            marginTop: '4px',
-                            fontWeight: '600'
-                          }}>
-                            👥 {classBookings.map(b => b.studentName).join(', ')}
+                      {/* Fila principal */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ flex: 1, paddingRight: '12px' }}>
+                          <span style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--gris-oscuro)', letterSpacing: '-0.5px' }}>
+                            {c.time}
+                          </span>
+                          <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600, marginBottom: '0px' }}>
+                            Prof. {c.teacherName}
+                          </p>
+                          {classBookings.length > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedClassId(expandedClassId === c.id ? null : c.id);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '11px',
+                                color: 'var(--verde-oliva-dark)',
+                                backgroundColor: '#EBF1ED',
+                                padding: '5px 12px',
+                                borderRadius: '12px',
+                                marginTop: '8px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              👥 {classBookings.length} {classBookings.length === 1 ? 'inscripta' : 'inscriptas'} {expandedClassId === c.id ? '▲' : '▼'}
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: full ? 'var(--rojo-alerta)' : 'var(--gris-medio)' }}>
+                            {full ? 'Sin cupos' : `${occ.free} lugar${occ.free !== 1 ? 'es' : ''}`}
+                          </span>
+                          {full ? (
+                            isWaitlisted ? (
+                              <button
+                                disabled
+                                style={{
+                                  padding: '8px 16px',
+                                  fontSize: '13px',
+                                  fontWeight: 800,
+                                  borderRadius: '20px',
+                                  border: 'none',
+                                  backgroundColor: '#EBF1ED',
+                                  color: '#2E4A3F',
+                                  cursor: 'default'
+                                }}
+                              >
+                                En espera
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => onJoinWaitlist(c.id, selectedDate)}
+                                style={{
+                                  padding: '8px 16px',
+                                  fontSize: '13px',
+                                  fontWeight: 800,
+                                  borderRadius: '20px',
+                                  border: 'none',
+                                  backgroundColor: 'var(--gris-oscuro)',
+                                  color: 'var(--blanco)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Lista de espera
+                              </button>
+                            )
+                          ) : (
+                            <button
+                              onClick={() => onBook(c.id)}
+                              style={{
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                  fontWeight: 800,
+                                  borderRadius: '20px',
+                                  border: 'none',
+                                  backgroundColor: 'var(--gris-oscuro)',
+                                  color: 'var(--blanco)',
+                                  cursor: 'pointer'
+                              }}
+                            >
+                              Reservar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Desplegable de inscriptas */}
+                      {expandedClassId === c.id && classBookings.length > 0 && (
+                        <div style={{
+                          borderTop: '1px solid #ECEFEC',
+                          paddingTop: '12px',
+                          fontSize: '12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          animation: 'fadeIn 0.2s ease-in-out'
+                        }}>
+                          <div style={{ fontWeight: '700', color: '#0F3B32' }}>Alumnas anotadas:</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {classBookings.map((b, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  backgroundColor: '#F3F6F4',
+                                  color: '#2E4A3F',
+                                  padding: '4px 10px',
+                                  borderRadius: '10px',
+                                  fontSize: '11px',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {b.studentName}
+                              </span>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: full ? 'var(--rojo-alerta)' : 'var(--gris-medio)' }}>
-                          {full ? 'Sin cupos' : `${occ.free} lugar${occ.free !== 1 ? 'es' : ''}`}
-                        </span>
-                        <button
-                          onClick={() => onBook(c.id)}
-                          disabled={full}
-                          style={{
-                            padding: '8px 16px',
-                            fontSize: '13px',
-                            fontWeight: 800,
-                            borderRadius: '20px',
-                            border: 'none',
-                            backgroundColor: full ? 'rgba(0,0,0,0.05)' : 'var(--gris-oscuro)',
-                            color: full ? 'var(--gris-medio)' : 'var(--blanco)',
-                            cursor: full ? 'default' : 'pointer'
-                          }}
-                        >
-                          Reservar
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

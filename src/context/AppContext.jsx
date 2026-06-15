@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { apiService as mockService } from '../api/apiService';
 
 const AppContext = createContext();
@@ -14,6 +14,7 @@ export const useApp = () => {
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const seenAlertIdsRef = useRef(new Set());
   const [users, setUsers] = useState([]);
   const [studentProfiles, setStudentProfiles] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -22,6 +23,7 @@ export const AppProvider = ({ children }) => {
   const [bakes, setBakes] = useState([]);
   const [payments, setPayments] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [waitlist, setWaitlist] = useState([]);
   const [nonWorkingDays, setNonWorkingDays] = useState([]);
   const [packs, setPacks] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -29,8 +31,8 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Cargar todos los datos desde el servicio
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       await mockService.initializeDB();
       const loadedUsers = await mockService.getUsers();
@@ -41,6 +43,7 @@ export const AppProvider = ({ children }) => {
       const loadedBakes = await mockService.getBakes().catch(() => []);
       const loadedPayments = await mockService.getPayments();
       const loadedAlerts = await mockService.getAlerts();
+      const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
       const loadedNonWorkingDays = await mockService.getNonWorkingDays().catch(() => []);
       const loadedPacks = await mockService.getPacks().catch(() => []);
       const loadedBranches = await mockService.getBranches().catch(() => []);
@@ -54,15 +57,48 @@ export const AppProvider = ({ children }) => {
       setBakes(loadedBakes);
       setPayments(loadedPayments);
       setAlerts(loadedAlerts);
+      setWaitlist(loadedWaitlist);
       setNonWorkingDays(loadedNonWorkingDays || []);
       setPacks(loadedPacks || []);
       setBranches(loadedBranches || []);
       setFaqs(loadedFaqs || []);
 
-      // Comprobar si hay una sesión guardada en sessionStorage
+      // Administrar alertas vistas para no duplicar notificaciones nativas
+      const currentUserId = currentUser?.id || currentUser?.id_usuarios;
+      if (!silent) {
+        loadedAlerts.forEach(a => seenAlertIdsRef.current.add(a.id));
+      } else if (currentUserId) {
+        const newAlerts = loadedAlerts.filter(
+          a => a.studentId === currentUserId && !a.resolved && !seenAlertIdsRef.current.has(a.id)
+        );
+        if (newAlerts.length > 0) {
+          newAlerts.forEach(alert => {
+            seenAlertIdsRef.current.add(alert.id);
+            if ('Notification' in window) {
+              if (Notification.permission === 'granted') {
+                new Notification('Casa Tuti', {
+                  body: alert.message,
+                  vibrate: [200, 100, 200]
+                });
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(perm => {
+                  if (perm === 'granted') {
+                    new Notification('Casa Tuti', {
+                      body: alert.message,
+                      vibrate: [200, 100, 200]
+                    });
+                  }
+                });
+              }
+            }
+          });
+        }
+      }
+
+      // Comprobar si hay una sesión guardada en sessionStorage o actualizar usuario actual en tiempo real
       const savedUserId = sessionStorage.getItem('tuti_session_user_id');
       if (savedUserId) {
-        const savedUser = loadedUsers.find(u => u.id === savedUserId);
+        const savedUser = loadedUsers.find(u => u.id?.toString() === savedUserId.toString());
         if (savedUser) {
           setCurrentUser(savedUser);
           setIsAuthenticated(true);
@@ -71,12 +107,24 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error("Error cargando los datos de la DB simulada:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(false);
+
+    // Pedir permiso para notificaciones nativas en dispositivo
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // Polling cada 5 segundos para actualizar el sistema automáticamente
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Login Acción
@@ -228,6 +276,8 @@ export const AppProvider = ({ children }) => {
       setAlerts(loadedAlerts);
       const loadedProfiles = await mockService.getStudentProfiles();
       setStudentProfiles(loadedProfiles);
+      const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
+      setWaitlist(loadedWaitlist);
 
       return newBooking;
     } finally {
@@ -286,8 +336,27 @@ export const AppProvider = ({ children }) => {
       setStudentProfiles(loadedProfiles);
       const loadedAlerts = await mockService.getAlerts();
       setAlerts(loadedAlerts);
+      const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
+      setWaitlist(loadedWaitlist);
 
       return { isLateCancellation };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Agregar a la lista de espera
+  const joinWaitlistAction = async (classId, dateStr) => {
+    setLoading(true);
+    try {
+      const studentId = currentUser.id;
+      await mockService.joinWaitlist({
+        studentId,
+        classId,
+        date: dateStr
+      });
+      const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
+      setWaitlist(loadedWaitlist);
     } finally {
       setLoading(false);
     }
@@ -741,6 +810,7 @@ export const AppProvider = ({ children }) => {
         bakes,
         payments,
         alerts,
+        waitlist,
         nonWorkingDays,
         packs,
         branches,
@@ -754,6 +824,7 @@ export const AppProvider = ({ children }) => {
         resetDatabase,
         bookClass,
         cancelBooking,
+        joinWaitlistAction,
         takeAttendance,
         deliverClayToStudent,
         createBake,

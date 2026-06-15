@@ -336,6 +336,21 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  // --- LISTA DE ESPERA ---
+  getWaitlist: async () => {
+    const res = await fetch(`${API_URL}/waitlist`);
+    return handleResponse(res);
+  },
+
+  joinWaitlist: async (waitlistData) => {
+    const res = await fetch(`${API_URL}/waitlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(waitlistData)
+    });
+    return handleResponse(res);
+  },
+
   // --- DÍAS NO LABORALES (CALENDARIO) ---
   getNonWorkingDays: async () => {
     const res = await fetch(`${API_URL}/non-working-days`);

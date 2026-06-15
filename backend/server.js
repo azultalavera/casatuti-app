@@ -118,6 +118,19 @@ const mapAlertToFE = (a) => {
   };
 };
 
+// Helper para mapear lista de espera
+const mapWaitlistToFE = (w) => {
+  if (!w) return null;
+  const dateStr = w.date instanceof Date ? w.date.toISOString().split('T')[0] : w.date;
+  return {
+    id: w.id,
+    studentId: w.student_id,
+    classId: w.class_id,
+    date: dateStr,
+    notified: w.notified
+  };
+};
+
 // Helper para mapear paquetes
 const mapPackToFE = (p) => {
   if (!p) return null;
@@ -1032,6 +1045,76 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
+// Obtener todas las entradas de lista de espera
+app.get('/api/waitlist', async (req, res) => {
+  try {
+    const queryStr = `
+      SELECT 
+        w.id_lista_espera AS id,
+        w.id_usuarios AS student_id,
+        ci.id_clases_def AS class_id,
+        ci.fecha_efectiva::text AS date,
+        w.bl_notificado AS notified
+      FROM public.t_lista_espera w
+      JOIN public.t_clases_instancia ci ON w.id_clase_instancia = ci.id_clase_instancia
+    `;
+    const { rows } = await db.query(queryStr);
+    res.json(rows.map(mapWaitlistToFE));
+  } catch (error) {
+    console.error('Error al obtener lista de espera:', error);
+    res.status(500).json({ error: 'Error al obtener lista de espera.' });
+  }
+});
+
+// Agregar un alumno a la lista de espera de un turno
+app.post('/api/waitlist', async (req, res) => {
+  const { studentId, classId, date } = req.body;
+
+  if (!studentId || !classId || !date) {
+    return res.status(400).json({ error: 'Faltan parámetros requeridos.' });
+  }
+
+  try {
+    // 1. Obtener o crear la instancia de la clase para esa fecha
+    let instanceId;
+    const instanceRes = await db.query(
+      'SELECT id_clase_instancia FROM public.t_clases_instancia WHERE id_clases_def = $1 AND fecha_efectiva = $2',
+      [classId, date]
+    );
+
+    if (instanceRes.rows.length > 0) {
+      instanceId = instanceRes.rows[0].id_clase_instancia;
+    } else {
+      const result = await db.query(
+        'INSERT INTO public.t_clases_instancia (id_clases_def, fecha_efectiva, bl_cancelada) VALUES ($1, $2, false) RETURNING id_clase_instancia',
+        [classId, date]
+      );
+      instanceId = result.rows[0].id_clase_instancia;
+    }
+
+    // 2. Validar si ya está en lista de espera (no notificada)
+    const checkRes = await db.query(
+      'SELECT * FROM public.t_lista_espera WHERE id_usuarios = $1 AND id_clase_instancia = $2 AND bl_notificado = false',
+      [studentId, instanceId]
+    );
+
+    if (checkRes.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya estás en la lista de espera para este turno.' });
+    }
+
+    // 3. Registrar en lista de espera
+    await db.query(
+      'INSERT INTO public.t_lista_espera (id_usuarios, id_clase_instancia, bl_notificado, fec_registro) VALUES ($1, $2, false, NOW())',
+      [studentId, instanceId]
+    );
+
+    res.status(201).json({ success: true, message: 'Agregado a la lista de espera con éxito.' });
+  } catch (error) {
+    console.error('Error al registrar en lista de espera:', error);
+    res.status(500).json({ error: 'Error al procesar la solicitud.' });
+  }
+});
+
 // Crear una reserva
 app.post('/api/bookings', async (req, res) => {
   const { studentId, studentName, classId, date } = req.body;
@@ -1125,6 +1208,12 @@ app.post('/api/bookings', async (req, res) => {
       [studentId]
     );
 
+    // Eliminar de la lista de espera si existía
+    await db.query(
+      'DELETE FROM public.t_lista_espera WHERE id_usuarios = $1 AND id_clase_instancia = $2',
+      [studentId, instanceId]
+    );
+
     // 8. Alerta de alta ocupación si queda crítico (0 o 1 cupos libres)
     const newOccupancy = activeBookingsCount + 1;
     if (classData.cupo_maximo - newOccupancy <= 1) {
@@ -1164,6 +1253,7 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
         i.id_inscripcion AS id_reserva,
         i.id_usuarios AS student_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
+        ci.id_clase_instancia AS id_clase_instancia,
         ci.id_clases_def AS class_id,
         ci.fecha_efectiva AS date,
         i.estado AS status
@@ -1222,6 +1312,29 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
       await db.query(
         'UPDATE public.t_cuenta_alumno SET saldo_actual = saldo_actual + 1 WHERE id_usuarios = $1',
         [booking.student_id]
+      );
+    }
+
+    // --- LÓGICA DE LISTA DE ESPERA (NOTIFICAR CUPOS LIBERADOS) ---
+    const waitlistRes = await db.query(
+      'SELECT id_usuarios FROM public.t_lista_espera WHERE id_clase_instancia = $1 AND bl_notificado = false',
+      [booking.id_clase_instancia]
+    );
+
+    if (waitlistRes.rows.length > 0) {
+      const dateStr = booking.date instanceof Date ? booking.date.toISOString().split('T')[0] : booking.date;
+      const notifyMsg = `¡Se liberó un cupo! Hay lugar disponible para la clase de las ${classTimeStr} el día ${dateStr}.`;
+      
+      for (const wlUser of waitlistRes.rows) {
+        await db.query(
+          'INSERT INTO public.t_notificaciones (id_usuarios, titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, $4, false, NOW())',
+          [wlUser.id_usuarios, 'Cupo Liberado', notifyMsg, 'WAITLIST_FREE_SPOT']
+        );
+      }
+
+      await db.query(
+        'UPDATE public.t_lista_espera SET bl_notificado = true WHERE id_clase_instancia = $1',
+        [booking.id_clase_instancia]
       );
     }
 
