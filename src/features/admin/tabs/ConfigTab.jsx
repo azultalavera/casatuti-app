@@ -255,7 +255,8 @@ export default function ConfigTab({ showFeedback, goBack }) {
               view === 'calendar' ? 'Calendarios y feriados' :
                 view === 'packs' ? 'Tipos de abonos' :
                   view === 'capacities' ? 'Tipificar cupos' :
-                    view === 'branches' ? 'Sucursales' : 'Normas de convivencia'}
+                    view === 'branches' ? 'Sucursales' : 
+                      view === 'notifications' ? 'Notificaciones' : 'Normas de convivencia'}
           </h2>
         </div>
       </div>
@@ -345,6 +346,23 @@ export default function ConfigTab({ showFeedback, goBack }) {
               </svg>
             </div>
             <h4 className="config-card-title">Normas de convivencia</h4>
+            <div className="config-card-action">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          {/* Tarjeta Notificaciones Push */}
+          <div className="config-card" style={{ border: '1px solid #D9B382' }} onClick={() => setView('notifications')}>
+            <div className="config-card-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            <h4 className="config-card-title">Notificaciones al celular</h4>
             <div className="config-card-action">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -709,6 +727,65 @@ export default function ConfigTab({ showFeedback, goBack }) {
             ))}
             {faqs.length === 0 && <p style={{ fontSize: '12px', color: 'var(--gris-medio)', textAlign: 'center' }}>No hay normas configuradas.</p>}
           </div>
+        </div>
+      )}
+
+      {view === 'notifications' && (
+        <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--gris-oscuro)' }}>Avisos de Reservas</h3>
+            <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px' }}>
+              Al activar esta opción, recibirás una notificación en este dispositivo (celular o computadora) cada vez que un alumno se inscriba a una clase.
+            </p>
+            <div style={{ backgroundColor: '#fff7ed', padding: '12px', borderRadius: '12px', marginTop: '12px', fontSize: '12px', color: '#9a3412' }}>
+              <strong>Importante (iPhone/iOS):</strong> Para que esto funcione en un iPhone, tenés que agregar esta página a tu "Pantalla de Inicio" (ícono de compartir &gt; Agregar a inicio) y abrir la app desde ese ícono.
+            </div>
+          </div>
+
+          <button 
+            className="btn-tuti btn-success-soft" 
+            style={{ width: '100%', padding: '14px', fontSize: '14px', fontWeight: 800 }}
+            onClick={async () => {
+              try {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                  alert('Tu navegador no soporta notificaciones push. Por favor asegurate de que la web esté agregada a tu pantalla de inicio en iOS o usa un navegador moderno.');
+                  return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                  alert('Permiso denegado para enviar notificaciones.');
+                  return;
+                }
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+                });
+                const userStr = localStorage.getItem('casatuti_user');
+                const user = userStr ? JSON.parse(userStr) : null;
+                if (!user) {
+                  alert('No estás logueado.');
+                  return;
+                }
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+                const res = await fetch(`${API_URL}/push/subscribe`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ subscription, userId: user.id })
+                });
+                if (res.ok) {
+                  showFeedback('Notificaciones activadas con éxito en este dispositivo.', 'info');
+                } else {
+                  throw new Error('Error al guardar la suscripción.');
+                }
+              } catch (err) {
+                console.error(err);
+                showFeedback(err.message, 'danger');
+              }
+            }}
+          >
+            Activar Notificaciones
+          </button>
         </div>
       )}
 

@@ -1,7 +1,4 @@
-import React from 'react';
-
 export default function CreditosTab({
-  currentUser,
   activePacks,
   selectedPackId,
   setSelectedPackId,
@@ -10,14 +7,17 @@ export default function CreditosTab({
   setBuyStep,
   buyLoading,
   onBuy,
+  isModal = false,
 }) {
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <h3 style={{ fontSize: '18px' }}>
-          {buyStep === 1 ? 'Comprar créditos' : 'Realizar transferencia'}
-        </h3>
-      </div>
+      {!isModal && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h3 style={{ fontSize: '18px' }}>
+            {buyStep === 1 ? 'Comprar créditos' : 'Realizar transferencia'}
+          </h3>
+        </div>
+      )}
 
       {buyStep === 1 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -79,12 +79,12 @@ export default function CreditosTab({
           <div style={{ backgroundColor: 'var(--blanco)', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.02)', padding: '20px', borderRadius: '24px', textAlign: 'center' }}>
             <p style={{ fontSize: '14px', marginBottom: '12px' }}><strong>Datos bancarios:</strong></p>
             <p style={{ fontSize: '13px', marginBottom: '8px' }}>
-              CBU: <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: '8px', wordBreak: 'break-all' }}>0000000000000000000000</code>
+              CBU: <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: '8px', wordBreak: 'break-all' }}>000003100076164884013</code>
             </p>
             <p style={{ fontSize: '13px', marginBottom: '8px' }}>
               Alias: <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: '8px', wordBreak: 'break-all' }}>CASA.TUTI</code>
             </p>
-            <p style={{ fontSize: '13px', margin: 0 }}>Titular: Casa Tuti</p>
+            <p style={{ fontSize: '13px', margin: 0 }}>Titular: Maria Candelaria Luna Ottonello</p>
           </div>
 
           <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: '4px 0', textAlign: 'center' }}>

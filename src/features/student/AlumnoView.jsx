@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import InicioTab from './InicioTab';
 import TurnosTab from './TurnosTab';
 import CreditosTab from './CreditosTab';
 import PerfilTab from './PerfilTab';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 
 const DAYS_OF_WEEK = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DAY_NUM = { Domingo: 0, Lunes: 1, Martes: 2, 'Miércoles': 3, Jueves: 4, Viernes: 5, Sábado: 6 };
@@ -23,7 +22,7 @@ function getWeekDate(dayName) {
   return null;
 }
 
-export default function AlumnoView({ activeTab = 'inicio' }) {
+export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
   const {
     currentUser,
     studentProfiles,
@@ -38,6 +37,7 @@ export default function AlumnoView({ activeTab = 'inicio' }) {
     packs,
     branches,
     resolveAlertAction,
+    payments,
   } = useApp();
 
   // --- Estado de Turnos ---
@@ -52,8 +52,6 @@ export default function AlumnoView({ activeTab = 'inicio' }) {
   const [buyStep, setBuyStep] = useState(1);
   const [selectedPackId, setSelectedPackId] = useState(null);
   const [buyLoading, setBuyLoading] = useState(false);
-  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
-
   const activePacks = packs;
   const selectedPack = activePacks.find(p => p.id === selectedPackId) || activePacks[0] || null;
 
@@ -159,144 +157,6 @@ export default function AlumnoView({ activeTab = 'inicio' }) {
             <span className="badge badge-clay" style={{ marginBottom: '6px' }}>Alumno activo</span>
             <h2 style={{ fontSize: '26px' }}>¡Hola, {currentUser.name}!</h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative' }}>
-            {/* Icono de notificaciones */}
-            <div 
-              onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
-              style={{
-                position: 'relative',
-                cursor: 'pointer',
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--blanco)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                color: 'var(--gris-oscuro)',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-                border: '1px solid var(--gris-claro)'
-              }}
-              title="Notificaciones"
-            >
-              <NotificationsIcon style={{ fontSize: '22px' }} />
-              {myAlerts.length > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  backgroundColor: 'var(--rojo-alerta)',
-                  color: 'var(--blanco)',
-                  borderRadius: '50%',
-                  width: '18px',
-                  height: '18px',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid var(--blanco)'
-                }}>
-                  {myAlerts.length}
-                </span>
-              )}
-            </div>
-
-            {/* Dropdown de notificaciones */}
-            {showNotificationsDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '52px',
-                right: '0',
-                width: '320px',
-                maxHeight: '350px',
-                backgroundColor: 'var(--blanco)',
-                borderRadius: '16px',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                border: '1px solid var(--gris-claro)',
-                zIndex: 1000,
-                padding: '16px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '8px' }}>
-                  <span style={{ fontWeight: '800', color: 'var(--gris-oscuro)', fontSize: '14px' }}>Notificaciones</span>
-                  {myAlerts.length > 0 && (
-                    <button 
-                      onClick={async () => {
-                        for (const alert of myAlerts) {
-                          await resolveAlertAction(alert.id);
-                        }
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--verde-oliva-dark)',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Limpiar todo
-                    </button>
-                  )}
-                </div>
-                {myAlerts.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'var(--gris-medio)', fontSize: '13px', padding: '16px 0' }}>
-                    No tienes notificaciones pendientes.
-                  </div>
-                ) : (
-                  myAlerts.map(alert => (
-                    <div 
-                      key={alert.id} 
-                      style={{ 
-                        padding: '8px 10px', 
-                        borderRadius: '8px', 
-                        backgroundColor: '#fcfcfc', 
-                        borderLeft: '4px solid var(--verde-oliva)',
-                        fontSize: '12px',
-                        color: 'var(--gris-oscuro)',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ fontWeight: '700', marginBottom: '2px' }}>{alert.title || 'Alerta'}</div>
-                      <div style={{ paddingRight: '16px' }}>{alert.message}</div>
-                      <button
-                        onClick={() => resolveAlertAction(alert.id)}
-                        style={{
-                          position: 'absolute',
-                          top: '6px',
-                          right: '6px',
-                          border: 'none',
-                          background: 'none',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: 'var(--gris-medio)',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Avatar */}
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '50%',
-              backgroundColor: 'var(--verde-oliva)', color: 'var(--blanco)',
-              display: 'flex', justifyContent: 'center', alignItems: 'center',
-              fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 'bold',
-              boxShadow: 'var(--shadow-clay)'
-            }}>
-              {currentUser.name[0]}
-            </div>
-          </div>
         </div>
 
         {activeTab === 'inicio' && (
@@ -308,8 +168,11 @@ export default function AlumnoView({ activeTab = 'inicio' }) {
             bookingError={bookingError}
             successMessage={successMessage}
             classes={classes}
+            payments={payments}
+            resolveAlertAction={resolveAlertAction}
             onCancel={handleCancel}
             onOpenBuyModal={() => { setBuyStep(1); setShowBuyModal(true); }}
+            onGoToTurnos={() => { if (setActiveTab) setActiveTab('turnos'); }}
           />
         )}
 
@@ -372,6 +235,7 @@ export default function AlumnoView({ activeTab = 'inicio' }) {
               setBuyStep={buyStep === 2 ? () => setShowBuyModal(false) : setBuyStep}
               buyLoading={buyLoading}
               onBuy={handleBuy}
+              isModal={true}
             />
           </div>
         </div>

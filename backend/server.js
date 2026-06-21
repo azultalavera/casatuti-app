@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import webPush from 'web-push';
 
 import db from './db.js';
 import { sendRecoveryEmail, sendWelcomeEmail } from './email.js';
@@ -10,9 +11,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
+// Configuración de Web Push
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webPush.setVapidDetails(
+    'mailto:tu-email@tudominio.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
 // Habilitar CORS para permitir peticiones del frontend (Vite)
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Helper para unificar mayúsculas en la primera letra de cada palabra de nombres y apellidos
 const capitalizeName = (str) => {
@@ -101,7 +112,8 @@ const mapPaymentToFE = (p) => {
     amount: parseFloat(p.amount),
     date: dateStr,
     status: p.status,
-    classCreditsAdded: p.class_credits_added
+    classCreditsAdded: p.class_credits_added,
+    description: p.motivo || (p.class_credits_added ? `Pack de ${p.class_credits_added} clases` : 'Deuda pendiente')
   };
 };
 
@@ -1234,6 +1246,25 @@ app.post('/api/bookings', async (req, res) => {
       created_at: new Date()
     };
 
+    // --- Notificación Web Push a Admins ---
+    try {
+      const payload = JSON.stringify({
+        title: 'Nueva Reserva',
+        body: `La alumna ${studentName} se ha inscripto a una clase el ${date} a las ${classTime}.`
+      });
+      const subQuery = await db.query('SELECT subscription FROM public.t_suscripciones_push');
+      for (let s of subQuery.rows) {
+        try {
+          await webPush.sendNotification(s.subscription, payload);
+        } catch (e) {
+          console.error('Error enviando push a suscripción:', e);
+          // Si la suscripción expiró, se podría eliminar aquí
+        }
+      }
+    } catch (pushErr) {
+      console.error('Error procesando web push en reservas:', pushErr);
+    }
+
     res.status(201).json(mapBookingToFE(newBooking));
   } catch (error) {
     console.error('Error al realizar reserva:', error);
@@ -1522,7 +1553,8 @@ app.get('/api/payments', async (req, res) => {
         hc.monto AS amount,
         hc.fec_movimiento::text AS date,
         hc.estado AS status,
-        hc.cantidad AS class_credits_added
+        hc.cantidad AS class_credits_added,
+        hc.motivo
       FROM public.t_historial_creditos hc
       JOIN public.t_usuarios u ON hc.id_usuarios = u.id_usuarios
       ORDER BY hc.fec_movimiento DESC
@@ -2034,5 +2066,32 @@ app.delete('/api/faqs/:id', async (req, res) => {
 // INICIAR SERVIDOR
 // ==========================================
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend de Casa Tuti corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
+});
+
+// ==========================================
+// PUSH NOTIFICATIONS ENDPOINT
+// ==========================================
+app.post('/api/push/subscribe', async (req, res) => {
+  const { subscription, userId } = req.body;
+  
+  if (!subscription || !userId) {
+    return res.status(400).json({ error: 'Faltan datos de suscripción o usuario.' });
+  }
+
+  try {
+    // Delete existing sub for this user to avoid duplicates if re-subscribing on same device
+    // (A more robust way is matching endpoint, but this is simpler for 1 device per admin)
+    await db.query('DELETE FROM public.t_suscripciones_push WHERE id_usuarios = $1', [userId]);
+
+    await db.query(
+      'INSERT INTO public.t_suscripciones_push (id_usuarios, subscription) VALUES ($1, $2)',
+      [userId, subscription]
+    );
+
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error('Error al guardar suscripción push:', err);
+    res.status(500).json({ error: 'Error al guardar la suscripción.' });
+  }
 });

@@ -67,3 +67,33 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Evento Push: Recibir notificaciones del servidor
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [100, 50, 100],
+      data: { url: '/' }
+    };
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(windowClients => {
+      if (windowClients.length > 0) {
+        windowClients[0].focus();
+      } else {
+        clients.openWindow('/');
+      }
+    })
+  );
+});

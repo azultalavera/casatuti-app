@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -9,11 +9,20 @@ export default function InicioTab({
   myBookings,
   myAlerts,
   bookingError,
-  successMessage,
   classes,
+  payments,
+  resolveAlertAction,
   onCancel,
   onOpenBuyModal,
+  onGoToTurnos,
 }) {
+  const [showDebtsModal, setShowDebtsModal] = useState(false);
+
+  const myPendingPayments = (payments || []).filter(
+    p => p.studentId == currentUser.id && p.status === 'PENDING'
+  );
+  const pendingDebt = myPendingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
   return (
     <>
       {/* Resumen (Estilo Dashboard) */}
@@ -30,13 +39,29 @@ export default function InicioTab({
         </div>
         <div className="stats-dashboard-grid">
           {/* Card Clases (Grande) */}
-          <div className="stat-card-modern stat-card-modern-large" style={{ backgroundColor: 'var(--card-mustard)' }}>
+          <div 
+            className="stat-card-modern stat-card-modern-large" 
+            style={{ 
+              backgroundColor: 'var(--card-mustard)',
+              cursor: profile.classCredits > 0 ? 'pointer' : 'default',
+              transition: 'var(--transition-quick)'
+            }}
+            onClick={() => { if (profile.classCredits > 0 && onGoToTurnos) onGoToTurnos(); }}
+          >
             <div className="stat-card-modern-icon">
               <span style={{ fontSize: '24px' }}>🎫</span>
             </div>
             <div className="stat-card-modern-content">
-              <div className="stat-card-modern-number">{profile.classCredits}</div>
-              <div className="stat-card-modern-label">Clases<br />disponibles</div>
+              {profile.classCredits > 0 ? (
+                <>
+                  <div className="stat-card-modern-number">{profile.classCredits}</div>
+                  <div className="stat-card-modern-label">Clases<br />disponibles</div>
+                </>
+              ) : (
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gris-oscuro)', lineHeight: '1.4' }}>
+                  No tienes créditos disponibles.<br/>Podes renovarlos desde el botón "Comprar"
+                </div>
+              )}
             </div>
           </div>
 
@@ -53,18 +78,28 @@ export default function InicioTab({
             </div>
           </div>
 
-          {/* Card Progreso Arcilla */}
-          <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', color: 'var(--gris-oscuro)', padding: '16px 20px' }}>
+          {/* Card Deudas Pendientes */}
+          <div 
+            className="stat-card-modern" 
+            style={{ 
+              backgroundColor: pendingDebt > 0 ? '#FFF7ED' : 'var(--blanco)', 
+              color: 'var(--gris-oscuro)', 
+              padding: '16px 20px',
+              cursor: pendingDebt > 0 ? 'pointer' : 'default',
+              transition: 'var(--transition-quick)'
+            }}
+            onClick={() => { if (pendingDebt > 0) setShowDebtsModal(true); }}
+          >
             <div className="stat-card-modern-content" style={{ justifyContent: 'center', height: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px', fontWeight: 700 }}>
-                <span style={{ color: 'var(--gris-medio)' }}>Límite arcilla</span>
-                <span style={{ color: 'var(--verde-oliva)' }}>{profile.monthlyClayKg}kg / 1kg</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gris-medio)' }}>Deudas pendientes</span>
+                <span style={{ fontSize: '16px' }}>{pendingDebt > 0 ? '💸' : '✅'}</span>
               </div>
-              <div className="progress-bar-container" style={{ height: '6px', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: '10px' }}>
-                <div className="progress-bar-fill" style={{ width: `${Math.min(100, profile.monthlyClayKg * 100)}%`, backgroundColor: 'var(--card-sage)', borderRadius: '10px', height: '100%' }} />
+              <div style={{ fontSize: '20px', fontWeight: 800, color: pendingDebt > 0 ? 'var(--rojo-alerta)' : 'var(--verde-oliva)' }}>
+                ${pendingDebt.toLocaleString('es-AR')}
               </div>
-              <span style={{ fontSize: '10px', color: profile.monthlyClayKg >= 1 ? 'var(--card-rust)' : 'var(--gris-medio)', marginTop: '8px', fontWeight: profile.monthlyClayKg >= 1 ? 800 : 600 }}>
-                {profile.monthlyClayKg >= 1 ? 'Límite alcanzado.' : 'Bloque 1kg disponible.'}
+              <span style={{ fontSize: '10px', color: pendingDebt > 0 ? 'var(--rojo-alerta)' : 'var(--gris-medio)', marginTop: '8px', fontWeight: pendingDebt > 0 ? 800 : 600 }}>
+                {pendingDebt > 0 ? 'Aboná a la brevedad.' : 'Todo al día.'}
               </span>
             </div>
           </div>
@@ -80,10 +115,18 @@ export default function InicioTab({
         </div>
       )}
       {myAlerts.map(a => (
-        <div key={a.id} className="alert-banner info animate-slide-up">
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div key={a.id} className="alert-banner info animate-slide-up" style={{ justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <NotificationsIcon style={{ fontSize: '18px' }} /> {a.message}
           </span>
+          {resolveAlertAction && (
+            <button 
+              onClick={() => resolveAlertAction(a.id)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', marginLeft: '12px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}
+            >
+              ✕
+            </button>
+          )}
         </div>
       ))}
 
@@ -105,7 +148,7 @@ export default function InicioTab({
                 <div key={b.id} style={{ padding: '20px', borderRadius: '28px', backgroundColor: 'var(--blanco)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                      {cd.day} · {cd.time}
+                      {cd.day} {b.date ? `${b.date.split('-')[2]}/${b.date.split('-')[1]}` : ''} · {cd.time}
                     </h4>
                     <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600 }}>
                       <LocationOnIcon style={{ fontSize: '14px', verticalAlign: 'text-bottom' }} /> {cd.sucursal} · Prof. {cd.teacherName}
@@ -126,6 +169,42 @@ export default function InicioTab({
           </div>
         )}
       </div>
+      {/* Modal Detalles de Deudas */}
+      {showDebtsModal && (
+        <div className="modal-overlay" onClick={() => setShowDebtsModal(false)}>
+          <div className="modal-content animate-scale-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)' }}>Detalle de deudas</h2>
+              <button onClick={() => setShowDebtsModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--gris-medio)' }}>×</button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
+              {myPendingPayments.map(p => (
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: 'var(--bg-crema)', borderRadius: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
+                      {(p.description || 'Deuda pendiente').charAt(0).toUpperCase() + (p.description || 'Deuda pendiente').slice(1).toLowerCase()}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
+                      {new Date(p.date || new Date()).toLocaleDateString('es-AR')}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>
+                    ${Number(p.amount).toLocaleString('es-AR')}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--gris-claro)' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>Total a abonar</span>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>
+                ${pendingDebt.toLocaleString('es-AR')}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

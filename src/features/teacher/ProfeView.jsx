@@ -122,9 +122,14 @@ export default function ProfeView() {
           fontFamily: 'var(--font-serif)',
           fontSize: '20px',
           fontWeight: 'bold',
-          boxShadow: 'var(--shadow-clay)'
+          boxShadow: 'var(--shadow-clay)',
+          overflow: 'hidden'
         }}>
-          {currentUser.name[0]}
+          {currentUser.avatar_url ? (
+            <img src={currentUser.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            currentUser.name[0]
+          )}
         </div>
       </div>
 

@@ -6,7 +6,6 @@ import ProfeView from './features/teacher/ProfeView';
 import AdminView from './features/admin/AdminView';
 import ConfigView from './features/support/ConfigView';
 import LoginView from './features/auth/LoginView';
-import ProfileView from './features/auth/ProfileView';
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -20,6 +19,10 @@ function AppContentWrapper() {
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [adminTab, setAdminTab] = useState('dashboard');
+
+  const userAlerts = (alerts || []).filter(a => 
+    !a.resolved && (currentUser?.role === 'ADMIN' || a.studentId === currentUser?.id)
+  );
 
   // Determinar qué vista renderizar
   const renderActiveView = () => {
@@ -35,7 +38,7 @@ function AppContentWrapper() {
       case 'PROFE':
         return <ProfeView />;
       case 'ALUMNO':
-        return <AlumnoView activeTab={viewOverride || 'inicio'} />;
+        return <AlumnoView activeTab={viewOverride || 'inicio'} setActiveTab={setViewOverride} />;
       case 'CONFIGURADOR':
         return <ConfigView />;
       default:
@@ -192,32 +195,33 @@ function AppContentWrapper() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Alertas y Configuración - Solo para Rol ADMIN */}
+          {/* Configuración - Solo para Rol ADMIN */}
           {currentUser?.role === 'ADMIN' && (
-            <>
-              {/* Botón de Configuración */}
-              <button
-                onClick={() => setAdminTab('config')}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '34px',
-                  height: '34px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  color: 'var(--blanco)',
-                  transition: 'var(--transition-quick)',
-                  outline: adminTab === 'config' ? '2px solid var(--blanco)' : 'none'
-                }}
-                title="Configuración"
-              >
-                <SettingsIcon style={{ fontSize: '22px' }} />
-              </button>
+            <button
+              onClick={() => setAdminTab('config')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '34px',
+                height: '34px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: 'var(--blanco)',
+                transition: 'var(--transition-quick)',
+                outline: adminTab === 'config' ? '2px solid var(--blanco)' : 'none'
+              }}
+              title="Configuración"
+            >
+              <SettingsIcon style={{ fontSize: '22px' }} />
+            </button>
+          )}
 
-              <div style={{ position: 'relative' }}>
+          {/* Alertas - Para ADMIN y ALUMNO */}
+          {['ADMIN', 'ALUMNO'].includes(currentUser?.role) && (
+            <div style={{ position: 'relative' }}>
               <button
                 onClick={() => {
                   setShowNotificationsDropdown(!showNotificationsDropdown);
@@ -239,8 +243,8 @@ function AppContentWrapper() {
                   transition: 'var(--transition-quick)'
                 }}
               >
-                <NotificationsIcon style={{ fontSize: '24px' }} />
-                {alerts && alerts.filter(a => !a.resolved).length > 0 && (
+                <NotificationsIcon style={{ fontSize: '24px', color: 'var(--blanco)' }} />
+                {userAlerts.length > 0 && (
                   <span
                     style={{
                       position: 'absolute',
@@ -261,7 +265,7 @@ function AppContentWrapper() {
                       border: '1.5px solid #513B2C'
                     }}
                   >
-                    {alerts.filter(a => !a.resolved).length}
+                    {userAlerts.length}
                   </span>
                 )}
               </button>
@@ -294,16 +298,16 @@ function AppContentWrapper() {
                       Notificaciones
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: 'bold', backgroundColor: 'var(--marron-arcilla-light)', padding: '2px 6px', borderRadius: '10px', fontFamily: 'var(--font-sans)' }}>
-                      {alerts ? alerts.filter(a => !a.resolved).length : 0} pendientes
+                      {userAlerts.length} pendientes
                     </span>
                   </div>
 
-                  {(!alerts || alerts.filter(a => !a.resolved).length === 0) ? (
+                  {userAlerts.length === 0 ? (
                     <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--gris-medio)', fontSize: '12px', fontStyle: 'italic', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                       No tienes alertas pendientes <AutoAwesomeIcon style={{ fontSize: '16px' }} />
                     </div>
                   ) : (
-                    alerts.filter(a => !a.resolved).map(alt => (
+                    userAlerts.map(alt => (
                       <div
                         key={alt.id}
                         style={{
@@ -360,8 +364,7 @@ function AppContentWrapper() {
                   )}
                 </div>
               )}
-              </div>
-            </>
+            </div>
           )}
 
           <div style={{ position: 'relative' }}>
@@ -372,8 +375,12 @@ function AppContentWrapper() {
                 setShowNotificationsDropdown(false);
               }}
             >
-              <div className="avatar-img-circle">
-                {currentUser?.nombre ? currentUser.nombre[0].toUpperCase() : currentUser?.name ? currentUser.name[0].toUpperCase() : 'U'}
+              <div className="avatar-img-circle" style={{ overflow: 'hidden' }}>
+                {currentUser?.avatar_url ? (
+                  <img src={currentUser.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  currentUser?.nombre ? currentUser.nombre[0].toUpperCase() : currentUser?.name ? currentUser.name[0].toUpperCase() : 'U'
+                )}
               </div>
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>∨</span>
             </div>

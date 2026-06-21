@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import BadgeIcon from '@mui/icons-material/Badge';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
@@ -43,6 +43,29 @@ export default function PerfilTab() {
   const handlePassInput = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Url = reader.result;
+        setFormData(prev => ({ ...prev, avatar_url: base64Url }));
+        
+        // Auto-guardar para que se refleje inmediatamente en el avatar superior
+        try {
+          await updateUserAction(currentUser.id, { ...formData, avatar_url: base64Url });
+          setMessage({ type: 'success', text: '¡Foto de perfil actualizada!' });
+          setTimeout(() => setMessage(null), 3000);
+        } catch (err) {
+          setMessage({ type: 'error', text: err.message || 'Error al actualizar la foto.' });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmitProfile = async (e) => {
@@ -177,30 +200,39 @@ export default function PerfilTab() {
               : avatarLetter
             }
           </div>
-          {/* Overlay camera button */}
-          <div style={{
-            position: 'absolute',
-            bottom: '2px',
-            right: '2px',
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            backgroundColor: '#2E4A3F',
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            cursor: 'pointer'
-          }}>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              position: 'absolute',
+              bottom: '2px',
+              right: '2px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              backgroundColor: '#2E4A3F',
+              color: 'white',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              cursor: 'pointer'
+            }}
+          >
             <CameraAltIcon style={{ fontSize: '15px' }} />
           </div>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleAvatarUpload}
+          />
         </div>
 
         <h2 style={{ fontSize: '20px', margin: '0 0 6px 0', fontWeight: '800', color: '#0F3B32', fontFamily: 'inherit' }}>
           {formData.nombre} {formData.apellido}
         </h2>
-        
+
         <span style={{
           backgroundColor: '#EBF1ED',
           color: '#2E4A3F',
@@ -248,7 +280,7 @@ export default function PerfilTab() {
               <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
             </div>
             <div className="form-group">
-              <label style={labelStyle}>Fecha de Nacimiento</label>
+              <label style={labelStyle}>Fecha de nacimiento</label>
               <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
             </div>
           </div>
@@ -274,19 +306,6 @@ export default function PerfilTab() {
               <label style={labelStyle}>Instagram (Usuario)</label>
               <input type="text" name="instagram" style={inputStyle} placeholder="@usuario" value={formData.instagram} onChange={handleInput} />
             </div>
-          </div>
-
-          <div style={sectionHeaderStyle}>
-            <div style={iconContainerStyle}>
-              <CameraAltIcon style={{ fontSize: '18px' }} />
-            </div>
-            <h3 style={headerTitleStyle}>Foto de Perfil</h3>
-          </div>
-
-          <div className="form-group">
-            <label style={labelStyle}>URL de la imagen (opcional)</label>
-            <input type="url" name="avatar_url" style={inputStyle} placeholder="https://ejemplo.com/mifoto.jpg" value={formData.avatar_url} onChange={handleInput} />
-            <p style={{ fontSize: '11px', color: '#8C9B96', marginTop: '6px', marginLeft: '4px' }}>Pegá el enlace de una imagen para usarla como tu foto de perfil.</p>
           </div>
 
           <button type="submit" className="btn-tuti btn-primary-clay" disabled={loading} style={{ marginTop: '8px' }}>
