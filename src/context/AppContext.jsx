@@ -35,19 +35,35 @@ export const AppProvider = ({ children }) => {
     if (!silent) setLoading(true);
     try {
       await mockService.initializeDB();
-      const loadedUsers = await mockService.getUsers();
-      const loadedProfiles = await mockService.getStudentProfiles();
-      const loadedClasses = await mockService.getClasses();
-      const loadedBookings = await mockService.getBookings();
-      const loadedDeliveries = await mockService.getClayDeliveries();
-      const loadedBakes = await mockService.getBakes().catch(() => []);
-      const loadedPayments = await mockService.getPayments();
-      const loadedAlerts = await mockService.getAlerts();
-      const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
-      const loadedNonWorkingDays = await mockService.getNonWorkingDays().catch(() => []);
-      const loadedPacks = await mockService.getPacks().catch(() => []);
-      const loadedBranches = await mockService.getBranches().catch(() => []);
-      const loadedFaqs = await mockService.getFaqs().catch(() => []);
+      const [
+        loadedUsers,
+        loadedProfiles,
+        loadedClasses,
+        loadedBookings,
+        loadedDeliveries,
+        loadedBakes,
+        loadedPayments,
+        loadedAlerts,
+        loadedWaitlist,
+        loadedNonWorkingDays,
+        loadedPacks,
+        loadedBranches,
+        loadedFaqs
+      ] = await Promise.all([
+        mockService.getUsers(),
+        mockService.getStudentProfiles(),
+        mockService.getClasses(),
+        mockService.getBookings(),
+        mockService.getClayDeliveries(),
+        mockService.getBakes().catch(() => []),
+        mockService.getPayments(),
+        mockService.getAlerts(),
+        mockService.getWaitlist().catch(() => []),
+        mockService.getNonWorkingDays().catch(() => []),
+        mockService.getPacks().catch(() => []),
+        mockService.getBranches().catch(() => []),
+        mockService.getFaqs().catch(() => [])
+      ]);
 
       setUsers(loadedUsers);
       setStudentProfiles(loadedProfiles);
@@ -119,12 +135,18 @@ export const AppProvider = ({ children }) => {
       Notification.requestPermission();
     }
 
-    // Polling cada 5 segundos para actualizar el sistema automáticamente
-    const interval = setInterval(() => {
-      loadData(true);
-    }, 5000);
+    let isPolling = true;
+    const pollData = async () => {
+      while (isPolling) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        if (isPolling) {
+          await loadData(true);
+        }
+      }
+    };
+    pollData();
 
-    return () => clearInterval(interval);
+    return () => { isPolling = false; };
   }, []);
 
   // Login Acción

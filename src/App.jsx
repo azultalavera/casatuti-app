@@ -36,7 +36,7 @@ function AppContentWrapper() {
       case 'ADMIN':
         return <AdminView activeTab={adminTab} setActiveTab={setAdminTab} />;
       case 'PROFE':
-        return <ProfeView />;
+        return <ProfeView activeTab={viewOverride || 'inicio'} setActiveTab={setViewOverride} />;
       case 'ALUMNO':
         return <AlumnoView activeTab={viewOverride || 'inicio'} setActiveTab={setViewOverride} />;
       case 'CONFIGURADOR':
@@ -525,6 +525,69 @@ function AppContentWrapper() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5h16.5a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6a1.5 1.5 0 011.5-1.5zm10.875 7.5a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0z" />
               </svg>
               <span>Créditos</span>
+            </button>
+
+            <button
+              onClick={() => setViewOverride('perfil')}
+              className={`nav-item ${viewOverride === 'perfil' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              <span>Perfil</span>
+            </button>
+
+            <button
+              onClick={() => {
+                logoutAction();
+                setViewOverride(null);
+                setShowHeaderDropdown(false);
+              }}
+              className="nav-item"
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+              </svg>
+              <span>Salir</span>
+            </button>
+          </>
+        ) : currentUser?.role === 'PROFE' ? (
+          <>
+            <button
+              onClick={() => setViewOverride('inicio')}
+              className={`nav-item ${(!viewOverride || viewOverride === 'inicio') ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+              <span>Inicio</span>
+            </button>
+
+            <button
+              onClick={() => setViewOverride('clases')}
+              className={`nav-item ${viewOverride === 'clases' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              <span>Clases</span>
+            </button>
+
+
+
+            <button
+              onClick={() => setViewOverride('alumnos')}
+              className={`nav-item ${viewOverride === 'alumnos' ? 'active' : ''}`}
+              style={{ background: 'transparent', border: 'none' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+              </svg>
+              <span>Alumnos</span>
             </button>
 
             <button

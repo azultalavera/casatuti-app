@@ -205,11 +205,13 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--verde-oliva)', borderWidth: '2px' }
                 }}
                 MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 224,
-                      width: 250,
-                      borderRadius: '16px'
+                  slotProps: {
+                    paper: {
+                      style: {
+                        maxHeight: 224,
+                        width: 250,
+                        borderRadius: '16px'
+                      },
                     },
                   },
                 }}
@@ -221,12 +223,12 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                     size="small" 
                     sx={{ color: 'var(--gris-medio)', '&.Mui-checked, &.MuiCheckbox-indeterminate': { color: 'var(--verde-oliva)' } }} 
                   />
-                  <ListItemText primary="Seleccionar todas" primaryTypographyProps={{ fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' }} />
+                  <ListItemText primary="Seleccionar todas" slotProps={{ primary: { fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' } }} />
                 </MenuItem>
                 {branches.map((b) => (
                   <MenuItem key={b.id} value={b.name} style={{ fontSize: '14px' }}>
                     <Checkbox checked={teacherBranches.indexOf(b.name) > -1} size="small" sx={{ color: 'var(--gris-medio)', '&.Mui-checked': { color: 'var(--verde-oliva)' } }} />
-                    <ListItemText primary={b.name} primaryTypographyProps={{ fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }} />
+                    <ListItemText primary={b.name} slotProps={{ primary: { fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' } }} />
                   </MenuItem>
                 ))}
               </Select>
