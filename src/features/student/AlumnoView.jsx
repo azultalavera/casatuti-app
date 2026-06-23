@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import InicioTab from './InicioTab';
 import TurnosTab from './TurnosTab';
@@ -30,6 +30,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
     bookings,
     bookClass,
     cancelBooking,
+    rescheduleBooking,
     requestStudentPayment,
     alerts,
     waitlist,
@@ -46,6 +47,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
   const [selectedDay, setSelectedDay] = useState(defaultDay);
   const [bookingError, setBookingError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [initialRescheduleBookingId, setInitialRescheduleBookingId] = useState(null);
 
   // --- Estado de Créditos / Compra ---
   const [showBuyModal, setShowBuyModal] = useState(false);
@@ -61,8 +63,14 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
   };
 
   const myBookings = bookings.filter(
-    b => b.studentId === currentUser.id && b.status === 'CONFIRMED'
-  );
+    b => b.studentId === currentUser.id && b.status === 'CONFIRMED' && new Date(b.date + 'T23:59:59') >= new Date()
+  ).sort((a, b) => {
+    const dateDiff = new Date(a.date) - new Date(b.date);
+    if (dateDiff !== 0) return dateDiff;
+    const classA = classes.find(c => c.id === a.classId);
+    const classB = classes.find(c => c.id === b.classId);
+    return (classA?.time || '').localeCompare(classB?.time || '');
+  });
 
   const myAlerts = alerts.filter(
     a => a.studentId === currentUser.id && !a.resolved
@@ -71,15 +79,52 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
   const weekDays = useMemo(() => {
     return DAYS_OF_WEEK.map(day => {
       const date = getWeekDate(day);
-      const hasTurns = classes.some(c => c.day === day);
+      let hasTurns = false;
+      
+      if (date) {
+        hasTurns = classes.some(c => {
+          if (c.day !== day) return false;
+          const startTimeStr = (c.time || '00:00').split(' - ')[0];
+          const [hours, minutes] = startTimeStr.split(':').map(Number);
+          
+          const classStartTime = new Date(`${date}T00:00:00`);
+          classStartTime.setHours(hours, minutes, 0, 0);
+
+          const now = new Date();
+          const diffMs = classStartTime.getTime() - now.getTime();
+          return diffMs >= 300000;
+        });
+      }
+
       return { day, date, available: !!date, hasTurns };
-    });
+    }).filter(d => d.hasTurns);
   }, [classes]);
+
+  useEffect(() => {
+    if (weekDays.length > 0 && !weekDays.find(w => w.day === selectedDay)) {
+      setSelectedDay(weekDays[0].day);
+    }
+  }, [weekDays, selectedDay]);
 
   const selectedDate = getWeekDate(selectedDay);
 
   const studentBranch = currentUser.sucursal ? currentUser.sucursal.toUpperCase() : null;
-  const classesForDay = classes.filter(c => c.day === selectedDay);
+  const classesForDay = classes.filter(c => {
+    if (c.day !== selectedDay) return false;
+    if (!selectedDate) return false;
+
+    const startTimeStr = (c.time || '00:00').split(' - ')[0];
+    const [hours, minutes] = startTimeStr.split(':').map(Number);
+    
+    const classStartTime = new Date(`${selectedDate}T00:00:00`);
+    classStartTime.setHours(hours, minutes, 0, 0);
+
+    const now = new Date();
+    const diffMs = classStartTime.getTime() - now.getTime();
+    
+    // Solo mostrar si faltan 5 minutos o más (300000 ms = 5 min)
+    return diffMs >= 300000;
+  });
   const byBranch = branches
     .filter(branch => !studentBranch || branch.name === studentBranch)
     .map(branch => ({
@@ -147,22 +192,38 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
     }
   };
 
+  const handleReschedule = async (bookingId, newClassId, newDateStr) => {
+    try {
+      await rescheduleBooking(bookingId, newClassId, newDateStr);
+      setSuccessMessage('¡Reserva reprogramada con éxito!');
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } catch (err) {
+      setBookingError(err.message);
+      setTimeout(() => setBookingError(''), 5000);
+    }
+  };
+
   return (
     <>
       <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* Cabecera */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span className="badge badge-clay" style={{ marginBottom: '6px' }}>Alumno activo</span>
-            <h2 style={{ fontSize: '26px' }}>¡Hola, {currentUser.name}!</h2>
+        {activeTab !== 'creditos' && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="badge badge-clay" style={{ marginBottom: '6px' }}>Alumno activo</span>
+              <h2 style={{ fontSize: '26px' }}>
+                {activeTab === 'inicio' ? `¡Hola, ${currentUser.name}!` : activeTab === 'turnos' ? 'Turnos' : 'Mi perfil'}
+              </h2>
+            </div>
           </div>
-        </div>
+        )}
 
         {activeTab === 'inicio' && (
           <InicioTab
             currentUser={currentUser}
             profile={profile}
+            bookings={bookings}
             myBookings={myBookings}
             myAlerts={myAlerts}
             bookingError={bookingError}
@@ -171,6 +232,10 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             payments={payments}
             resolveAlertAction={resolveAlertAction}
             onCancel={handleCancel}
+            onReprogramar={(bId) => {
+              setInitialRescheduleBookingId(bId);
+              if (setActiveTab) setActiveTab('turnos');
+            }}
             onOpenBuyModal={() => { setBuyStep(1); setShowBuyModal(true); }}
             onGoToTurnos={() => { if (setActiveTab) setActiveTab('turnos'); }}
           />
@@ -185,8 +250,13 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             selectedDate={selectedDate}
             byBranch={byBranch}
             bookings={bookings}
+            myBookings={myBookings}
             classes={classes}
             onBook={handleBook}
+            onCancel={handleCancel}
+            onReschedule={handleReschedule}
+            initialRescheduleBookingId={initialRescheduleBookingId}
+            clearInitialReschedule={() => setInitialRescheduleBookingId(null)}
             bookingError={bookingError}
             successMessage={successMessage}
             waitlist={waitlist}
@@ -198,6 +268,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
         {activeTab === 'creditos' && (
           <CreditosTab
             currentUser={currentUser}
+            profile={profile}
             activePacks={activePacks}
             selectedPackId={selectedPackId}
             setSelectedPackId={setSelectedPackId}
@@ -206,6 +277,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             setBuyStep={setBuyStep}
             buyLoading={buyLoading}
             onBuy={handleBuy}
+            payments={payments}
           />
         )}
 
@@ -227,6 +299,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             </div>
             <CreditosTab
               currentUser={currentUser}
+              profile={profile}
               activePacks={activePacks}
               selectedPackId={selectedPackId}
               setSelectedPackId={setSelectedPackId}
@@ -235,6 +308,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
               setBuyStep={buyStep === 2 ? () => setShowBuyModal(false) : setBuyStep}
               buyLoading={buyLoading}
               onBuy={handleBuy}
+              payments={payments}
               isModal={true}
             />
           </div>

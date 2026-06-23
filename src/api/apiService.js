@@ -229,6 +229,15 @@ export const apiService = {
     throw new Error('Operación de actualización de reserva no soportada en el servidor real.');
   },
 
+  rescheduleBooking: async (bookingId, newClassId, newDate) => {
+    const res = await fetch(`${API_URL}/bookings/${bookingId}/reschedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newClassId, newDate })
+    });
+    return handleResponse(res);
+  },
+
   // --- ENTREGAS DE ARCILLA ---
   getClayDeliveries: async () => {
     const res = await fetch(`${API_URL}/clay-deliveries`);
@@ -300,9 +309,11 @@ export const apiService = {
     return handleResponse(res);
   },
 
-  confirmPayment: async (paymentId) => {
+  confirmPayment: async (paymentId, confirmationDate) => {
     const res = await fetch(`${API_URL}/payments/${paymentId}/confirm`, {
-      method: 'PUT'
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmationDate })
     });
     return handleResponse(res);
   },

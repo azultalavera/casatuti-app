@@ -57,6 +57,7 @@ CREATE TABLE public.t_historial_creditos (
   cantidad integer NOT NULL,
   motivo text,
   fec_movimiento timestamp with time zone DEFAULT now(),
+  bl_notificado_venc boolean DEFAULT false,
   CONSTRAINT t_historial_creditos_pkey PRIMARY KEY (id),
   CONSTRAINT t_historial_creditos_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.t_usuarios(id_usuario)
 );

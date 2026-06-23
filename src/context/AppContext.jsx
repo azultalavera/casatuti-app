@@ -307,61 +307,48 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // 2. Cancelar reserva con lógica de 2 horas de límite
+  // 2. Cancelar reserva delegando la lógica al backend
   const cancelBooking = async (bookingId, forceLate = false) => {
     setLoading(true);
     try {
-      const booking = bookings.find(b => b.id === bookingId);
-      if (!booking) throw new Error("Reserva no encontrada");
+      // Llamada al backend real para procesar la cancelación. El backend calcula las 2 horas y devuelve los créditos si corresponde.
+      const response = await mockService.updateBooking(bookingId, { 
+        status: forceLate ? 'CANCELLED_LATE' : 'CANCELLED' 
+      });
 
-      const classData = classes.find(c => c.id === booking.classId);
-      const profile = studentProfiles.find(p => p.studentId === booking.studentId);
-
-      if (!classData || !profile) throw new Error("Datos de perfil o clase inconsistentes");
-
-      // Validar límite de 2 horas
-      // Extraemos la hora de inicio de la clase (ej: "18:00 - 20:00" -> "18:00")
-      const startTimeStr = classData.time.split(' - ')[0]; // "18:00"
-      const [hours, minutes] = startTimeStr.split(':').map(Number);
-      
-      // Combinamos la fecha de la clase con la hora de inicio
-      const classStartDateTime = new Date(booking.date);
-      classStartDateTime.setHours(hours, minutes, 0, 0);
-
-      const now = new Date();
-      const diffMs = classStartDateTime.getTime() - now.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-
-      const isLateCancellation = forceLate || diffHours < 2;
-
-      if (isLateCancellation) {
-        // Cancelación tardía: se cobra la clase (no se devuelven los créditos)
-        await mockService.updateBooking(bookingId, { status: 'CANCELLED_LATE' });
-        
-        // Crear alerta para el administrador
-        await mockService.createAlert({
-          type: 'LATE_CANCELLATION',
-          message: `El alumno ${booking.studentName} realizó una cancelación tardía (menos de 2 horas de anticipación) para "${classData.name}" del ${booking.date} a las ${startTimeStr}. Se debitó el crédito.`
-        });
-      } else {
-        // Cancelación a tiempo: se devuelve el crédito
-        await mockService.updateBooking(bookingId, { status: 'CANCELLED' });
-        await mockService.updateStudentProfile(booking.studentId, {
-          classCredits: profile.classCredits + 1
-        });
-      }
-
-      // Recargar datos actualizados
+      // Recargar datos actualizados desde el backend
       const loadedBookings = await mockService.getBookings();
       setBookings(loadedBookings);
       const loadedProfiles = await mockService.getStudentProfiles();
       setStudentProfiles(loadedProfiles);
       const loadedAlerts = await mockService.getAlerts();
       setAlerts(loadedAlerts);
+      
+      // La respuesta del backend debería indicar si fue tardía
+      return { isLateCancellation: response.isLateCancellation };
+    } catch (error) {
+      console.error('Error al cancelar reserva:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rescheduleBooking = async (bookingId, newClassId, newDateStr) => {
+    setLoading(true);
+    try {
+      await mockService.rescheduleBooking(bookingId, newClassId, newDateStr);
+
+      // Recargar datos actualizados
+      const loadedBookings = await mockService.getBookings();
+      setBookings(loadedBookings);
+      const loadedAlerts = await mockService.getAlerts();
+      setAlerts(loadedAlerts);
+      const loadedProfiles = await mockService.getStudentProfiles();
+      setStudentProfiles(loadedProfiles);
       const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
       setWaitlist(loadedWaitlist);
-
-      return { isLateCancellation };
+      return true;
     } finally {
       setLoading(false);
     }
@@ -489,10 +476,10 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const confirmPendingPayment = async (paymentId) => {
+  const confirmPendingPayment = async (paymentId, confirmationDate) => {
     setLoading(true);
     try {
-      await mockService.confirmPayment(paymentId);
+      await mockService.confirmPayment(paymentId, confirmationDate);
       // Recargar perfiles y pagos
       const loadedProfiles = await mockService.getStudentProfiles();
       setStudentProfiles(loadedProfiles);
@@ -846,6 +833,7 @@ export const AppProvider = ({ children }) => {
         resetDatabase,
         bookClass,
         cancelBooking,
+        rescheduleBooking,
         joinWaitlistAction,
         takeAttendance,
         deliverClayToStudent,

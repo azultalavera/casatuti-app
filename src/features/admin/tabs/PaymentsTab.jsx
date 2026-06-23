@@ -70,6 +70,7 @@ export default function PaymentsTab({ showFeedback }) {
   // Acciones Masivas
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState(null);
 
   // Tabs y Modales
   const [activeTab, setActiveTab] = useState(pendingPayments.length > 0 ? 'PENDING' : 'CONFIRMED');
@@ -138,19 +139,28 @@ export default function PaymentsTab({ showFeedback }) {
   };
 
   const handleBulkConfirm = async () => {
-    if (!confirm(`¿Estás seguro de confirmar ${selectedPayments.length} pagos?`)) return;
+    if (selectedPayments.length === 0) return;
+    setConfirmModalData({
+      ids: selectedPayments,
+      date: new Date().toISOString().split('T')[0]
+    });
+  };
+  const handleConfirmSubmit = async () => {
+    if (!confirmModalData || confirmModalData.ids.length === 0) return;
     setIsProcessingBulk(true);
     let successCount = 0;
-    for (const id of selectedPayments) {
+    for (const id of confirmModalData.ids) {
       try {
-        await confirmPendingPayment(id);
+        await confirmPendingPayment(id, confirmModalData.date);
         successCount++;
       } catch (e) {
         console.error(`Error confirmando pago ${id}:`, e);
+        showFeedback(e.message || 'Error al confirmar', 'danger');
       }
     }
     setIsProcessingBulk(false);
     setSelectedPayments([]);
+    setConfirmModalData(null);
     if (successCount > 0) {
       showFeedback(`Se confirmaron ${successCount} pagos exitosamente.`, 'info');
       setActiveTab('CONFIRMED');
@@ -302,13 +312,10 @@ export default function PaymentsTab({ showFeedback }) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }} onClick={e => e.stopPropagation()}>
                         <button
                           onClick={async () => {
-                            try {
-                              await confirmPendingPayment(pay.id);
-                              showFeedback(`Pago de ${st?.name} confirmado con éxito.`, 'info');
-                              setActiveTab('CONFIRMED');
-                            } catch (err) {
-                              showFeedback(err.message, 'danger');
-                            }
+                            setConfirmModalData({
+                              ids: [pay.id],
+                              date: new Date().toISOString().split('T')[0]
+                            });
                           }}
                           className="btn-tuti btn-primary-clay"
                           style={{ fontSize: '11px', padding: '6px 12px' }}
@@ -758,6 +765,57 @@ export default function PaymentsTab({ showFeedback }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       </button>
+
+      {/* Modal de Confirmación de Fecha */}
+      {confirmModalData && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px'
+        }}>
+          <div className="clay-card animate-slide-up" style={{
+            width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px',
+            borderRadius: '24px', boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: '0 0 16px 0' }}>
+              Confirmar {confirmModalData.ids.length > 1 ? 'pagos' : 'pago'}
+            </h3>
+            
+            <div className="form-group">
+              <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>Fecha de transferencia / acreditación:</label>
+              <input
+                type="date"
+                className="input-tuti"
+                value={confirmModalData.date}
+                onChange={(e) => setConfirmModalData({ ...confirmModalData, date: e.target.value })}
+                style={{ marginTop: '8px', backgroundColor: 'var(--bg-crema)', border: 'none', borderRadius: '12px', padding: '12px', width: '100%', boxSizing: 'border-box' }}
+              />
+              <p style={{ fontSize: '11px', color: 'var(--gris-medio)', marginTop: '8px', lineHeight: '1.4' }}>
+                El vencimiento de los créditos (30 días) se calculará a partir de esta fecha.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button
+                onClick={() => setConfirmModalData(null)}
+                className="btn-tuti btn-secondary"
+                style={{ flex: 1, backgroundColor: 'var(--bg-crema)', color: 'var(--gris-oscuro)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                disabled={isProcessingBulk}
+                className="btn-tuti btn-primary-clay"
+                style={{ flex: 1 }}
+              >
+                {isProcessingBulk ? 'Procesando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Estilos CSS Inyectados */}
       <style dangerouslySetInnerHTML={{
