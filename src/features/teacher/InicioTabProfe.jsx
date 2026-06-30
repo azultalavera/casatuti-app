@@ -234,7 +234,7 @@ export default function InicioTabProfe({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div className="stat-card-modern-content">
-              <div className="stat-card-modern-number" style={{ fontSize: '18px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 800, fontFamily: 'var(--font-sans)', lineHeight: '1.2', letterSpacing: '-0.3px', marginBottom: '4px' }}>
                 Horneados y<br/>Arcilla Extra
               </div>
               <div className="stat-card-modern-label">Registrar insumos</div>

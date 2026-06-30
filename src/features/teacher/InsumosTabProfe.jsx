@@ -52,18 +52,19 @@ export default function InsumosTabProfe({
     return candidates.length > 0 ? candidates[0] : null;
   }, [myClasses]);
 
-  const [selectedSucursal, setSelectedSucursal] = useState(nextClassData?.sucursal || '');
   const [selectedClassId, setSelectedClassId] = useState(nextClassData ? `${nextClassData.classId}-${nextClassData.dateStr}` : '');
 
   // Modal de Horneado
-  const [bakeModal, setBakeModal] = useState({ isOpen: false, studentId: null, studentName: null, description: '', price: '' });
+  const [bakeModal, setBakeModal] = useState({ 
+    isOpen: false, studentId: null, studentName: null, description: '', price: '', 
+    paymentMethod: 'PENDIENTE', amountCash: '', amountTransfer: '' 
+  });
   // Modal de Arcilla
   const [clayModal, setClayModal] = useState({ isOpen: false, studentId: null, studentName: null, quantity: '' });
 
-  // Derivar opciones de clases según la sucursal seleccionada (próximos 15 días)
+  // Derivar opciones de clases (próximos 15 días)
   const availableClasses = useMemo(() => {
-    if (!selectedSucursal || myClasses.length === 0) return [];
-    const branchClasses = myClasses.filter(c => c.sucursal === selectedSucursal);
+    if (myClasses.length === 0) return [];
     const now = new Date();
     let list = [];
     for (let i = 0; i < 15; i++) {
@@ -71,19 +72,19 @@ export default function InsumosTabProfe({
       dateToCheck.setDate(now.getDate() + i);
       const dayName = DAYS[dateToCheck.getDay()];
       
-      const dayClasses = branchClasses.filter(c => c.day === dayName);
+      const dayClasses = myClasses.filter(c => c.day === dayName);
       for (const c of dayClasses) {
         const dateStr = `${dateToCheck.getFullYear()}-${String(dateToCheck.getMonth() + 1).padStart(2, '0')}-${String(dateToCheck.getDate()).padStart(2, '0')}`;
         list.push({
           id: `${c.id}-${dateStr}`,
           classId: c.id,
           dateStr: dateStr,
-          label: `${dayName} ${dateToCheck.getDate()} - ${c.time}`
+          label: `${c.sucursal ? c.sucursal + ' - ' : ''}${dayName} ${dateToCheck.getDate()} - ${c.time}`
         });
       }
     }
     return list;
-  }, [selectedSucursal, myClasses]);
+  }, [myClasses]);
 
   // Alumnos inscriptos en la clase seleccionada
   const enrolledStudents = useMemo(() => {
@@ -104,13 +105,22 @@ export default function InsumosTabProfe({
     e.preventDefault();
     if (!bakeModal.description || !bakeModal.price) return;
     try {
+      let finalDescription = bakeModal.description;
+      if (bakeModal.paymentMethod === 'CONTADO') {
+        finalDescription += ' (Pagado en Efectivo)';
+      } else if (bakeModal.paymentMethod === 'TRANSF') {
+        finalDescription += ' (Pagado por Transferencia)';
+      } else if (bakeModal.paymentMethod === 'COMBINADO') {
+        finalDescription += ` (Pago Combinado: $${bakeModal.amountCash || 0} Efvo, $${bakeModal.amountTransfer || 0} Transf)`;
+      }
+
       await createBake({
         studentId: bakeModal.studentId,
-        description: bakeModal.description,
+        description: finalDescription,
         price: parseFloat(bakeModal.price)
       });
-      alert(`Horneado registrado con éxito para ${bakeModal.studentName}. (Quedó pendiente de pago)`);
-      setBakeModal({ isOpen: false, studentId: null, studentName: null, description: '', price: '' });
+      alert(`Horneado registrado con éxito para ${bakeModal.studentName}.`);
+      setBakeModal({ isOpen: false, studentId: null, studentName: null, description: '', price: '', paymentMethod: 'PENDIENTE', amountCash: '', amountTransfer: '' });
     } catch (err) {
       alert("Error al registrar horneado: " + err.message);
     }
@@ -135,7 +145,7 @@ export default function InsumosTabProfe({
     <>
       <div style={{ marginBottom: '24px' }}>
         <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '8px' }}>
-          Horneados y Arcilla Extra
+          Horneados y arcilla extra
         </h3>
         <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>
           Registrá los servicios de horneado o venta de arcilla extra por alumna. Se cargarán como deuda pendiente.
@@ -144,29 +154,12 @@ export default function InsumosTabProfe({
 
       <div className="clay-card" style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'var(--blanco)', marginBottom: '24px' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 200px' }}>
-            <label className="label-tuti">Sucursal</label>
-            <select 
-              className="input-tuti" 
-              value={selectedSucursal} 
-              onChange={e => {
-                setSelectedSucursal(e.target.value);
-                setSelectedClassId('');
-              }}
-            >
-              <option value="">Seleccionar Sucursal</option>
-              <option value="ALTO VERDE">Alto Verde</option>
-              <option value="CENTRO">Centro</option>
-            </select>
-          </div>
-          
           <div style={{ flex: '1 1 300px' }}>
             <label className="label-tuti">Turno / Clase</label>
             <select 
               className="input-tuti" 
               value={selectedClassId} 
               onChange={e => setSelectedClassId(e.target.value)}
-              disabled={!selectedSucursal}
             >
               <option value="">Seleccionar Turno</option>
               {availableClasses.map(c => (
@@ -198,7 +191,7 @@ export default function InsumosTabProfe({
                     <button 
                       className="btn-tuti btn-outline-tuti" 
                       style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'var(--marron-arcilla)', color: 'var(--marron-arcilla)' }}
-                      onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, description: '', price: '' })}
+                      onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, description: '', price: '', paymentMethod: 'PENDIENTE', amountCash: '', amountTransfer: '' })}
                     >
                       <LocalFireDepartmentIcon style={{ fontSize: '14px' }} /> Horneado
                     </button>
@@ -219,15 +212,18 @@ export default function InsumosTabProfe({
 
       {/* Modal Horneado */}
       {bakeModal.isOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '16px'
-        }}>
+        <div className="modal-overlay" style={{ padding: '16px' }}>
           <div className="clay-card animate-slide-up" style={{
-            width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px'
+            width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px', position: 'relative',
+            maxHeight: '90vh', overflowY: 'auto'
           }}>
+            <button 
+              type="button" 
+              onClick={() => setBakeModal({...bakeModal, isOpen: false})}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--gris-medio)' }}
+            >
+              ✕
+            </button>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '16px' }}>
               Registrar Horneado
             </h3>
@@ -246,7 +242,7 @@ export default function InsumosTabProfe({
                   placeholder="Detalle de piezas..."
                 />
               </div>
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label className="label-tuti">Monto a cobrar ($)</label>
                 <input 
                   type="number" 
@@ -258,10 +254,57 @@ export default function InsumosTabProfe({
                   min="0"
                 />
               </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn-tuti btn-outline-tuti" onClick={() => setBakeModal({...bakeModal, isOpen: false})}>Cancelar</button>
-                <button type="submit" className="btn-tuti btn-primary-tuti">Registrar (Pendiente)</button>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label className="label-tuti">¿Cómo abonó?</label>
+                <select 
+                  className="input-tuti"
+                  value={bakeModal.paymentMethod}
+                  onChange={e => setBakeModal({...bakeModal, paymentMethod: e.target.value})}
+                >
+                  <option value="PENDIENTE">A pagar (queda pendiente)</option>
+                  <option value="CONTADO">Efectivo</option>
+                  <option value="TRANSF">Transferencia</option>
+                  <option value="COMBINADO">Combinado (Efectivo + Transferencia)</option>
+                </select>
               </div>
+
+              {bakeModal.paymentMethod === 'COMBINADO' && (
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="label-tuti">Monto Efectivo</label>
+                    <input 
+                      type="number" 
+                      className="input-tuti" 
+                      required
+                      value={bakeModal.amountCash}
+                      onChange={e => setBakeModal({...bakeModal, amountCash: e.target.value})}
+                      placeholder="$"
+                      min="0"
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="label-tuti">Monto Transf.</label>
+                    <input 
+                      type="number" 
+                      className="input-tuti" 
+                      required
+                      value={bakeModal.amountTransfer}
+                      onChange={e => setBakeModal({...bakeModal, amountTransfer: e.target.value})}
+                      placeholder="$"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                className="btn-tuti btn-primary-tuti" 
+                style={{ width: '100%', padding: '14px', fontSize: '15px', backgroundColor: 'var(--verde-oliva)', border: 'none' }}
+              >
+                Registrar
+              </button>
             </form>
           </div>
         </div>
@@ -269,15 +312,18 @@ export default function InsumosTabProfe({
 
       {/* Modal Arcilla */}
       {clayModal.isOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '16px'
-        }}>
+        <div className="modal-overlay" style={{ padding: '16px' }}>
           <div className="clay-card animate-slide-up" style={{
-            width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px'
+            width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px', position: 'relative',
+            maxHeight: '90vh', overflowY: 'auto'
           }}>
+            <button 
+              type="button" 
+              onClick={() => setClayModal({...clayModal, isOpen: false})}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--gris-medio)' }}
+            >
+              ✕
+            </button>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '16px' }}>
               Arcilla Extra
             </h3>
@@ -299,10 +345,13 @@ export default function InsumosTabProfe({
               <p style={{ fontSize: '12px', color: 'var(--gris-medio)', fontStyle: 'italic', marginBottom: '20px' }}>
                 El monto lo asignará el administrador más tarde.
               </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn-tuti btn-outline-tuti" onClick={() => setClayModal({...clayModal, isOpen: false})}>Cancelar</button>
-                <button type="submit" className="btn-tuti btn-primary-tuti">Registrar</button>
-              </div>
+              <button 
+                type="submit" 
+                className="btn-tuti btn-primary-tuti" 
+                style={{ width: '100%', padding: '14px', fontSize: '15px', backgroundColor: 'var(--verde-oliva)', border: 'none' }}
+              >
+                Registrar
+              </button>
             </form>
           </div>
         </div>

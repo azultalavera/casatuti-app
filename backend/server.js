@@ -1532,7 +1532,7 @@ app.post('/api/bakes', async (req, res) => {
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
-        ($1, 'HORNO', $2, $3, 'PENDIENTE', false, NOW())`,
+        ($1, 'HORNO', $2, $3, NULL, false, NOW())`,
       [studentId, description, price]
     );
 
@@ -1557,7 +1557,7 @@ app.post('/api/extra-clay', async (req, res) => {
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
-        ($1, 'ARCILLA', $2, 0, 'PENDIENTE', false, NOW())`,
+        ($1, 'ARCILLA', $2, 0, NULL, false, NOW())`,
       [studentId, descripcion]
     );
 
