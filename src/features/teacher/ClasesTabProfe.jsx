@@ -168,7 +168,7 @@ export default function ClasesTabProfe({
               <button onClick={handlePrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--marron-arcilla)' }}>
                 <ChevronLeftIcon />
               </button>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, textTransform: 'capitalize' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
                 {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </h3>
               <button onClick={handleNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--marron-arcilla)' }}>
@@ -311,7 +311,7 @@ export default function ClasesTabProfe({
               <ArrowBackIcon style={{ color: 'var(--gris-oscuro)', fontSize: '20px' }} />
             </button>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Gestión de Alumnos</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Gestión de alumnos</h3>
               <span style={{ fontSize: '12px', color: 'var(--gris-medio)', fontWeight: 600 }}>{selectedDateStr.split('-').reverse().join('/')}</span>
             </div>
           </div>
@@ -353,7 +353,7 @@ export default function ClasesTabProfe({
                       {/* Arcilla */}
                       <div>
                         {profile.monthlyClayKg >= 1.0 ? (
-                          <button className="btn-tuti btn-disabled" style={{ padding: '8px 16px', fontSize: '12px', width: '100%' }} disabled>✓ Bloque de 1kg Entregado</button>
+                          <button className="btn-tuti btn-disabled" style={{ padding: '8px 16px', fontSize: '12px', width: '100%' }} disabled>✓ Bloque de 1kg entregado</button>
                         ) : (
                           <button onClick={() => handleClayDelivery(b.studentId, b.studentName)} className="btn-tuti btn-primary-clay" style={{ padding: '8px 16px', fontSize: '12px', width: '100%', justifyContent: 'center' }}>
                             <CardGiftcardIcon style={{ fontSize: '14px' }} /> Entregar 1kg Arcilla
@@ -363,7 +363,7 @@ export default function ClasesTabProfe({
                       {/* Horneado */}
                       <div>
                         <button onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, price: '', paymentMethod: 'CONTADO' })} className="btn-tuti btn-secondary" style={{ padding: '8px 16px', fontSize: '12px', width: '100%', justifyContent: 'center' }}>
-                          Registrar Horneado
+                          Registrar horneado
                         </button>
                       </div>
                     </div>
@@ -379,7 +379,7 @@ export default function ClasesTabProfe({
       {bakeModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Registrar Horneado</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Registrar horneado</h3>
             <p style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '16px' }}>Alumno: <strong>{bakeModal.studentName}</strong></p>
             <form onSubmit={handleRegisterBake} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -389,13 +389,13 @@ export default function ClasesTabProfe({
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Método de Pago *</label>
                 <select className="input-tuti" value={bakeModal.paymentMethod} onChange={(e) => setBakeModal({...bakeModal, paymentMethod: e.target.value})}>
-                  <option value="CONTADO">Efectivo / Contado</option>
+                  <option value="CONTADO">Efectivo / contado</option>
                   <option value="TRANSF">Transferencia</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                 <button type="button" onClick={() => setBakeModal({ ...bakeModal, isOpen: false })} className="btn-tuti btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-                <button type="submit" className="btn-tuti btn-primary-clay" style={{ flex: 1 }}>Confirmar Registro</button>
+                <button type="submit" className="btn-tuti btn-primary-clay" style={{ flex: 1 }}>Confirmar registro</button>
               </div>
             </form>
           </div>
@@ -406,14 +406,14 @@ export default function ClasesTabProfe({
       {pauseModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Solicitar Pausa de Clase</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Solicitar pausa de clase</h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginBottom: '16px', lineHeight: '1.4' }}>
               Estás por enviar una solicitud al administrador para pausar la clase <strong>{pauseModal.classInfo?.name}</strong> del día <strong>{pauseModal.dateStr?.split('-').reverse().join('/')}</strong>. 
               Los alumnos inscriptos serán notificados si la pausa es aprobada.
             </p>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button type="button" onClick={() => setPauseModal({ isOpen: false, classInfo: null, dateStr: null })} className="btn-tuti btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-              <button type="button" onClick={handleRequestPause} className="btn-tuti btn-primary-clay" style={{ flex: 1, backgroundColor: 'var(--rojo-alerta)' }}>Enviar Solicitud</button>
+              <button type="button" onClick={handleRequestPause} className="btn-tuti btn-primary-clay" style={{ flex: 1, backgroundColor: 'var(--rojo-alerta)' }}>Enviar solicitud</button>
             </div>
           </div>
         </div>

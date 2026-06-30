@@ -387,7 +387,6 @@ export default function TurnosTab({
                 fontWeight: 700,
                 outline: 'none',
                 cursor: 'pointer',
-                textTransform: 'capitalize',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
               }}
             >
@@ -493,7 +492,7 @@ export default function TurnosTab({
       {rescheduleModalOpen && bookingToReschedule && (
         <div className="modal-overlay" onClick={() => setRescheduleModalOpen(false)}>
           <div className="modal-content animate-scale-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)', marginBottom: '16px' }}>Reprogramar Turno</h2>
+            <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)', marginBottom: '16px' }}>Reprogramar turno</h2>
             <p style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '16px' }}>
               Seleccioná un nuevo día y horario para reprogramar tu clase.
             </p>
@@ -526,7 +525,10 @@ export default function TurnosTab({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
               {classes.filter(c => {
                 const origClass = classes.find(orig => orig.id === bookingToReschedule?.classId);
-                return c.day === rescheduleSelectedDay && origClass && c.sucursal === origClass.sucursal;
+                const dateStr = weekDays.find(w => w.day === rescheduleSelectedDay)?.date;
+                const isAlreadyEnrolled = myBookings?.some(b => b.classId === c.id && b.date === dateStr && b.status === 'CONFIRMED');
+                const isSameSlot = bookingToReschedule?.classId === c.id && bookingToReschedule?.date === dateStr;
+                return c.day === rescheduleSelectedDay && origClass && c.sucursal === origClass.sucursal && !isAlreadyEnrolled && !isSameSlot;
               }).map(c => {
                 const dateStr = weekDays.find(w => w.day === rescheduleSelectedDay)?.date;
                 const occ = getOccupancyInfo(c.id, dateStr);

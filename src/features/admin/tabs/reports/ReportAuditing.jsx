@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../../../context/AppContext';
-import { exportToCSV } from '../../../../utils/exportToCSV';
+import { exportToExcel } from '../../../../utils/exportToExcel';
 
 export default function ReportAuditing() {
   const { payments, users } = useApp();
@@ -26,7 +26,7 @@ export default function ReportAuditing() {
       };
     });
 
-    exportToCSV(exportData, `Reporte_Auditoria_Deudas`);
+    exportToExcel(exportData, `Reporte_Auditoria_Deudas`);
   };
 
   const totalDebt = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -62,7 +62,7 @@ export default function ReportAuditing() {
                 <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Fecha</th>
                 <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Alumna</th>
                 <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>DNI</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Monto Pendiente</th>
+                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Monto pendiente</th>
                 <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Créditos Involucrados</th>
               </tr>
             </thead>

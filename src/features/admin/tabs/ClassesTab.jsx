@@ -226,7 +226,7 @@ export default function ClassesTab({ showFeedback }) {
   };
 
   // Turnos del día y sucursal seleccionados
-  const classesForDay = classes.filter(c => c.day === selectedDay && (selectedBranchFilter === 'ALL' || (c.sucursal || '').toUpperCase() === selectedBranchFilter));
+  const classesForDay = classes.filter(c => c.day === selectedDay && (selectedBranchFilter === 'ALL' || (c.sucursal || '').toUpperCase() === selectedBranchFilter.toUpperCase()));
 
 
   return (
@@ -727,7 +727,7 @@ export default function ClassesTab({ showFeedback }) {
                                       width: '160px'
                                     }}
                                   >
-                                    <option value="">-- Seleccionar Profe --</option>
+                                    <option value="">-- Seleccionar profe --</option>
                                     {teachers.map(tc => (
                                       <option key={tc.id} value={tc.id}>
                                         {tc.name}

@@ -107,7 +107,7 @@ export default function ProfileView() {
             formData.nombre ? formData.nombre[0].toUpperCase() : 'U'
           )}
         </div>
-        <h2 style={{ fontSize: '24px', margin: '0', color: 'var(--gris-oscuro)' }}>Mi Perfil</h2>
+        <h2 style={{ fontSize: '24px', margin: '0', color: 'var(--gris-oscuro)' }}>Mi perfil</h2>
         <p style={{ fontSize: '14px', color: 'var(--gris-medio)', margin: '4px 0 0 0' }}>{currentUser?.rol || 'ALUMNO'}</p>
       </div>
 
@@ -115,7 +115,7 @@ export default function ProfileView() {
       <div className="clay-card" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '10px' }}>
           <BadgeIcon style={{ color: 'var(--marron-arcilla)' }} />
-          <h3 style={{ fontSize: '18px', margin: 0, color: 'var(--gris-oscuro)' }}>Datos Personales</h3>
+          <h3 style={{ fontSize: '18px', margin: 0, color: 'var(--gris-oscuro)' }}>Datos personales</h3>
         </div>
 
         {message && (
@@ -163,7 +163,7 @@ export default function ProfileView() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Fecha de Nacimiento</label>
+              <label className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Fecha de nacimiento</label>
               <input 
                 type="date" 
                 name="fecha_nacimiento"
@@ -217,7 +217,7 @@ export default function ProfileView() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', marginBottom: '6px', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '10px' }}>
             <CameraAltIcon style={{ color: 'var(--marron-arcilla)' }} />
-            <h3 style={{ fontSize: '18px', margin: 0, color: 'var(--gris-oscuro)' }}>Foto de Perfil</h3>
+            <h3 style={{ fontSize: '18px', margin: 0, color: 'var(--gris-oscuro)' }}>Foto de perfil</h3>
           </div>
 
           <div className="form-group">

@@ -167,7 +167,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               <input type="text" placeholder="@juan.gomez" className="input-tuti" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha Nacimiento</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha de nacimiento</label>
               <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

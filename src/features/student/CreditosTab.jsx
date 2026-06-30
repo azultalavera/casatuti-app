@@ -75,12 +75,20 @@ export default function CreditosTab({
 
   // Si sobraron créditos (por ej: agregados manualmente o antes de tener la tabla de pagos)
   if (remainingCredits > 0) {
+    const expirationDateStr = profile?.expirationDate;
+    const expDate = expirationDateStr ? getDateObj(expirationDateStr) : null;
+    let buyDate = null;
+    if (expDate) {
+       buyDate = new Date(expDate);
+       buyDate.setDate(buyDate.getDate() - 30);
+    }
+
     activePacksList.push({
       isLegacy: true,
       allocated: remainingCredits,
       total: remainingCredits,
-      buyDate: new Date(),
-      expDate: null
+      buyDate: buyDate,
+      expDate: expDate
     });
   }
 
@@ -153,7 +161,7 @@ export default function CreditosTab({
               <p style={{ fontSize: '13px', marginBottom: '8px' }}>
                 Alias: <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: '8px', wordBreak: 'break-all' }}>CASA.TUTI</code>
               </p>
-              <p style={{ fontSize: '13px', margin: 0 }}>Titular: Maria Candelaria Luna Ottonello</p>
+              <p style={{ fontSize: '13px', margin: 0 }}>Titular: maria candelaria luna ottonello</p>
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: '4px 0', textAlign: 'center' }}>
@@ -204,7 +212,7 @@ export default function CreditosTab({
           <p style={{ fontSize: '13px', marginBottom: '8px' }}>
             Alias: <code style={{ backgroundColor: '#f0f0f0', padding: '4px 8px', borderRadius: '8px', wordBreak: 'break-all' }}>CASA.TUTI</code>
           </p>
-          <p style={{ fontSize: '13px', margin: 0 }}>Titular: Maria Candelaria Luna Ottonello</p>
+          <p style={{ fontSize: '13px', margin: 0 }}>Titular: maria candelaria luna ottonello</p>
         </div>
 
         <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: '4px 0', textAlign: 'center' }}>
@@ -229,7 +237,7 @@ export default function CreditosTab({
     );
   }
 
-  // Vista principal: "Pagos y Créditos"
+  // Vista principal: "Pagos y créditos"
   return (
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -340,7 +348,7 @@ export default function CreditosTab({
                     backgroundColor: 'var(--bg-crema)', padding: '6px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600
                   }}>
                     <CalendarTodayIcon style={{ fontSize: '14px', color: 'var(--gris-medio)' }} />
-                    {pack.isLegacy ? 'Fecha: No registrada' : `Comprado: ${pack.buyDate.toLocaleDateString('es-AR')}`}
+                    {pack.buyDate ? `Inicia: ${pack.buyDate.toLocaleDateString('es-AR')}` : 'Fecha: No registrada'}
                   </div>
 
                   <div style={{

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../../context/AppContext';
-import { exportToCSV } from '../../../../utils/exportToCSV';
+import { exportToExcel } from '../../../../utils/exportToExcel';
 
 export default function ReportAttendance() {
   const { classes, bookings, users } = useApp();
@@ -43,14 +43,14 @@ export default function ReportAttendance() {
       return;
     }
 
-    exportToCSV(exportData, `Reporte_Asistencia_${selectedDate}`);
+    exportToExcel(exportData, `Reporte_Asistencia_${selectedDate}`);
   };
 
   return (
     <div className="clay-card" style={{ padding: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
         <div>
-          <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Reporte de Asistencia</h3>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Reporte de asistencia</h3>
           <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>Alumnas anotadas por horario para la toma de lista.</p>
         </div>
         <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../../../../context/AppContext';
-import { exportToCSV } from '../../../../utils/exportToCSV';
+import { exportToExcel } from '../../../../utils/exportToExcel';
 
 export default function ReportMetrics() {
-  const { users, studentProfiles, classes, bookings } = useApp();
+  const { users, studentProfiles, classes, bookings, payments } = useApp();
 
   const alumnos = users.filter(u => u.role === 'ALUMNO');
 
@@ -52,11 +52,34 @@ export default function ReportMetrics() {
 
   const handleExportActive = () => {
     if (activeStudents.length === 0) return alert("No hay alumnas activas.");
+    
+    const sortedPayments = [...(payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+
     const data = activeStudents.map(a => {
       const p = studentProfiles.find(p => p.studentId === a.id);
-      return { "Nombre": a.name, "Email": a.email, "Teléfono": a.telefono, "Créditos_Restantes": p?.classCredits || 0 };
+      
+      const lastPayment = sortedPayments.find(pay => pay.studentId === a.id && (pay.status === 'CONFIRMED' || !pay.status));
+      const fechaCompraRaw = lastPayment && lastPayment.date ? lastPayment.date : null;
+      
+      const formatFec = (d) => {
+        if (!d) return 'N/A';
+        const dateObj = new Date(d);
+        return isNaN(dateObj.getTime()) ? 'N/A' : dateObj.toLocaleDateString('es-AR');
+      };
+
+      return { 
+        "Nombre": a.name || a.nombre || '-', 
+        "Teléfono": a.telefono || '-', 
+        "Instagram": a.instagram || '-',
+        "Fecha de nacimiento": formatFec(a.fecha_nacimiento || a.birthdate),
+        "DNI": a.nro_documento || '-',
+        "Créditos Disponibles": p?.classCredits || 0,
+        "Fecha de Compra": formatFec(fechaCompraRaw),
+        "Fecha de Vencimiento": formatFec(p?.expirationDate)
+      };
     });
-    exportToCSV(data, "Reporte_Alumnas_Activas");
+    
+    exportToExcel(data, "Reporte_Alumnas_Activas");
   };
 
   const handleExportDropouts = () => {
@@ -64,7 +87,7 @@ export default function ReportMetrics() {
     const data = dropoutStudents.map(a => {
       return { "Nombre": a.name, "Email": a.email, "Teléfono": a.telefono, "Estado": "Abandono (>30 días sin créditos)" };
     });
-    exportToCSV(data, "Reporte_Alumnas_Abandono");
+    exportToExcel(data, "Reporte_Alumnas_Abandono");
   };
 
   return (
@@ -77,14 +100,14 @@ export default function ReportMetrics() {
           <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', fontWeight: 600 }}>ALUMNAS ACTIVAS</div>
           <div style={{ fontSize: '36px', fontWeight: 800, marginBottom: '8px' }}>{activeStudents.length} <span style={{fontSize:'16px', fontWeight:400, opacity:0.8}}>/ {totalAlumnos}</span></div>
           <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '16px' }}>{activePercentage}% del total de alumnas registradas.</div>
-          <button onClick={handleExportActive} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar Activas</button>
+          <button onClick={handleExportActive} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar activas</button>
         </div>
 
         <div className="stat-card-modern" style={{ background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', color: 'white' }}>
           <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', fontWeight: 600 }}>TASA DE ABANDONO</div>
           <div style={{ fontSize: '36px', fontWeight: 800, marginBottom: '8px' }}>{dropoutPercentage}%</div>
           <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '16px' }}>{dropoutStudents.length} alumnas sin créditos ni reservas recientes.</div>
-          <button onClick={handleExportDropouts} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar Abandonos</button>
+          <button onClick={handleExportDropouts} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar abandonos</button>
         </div>
 
         <div className="stat-card-modern" style={{ background: 'var(--blanco)', border: '1px solid var(--gris-claro)' }}>

@@ -253,7 +253,7 @@ export default function PerfilTab() {
           <div style={iconContainerStyle}>
             <BadgeIcon style={{ fontSize: '18px' }} />
           </div>
-          <h3 style={headerTitleStyle}>Datos Personales</h3>
+          <h3 style={headerTitleStyle}>Datos personales</h3>
         </div>
 
         {message && (

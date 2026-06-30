@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../../context/AppContext';
-import { exportToCSV } from '../../../../utils/exportToCSV';
+import { exportToExcel } from '../../../../utils/exportToExcel';
 
 export default function ReportBirthdays() {
   const { users } = useApp();
@@ -44,7 +44,7 @@ export default function ReportBirthdays() {
       "Teléfono": u.telefono || 'N/A'
     }));
 
-    exportToCSV(exportData, `Cumpleanos_Mes_${selectedMonth}`);
+    exportToExcel(exportData, `Cumpleanos_Mes_${selectedMonth}`);
   };
 
   return (

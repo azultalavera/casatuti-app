@@ -92,14 +92,14 @@ export const AppProvider = ({ children }) => {
             seenAlertIdsRef.current.add(alert.id);
             if ('Notification' in window) {
               if (Notification.permission === 'granted') {
-                new Notification('Casa Tuti', {
+                new Notification('Casa tuti', {
                   body: alert.message,
                   vibrate: [200, 100, 200]
                 });
               } else if (Notification.permission !== 'denied') {
                 Notification.requestPermission().then(perm => {
                   if (perm === 'granted') {
-                    new Notification('Casa Tuti', {
+                    new Notification('Casa tuti', {
                       body: alert.message,
                       vibrate: [200, 100, 200]
                     });
@@ -282,6 +282,13 @@ export const AppProvider = ({ children }) => {
         status: 'CONFIRMED'
       });
 
+      // 3. Notificar a la alumna
+      await mockService.createAlert({
+        type: 'INFO',
+        message: `Te agregaron a la clase "${classData.name}" del día ${dateStr} (${classData.time}). Se ha descontado 1 crédito.`,
+        studentId: studentId
+      });
+
       // Si el cupo queda crítico (0 o 1 lugar libre), creamos una alerta de alta ocupación
       const newOccupancy = activeBookingsForClass.length + 1;
       if (classData.capacity - newOccupancy <= 1) {
@@ -301,6 +308,80 @@ export const AppProvider = ({ children }) => {
       const loadedWaitlist = await mockService.getWaitlist().catch(() => []);
       setWaitlist(loadedWaitlist);
 
+      return newBooking;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1b. Reservar clase para otro alumno (por el profesor)
+  const bookClassForStudent = async (studentId, classId, dateStr) => {
+    setLoading(true);
+    try {
+      const student = users.find(u => u.id === studentId);
+      if (!student) throw new Error("Alumno no encontrado");
+      const studentName = student.name;
+      
+      const profile = studentProfiles.find(p => p.studentId === studentId);
+      const classData = classes.find(c => c.id === classId);
+
+      if (!profile || !classData) {
+        throw new Error("Datos incorrectos");
+      }
+
+      // Validar si la clase está pausada para esta fecha
+      if (classData.pausedDates && classData.pausedDates.includes(dateStr)) {
+        throw new Error("Este turno se encuentra pausado para la fecha seleccionada.");
+      }
+
+      // Validar si la cuenta está pausada
+      if (profile.isBlocked) {
+        throw new Error("La cuenta del alumno está pausada. No puedes realizar reservas.");
+      }
+
+      // Validar créditos de clase del alumno
+      if (profile.classCredits <= 0) {
+        throw new Error("La alumna no tiene créditos de clase disponibles.");
+      }
+
+      // Validar reservas ya existentes para el mismo alumno en la misma clase y fecha
+      const existingBooking = bookings.find(
+        b => b.studentId === studentId && b.classId === classId && b.date === dateStr && (b.status === 'CONFIRMED' || b.status === 'ATTENDED')
+      );
+      if (existingBooking) {
+        throw new Error("La alumna ya se encuentra inscripta en esta clase.");
+      }
+
+      // Validar cupo
+      const activeBookingsForClass = bookings.filter(b => b.classId === classId && b.date === dateStr && (b.status === 'CONFIRMED' || b.status === 'ATTENDED'));
+      if (activeBookingsForClass.length >= classData.capacity) {
+        throw new Error("No hay cupo disponible en esta clase.");
+      }
+
+      // 1. Crear la reserva en backend (simulado o real)
+      const newBooking = await mockService.createBooking({
+        studentId,
+        studentName,
+        classId,
+        date: dateStr,
+        status: 'CONFIRMED'
+      });
+      
+      // 3. Notificar a la alumna
+      await mockService.createAlert({
+        type: 'INFO',
+        message: `Te agregaron a la clase "${classData.name}" del día ${dateStr} (${classData.time}). Se ha descontado 1 crédito.`,
+        studentId: studentId
+      });
+
+      // Recargar datos actualizados
+      const loadedBookings = await mockService.getBookings();
+      setBookings(loadedBookings);
+      const loadedAlerts = await mockService.getAlerts();
+      setAlerts(loadedAlerts);
+      const loadedProfiles = await mockService.getStudentProfiles();
+      setStudentProfiles(loadedProfiles);
+      
       return newBooking;
     } finally {
       setLoading(false);
@@ -624,6 +705,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const createExtraClay = async (clayData) => {
+    setLoading(true);
+    try {
+      await mockService.createExtraClay(clayData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 7. Crear un nuevo estudiante o profesor por el ADMIN
   const createNewUserAction = async (userData) => {
     setLoading(true);
@@ -698,6 +788,19 @@ export const AppProvider = ({ children }) => {
       await mockService.resolveAlert(alertId);
       const loadedAlerts = await mockService.getAlerts();
       setAlerts(loadedAlerts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resolveAllAlertsAction = async (alertIds) => {
+    setLoading(true);
+    try {
+      await Promise.all(alertIds.map(id => mockService.resolveAlert(id)));
+      const loadedAlerts = await mockService.getAlerts();
+      setAlerts(loadedAlerts);
+    } catch (error) {
+      console.error("Error al resolver alertas:", error);
     } finally {
       setLoading(false);
     }
@@ -831,7 +934,10 @@ export const AppProvider = ({ children }) => {
         changeUserRole,
         changeUser,
         resetDatabase,
+        // Student Actions
         bookClass,
+        bookClassForStudent,
+        createExtraClay,
         cancelBooking,
         rescheduleBooking,
         joinWaitlistAction,
@@ -854,6 +960,7 @@ export const AppProvider = ({ children }) => {
         deleteUserAction,
         toggleStudentBlockAction,
         resolveAlertAction,
+        resolveAllAlertsAction,
         addNonWorkingDay,
         deleteNonWorkingDay,
         createPack,

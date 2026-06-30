@@ -13,7 +13,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 function AppContentWrapper() {
-  const { currentUser, isAuthenticated, logoutAction, users, changeUser, loading, alerts, resolveAlertAction } = useApp();
+  const { currentUser, isAuthenticated, logoutAction, users, changeUser, loading, alerts, resolveAlertAction, resolveAllAlertsAction } = useApp();
   const [viewOverride, setViewOverride] = useState(null); // Permite forzar vista de consola
   const [showImpersonatorDropdown, setShowImpersonatorDropdown] = useState(false);
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
@@ -190,8 +190,8 @@ function AppContentWrapper() {
       {/* Cabecera de Marca Premium Unificada */}
       <div className="app-brand-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={logo} alt="Casa Tuti logo" className="brand-logo-img" />
-          <span className="brand-title-text">Casa Tuti</span>
+          <img src={logo} alt="Casa tuti logo" className="brand-logo-img" />
+          <span className="brand-title-text">Casa tuti</span>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -294,12 +294,34 @@ function AppContentWrapper() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '6px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--gris-oscuro)', fontFamily: 'var(--font-sans)' }}>
-                      Notificaciones
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: 'bold', backgroundColor: 'var(--marron-arcilla-light)', padding: '2px 6px', borderRadius: '10px', fontFamily: 'var(--font-sans)' }}>
-                      {userAlerts.length} pendientes
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--gris-oscuro)', fontFamily: 'var(--font-sans)' }}>
+                        Notificaciones
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: 'bold', backgroundColor: 'var(--marron-arcilla-light)', padding: '2px 6px', borderRadius: '10px', fontFamily: 'var(--font-sans)' }}>
+                        {userAlerts.length}
+                      </span>
+                    </div>
+                    {userAlerts.length > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          resolveAllAlertsAction(userAlerts.map(a => a.id));
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--marron-arcilla)',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Marcar todas leídas ✓
+                      </button>
+                    )}
                   </div>
 
                   {userAlerts.length === 0 ? (
@@ -403,7 +425,7 @@ function AppContentWrapper() {
                   }}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}
                 >
-                  <PersonIcon style={{ fontSize: '16px', color: 'var(--gris-oscuro)' }} /> <span>Mi Perfil</span>
+                  <PersonIcon style={{ fontSize: '16px', color: 'var(--gris-oscuro)' }} /> <span>Mi perfil</span>
                 </button>
                 <button 
                   className="dropdown-item-header" 
@@ -414,7 +436,7 @@ function AppContentWrapper() {
                   }}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  <LogoutIcon style={{ fontSize: '16px', color: 'var(--rojo-alerta)' }} /> <span>Cerrar Sesión</span>
+                  <LogoutIcon style={{ fontSize: '16px', color: 'var(--rojo-alerta)' }} /> <span>Cerrar sesión</span>
                 </button>
               </div>
             )}

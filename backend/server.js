@@ -1521,9 +1521,9 @@ app.get('/api/bakes', async (req, res) => {
 
 // Registrar un horneado
 app.post('/api/bakes', async (req, res) => {
-  const { studentId, price, paymentMethod } = req.body;
+  const { studentId, price, description } = req.body;
 
-  if (!studentId || price === undefined || !paymentMethod) {
+  if (!studentId || price === undefined || !description) {
     return res.status(400).json({ error: 'Faltan parámetros de horneado requeridos.' });
   }
 
@@ -1532,14 +1532,39 @@ app.post('/api/bakes', async (req, res) => {
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
-        ($1, 'HORNO', 'Servicio de horneado', $2, $3, true, NOW())`,
-      [studentId, price, paymentMethod]
+        ($1, 'HORNO', $2, $3, 'PENDIENTE', false, NOW())`,
+      [studentId, description, price]
     );
 
     res.status(201).json({ success: true });
   } catch (error) {
     console.error('Error al registrar horneado:', error);
     res.status(500).json({ error: 'Error al registrar el horneado.' });
+  }
+});
+
+// Registrar arcilla extra
+app.post('/api/extra-clay', async (req, res) => {
+  const { studentId, quantity } = req.body;
+
+  if (!studentId || !quantity) {
+    return res.status(400).json({ error: 'Faltan parámetros de arcilla requeridos.' });
+  }
+
+  try {
+    const descripcion = `Arcilla extra: ${quantity}`;
+    await db.query(
+      `INSERT INTO public.t_deudas_insumos 
+        (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
+      VALUES 
+        ($1, 'ARCILLA', $2, 0, 'PENDIENTE', false, NOW())`,
+      [studentId, descripcion]
+    );
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    console.error('Error al registrar arcilla extra:', error);
+    res.status(500).json({ error: 'Error al registrar la arcilla extra.' });
   }
 });
 
@@ -1642,7 +1667,7 @@ app.get('/api/alerts', async (req, res) => {
 
 // Crear una alerta manual
 app.post('/api/alerts', async (req, res) => {
-  const { type, message } = req.body;
+  const { type, message, studentId } = req.body;
 
   if (!type || !message) {
     return res.status(400).json({ error: 'Tipo y mensaje obligatorios.' });
@@ -1650,10 +1675,10 @@ app.post('/api/alerts', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      `INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at)
-       VALUES ($1, $2, $3, false, NOW())
-       RETURNING id_notificacion AS id_alerta, null as id_usuarios, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
-      [type, message, type]
+      `INSERT INTO public.t_notificaciones (titulo, mensaje, tipo, leido, created_at, id_usuarios)
+       VALUES ($1, $2, $3, false, NOW(), $4)
+       RETURNING id_notificacion AS id_alerta, id_usuarios, tipo AS type, mensaje AS message, created_at::text AS date, leido AS resolved`,
+      [type, message, type, studentId || null]
     );
     res.status(201).json(mapAlertToFE(rows[0]));
   } catch (error) {

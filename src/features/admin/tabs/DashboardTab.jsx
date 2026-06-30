@@ -18,17 +18,17 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
   // Filtrado por sucursal
   const filteredClasses = selectedBranch === 'ALL'
     ? classes
-    : classes.filter(c => (c.sucursal || '').toUpperCase() === selectedBranch);
+    : classes.filter(c => (c.sucursal || '').toUpperCase() === selectedBranch.toUpperCase());
 
   const filteredStudents = selectedBranch === 'ALL'
     ? students
-    : students.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch);
+    : students.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch.toUpperCase());
 
   const filteredStudentProfiles = selectedBranch === 'ALL'
     ? studentProfiles
     : studentProfiles.filter(p => {
       const student = students.find(s => s.id === p.studentId);
-      return student && (student.sucursal || '').toUpperCase() === selectedBranch;
+      return student && (student.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
     });
 
   const turnosHoyCount = filteredClasses.filter(c => c.day === todayDay).length;
@@ -56,7 +56,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
     if (p.status !== 'PENDING') return false;
     if (selectedBranch === 'ALL') return true;
     const st = students.find(s => s.id === p.studentId);
-    return st && (st.sucursal || '').toUpperCase() === selectedBranch;
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
   }).length;
 
   return (

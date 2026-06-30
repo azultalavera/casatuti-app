@@ -271,7 +271,19 @@ export const apiService = {
       body: JSON.stringify({
         studentId: bakeData.studentId,
         price: bakeData.price,
-        paymentMethod: bakeData.paymentMethod
+        description: bakeData.description
+      })
+    });
+    return handleResponse(res);
+  },
+
+  createExtraClay: async (clayData) => {
+    const res = await fetch(`${API_URL}/extra-clay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: clayData.studentId,
+        quantity: clayData.quantity
       })
     });
     return handleResponse(res);

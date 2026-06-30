@@ -4,11 +4,13 @@ import ReportFinancial from './reports/ReportFinancial';
 import ReportAuditing from './reports/ReportAuditing';
 import ReportMetrics from './reports/ReportMetrics';
 import ReportBirthdays from './reports/ReportBirthdays';
+import ReportRevenue from './reports/ReportRevenue';
 
 export default function ReportsTab({ goBack }) {
-  const [activeTab, setActiveTab] = useState('METRICS');
+  const [activeTab, setActiveTab] = useState('REVENUE');
 
   const tabs = [
+    { id: 'REVENUE', label: 'Recaudación Total' },
     { id: 'METRICS', label: 'Métricas Generales' },
     { id: 'ATTENDANCE', label: 'Asistencia' },
     { id: 'FINANCIAL', label: 'Financiero (Horneados)' },
@@ -70,6 +72,7 @@ export default function ReportsTab({ goBack }) {
 
       {/* Tab Content */}
       <div style={{ marginTop: '10px' }}>
+        {activeTab === 'REVENUE' && <ReportRevenue />}
         {activeTab === 'METRICS' && <ReportMetrics />}
         {activeTab === 'ATTENDANCE' && <ReportAttendance />}
         {activeTab === 'FINANCIAL' && <ReportFinancial />}

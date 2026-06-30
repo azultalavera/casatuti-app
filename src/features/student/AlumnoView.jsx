@@ -126,10 +126,10 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
     return diffMs >= 300000;
   });
   const byBranch = branches
-    .filter(branch => !studentBranch || branch.name === studentBranch)
+    .filter(branch => !studentBranch || branch.name.toUpperCase() === studentBranch)
     .map(branch => ({
       branch: branch.name,
-      items: classesForDay.filter(c => (c.sucursal || '').toUpperCase() === branch.name)
+      items: classesForDay.filter(c => (c.sucursal || '').toUpperCase() === branch.name.toUpperCase())
     }))
     .filter(g => g.items.length > 0);
 

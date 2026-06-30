@@ -24,20 +24,20 @@ export default function PaymentsTab({ showFeedback }) {
 
   const students = selectedBranch === 'ALL'
     ? baseStudents
-    : baseStudents.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch);
+    : baseStudents.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch.toUpperCase());
 
   const pendingPayments = payments.filter(p => {
     if (p.status !== 'PENDING') return false;
     if (selectedBranch === 'ALL') return true;
     const st = baseStudents.find(s => s.id === p.studentId);
-    return st && (st.sucursal || '').toUpperCase() === selectedBranch;
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
   });
 
   const confirmedPayments = payments.filter(p => {
     if (p.status !== 'PAID') return false;
     if (selectedBranch === 'ALL') return true;
     const st = baseStudents.find(s => s.id === p.studentId);
-    return st && (st.sucursal || '').toUpperCase() === selectedBranch;
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
   });
 
   // Filtro de Meses para Pagos Confirmados

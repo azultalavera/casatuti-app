@@ -628,7 +628,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--gris-claro)', paddingTop: '20px', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ flex: '1 1 120px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Nuevo Cupo Máximo</label>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Nuevo cupo máximo</label>
               <input 
                 type="number" 
                 className="input-tuti" 
@@ -654,7 +654,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
         <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
           <form onSubmit={handleSaveBranch} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ flex: '1 1 120px' }}>
-              <label style={{ fontSize: '11px' }}>Nombre Sucursal</label>
+              <label style={{ fontSize: '11px' }}>Nombre sucursal</label>
               <input type="text" className="input-tuti" value={branchName} onChange={e => setBranchName(e.target.value)} placeholder="Ej. CENTRO" required />
             </div>
             <div className="form-group" style={{ flex: '2 1 150px' }}>
@@ -696,11 +696,11 @@ export default function ConfigTab({ showFeedback, goBack }) {
         <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
           <form onSubmit={handleSaveFaq} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
             <div className="form-group">
-              <label style={{ fontSize: '11px' }}>Pregunta / Norma</label>
+              <label style={{ fontSize: '11px' }}>Pregunta / norma</label>
               <input type="text" className="input-tuti" value={faqQuestion} onChange={e => setFaqQuestion(e.target.value)} placeholder="Ej. ¿Cómo recupero una clase?" required />
             </div>
             <div className="form-group">
-              <label style={{ fontSize: '11px' }}>Respuesta / Detalle</label>
+              <label style={{ fontSize: '11px' }}>Respuesta / detalle</label>
               <textarea className="input-tuti" value={faqAnswer} onChange={e => setFaqAnswer(e.target.value)} placeholder="Detalle de la norma..." rows="3" required style={{ resize: 'vertical' }} />
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -733,7 +733,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
       {view === 'notifications' && (
         <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
           <div style={{ marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--gris-oscuro)' }}>Avisos de Reservas</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--gris-oscuro)' }}>Avisos de reservas</h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px' }}>
               Al activar esta opción, recibirás una notificación en este dispositivo (celular o computadora) cada vez que un alumno se inscriba a una clase.
             </p>

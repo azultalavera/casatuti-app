@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../../context/AppContext';
-import { exportToCSV } from '../../../../utils/exportToCSV';
+import { exportToExcel } from '../../../../utils/exportToExcel';
 
 export default function ReportFinancial() {
   const { bakes } = useApp();
@@ -44,7 +44,7 @@ export default function ReportFinancial() {
       "Metodo_Pago": b.paymentMethod === 'TRANSF' ? 'Transferencia' : 'Efectivo',
     }));
 
-    exportToCSV(exportData, `Reporte_Horneados_${filterType}`);
+    exportToExcel(exportData, `Reporte_Horneados_${filterType}`);
   };
 
   return (
@@ -66,7 +66,7 @@ export default function ReportFinancial() {
             <option value="ALL">Todo el historial</option>
             <option value="DAY">Hoy</option>
             <option value="WEEK">Última Semana</option>
-            <option value="MONTH">Este Mes</option>
+            <option value="MONTH">Este mes</option>
           </select>
         </div>
 

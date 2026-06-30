@@ -35,7 +35,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
     const matchesSearch = st.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       st.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (st.nro_documento && String(st.nro_documento).includes(searchTerm));
-    const matchesBranch = selectedBranch === 'ALL' || (st.sucursal || '').toUpperCase() === selectedBranch;
+    const matchesBranch = selectedBranch === 'ALL' || (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
     const matchesStatus = selectedStatus === 'ALL' ||
       (selectedStatus === 'ACTIVE' && !profile.isBlocked) ||
       (selectedStatus === 'INACTIVE' && profile.isBlocked);
@@ -158,7 +158,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
             </div>
 
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha de Nacimiento</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Fecha de nacimiento</label>
               <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
             </div>
 

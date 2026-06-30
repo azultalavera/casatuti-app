@@ -3,17 +3,21 @@ import { useApp } from '../../context/AppContext';
 import InicioTabProfe from './InicioTabProfe';
 import ClasesTabProfe from './ClasesTabProfe';
 import AlumnosTabProfe from './AlumnosTabProfe';
+import InsumosTabProfe from './InsumosTabProfe';
 import PerfilTab from '../student/PerfilTab';
 
 export default function ProfeView({ activeTab, setActiveTab }) {
   const {
+    users,
     currentUser,
     classes,
     bookings,
     studentProfiles,
     takeAttendance,
     deliverClayToStudent,
-    createBake
+    createBake,
+    createExtraClay,
+    bookClassForStudent
   } = useApp();
 
   const renderContent = () => {
@@ -21,9 +25,15 @@ export default function ProfeView({ activeTab, setActiveTab }) {
       case 'inicio':
         return (
           <InicioTabProfe 
+            users={users}
             currentUser={currentUser}
             classes={classes}
             bookings={bookings}
+            studentProfiles={studentProfiles}
+            takeAttendance={takeAttendance}
+            deliverClayToStudent={deliverClayToStudent}
+            bookClassForStudent={bookClassForStudent}
+            setActiveTab={setActiveTab}
           />
         );
       case 'clases':
@@ -47,14 +57,31 @@ export default function ProfeView({ activeTab, setActiveTab }) {
             studentProfiles={studentProfiles}
           />
         );
+      case 'insumos':
+        return (
+          <InsumosTabProfe
+            currentUser={currentUser}
+            classes={classes}
+            bookings={bookings}
+            studentProfiles={studentProfiles}
+            createBake={createBake}
+            createExtraClay={createExtraClay}
+          />
+        );
       case 'perfil':
         return <PerfilTab />;
       default:
         return (
           <InicioTabProfe 
+            users={users}
             currentUser={currentUser}
             classes={classes}
             bookings={bookings}
+            studentProfiles={studentProfiles}
+            takeAttendance={takeAttendance}
+            deliverClayToStudent={deliverClayToStudent}
+            bookClassForStudent={bookClassForStudent}
+            setActiveTab={setActiveTab}
           />
         );
     }
@@ -67,7 +94,7 @@ export default function ProfeView({ activeTab, setActiveTab }) {
       {activeTab !== 'perfil' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="badge badge-oliva" style={{ marginBottom: '6px' }}>Profesor Activo</span>
+            <span className="badge badge-oliva" style={{ marginBottom: '6px' }}>Profesor activo</span>
             <h2 style={{ fontSize: '26px' }}>Prof. {currentUser.name.split(' ')[0]}</h2>
           </div>
           <div style={{
