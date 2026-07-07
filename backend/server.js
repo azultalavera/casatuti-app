@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5005;
 // Configuración de Web Push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails(
-    'mailto:tu-email@tudominio.com',
+    'mailto:azultalav@gmail.com',
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
@@ -23,7 +23,7 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 // Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://tu-frontend.vercel.app"
+  "https://casatuti-app.vercel.app/"
 ];
 
 app.use(cors({
