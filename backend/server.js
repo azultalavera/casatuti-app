@@ -11,6 +11,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
+// Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
+app.use(cors({
+  origin: ['https://casatuti-app.vercel.app', 'http://localhost:5173'],
+  credentials: true
+}));
+
 // Configuración de Web Push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails(
@@ -19,17 +25,6 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PRIVATE_KEY
   );
 }
-
-// Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://casatuti-app.vercel.app/"
-];
-
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
