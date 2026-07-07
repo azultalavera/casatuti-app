@@ -1,12 +1,27 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
-// Helper para procesar la respuesta HTTP
 const handleResponse = async (response) => {
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Ocurrió un error en el servidor.');
+    let errMsg = `Error del servidor (${response.status})`;
+    try {
+      const data = await response.json();
+      errMsg = data.error || errMsg;
+    } catch (e) {
+      try {
+        const text = await response.text();
+        if (text && text.length < 150) {
+          errMsg = text;
+        }
+      } catch (inner) {}
+    }
+    throw new Error(errMsg);
   }
-  return data;
+
+  try {
+    return await response.json();
+  } catch (e) {
+    throw new Error('La respuesta del servidor no es un JSON válido o está vacía.');
+  }
 };
 
 export const apiService = {
