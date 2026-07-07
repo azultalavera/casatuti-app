@@ -20,8 +20,17 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   );
 }
 
-// Habilitar CORS para permitir peticiones del frontend (Vite)
-app.use(cors());
+// Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://tu-frontend.vercel.app"
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -246,7 +255,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 
     const user = rows[0];
-    
+
     // Generar contraseña temporal de 8 caracteres
     const tempPassword = Math.random().toString(36).slice(-8);
 
@@ -340,7 +349,7 @@ app.post('/api/users', async (req, res) => {
         let rulesHtml = faqs.map(f => `<p style="margin-bottom: 4px;"><strong>${f.pregunta}</strong></p><p style="margin-top: 0;">${f.respuesta}</p>`).join('');
         if (!rulesHtml) rulesHtml = '<p>No hay normas registradas en este momento.</p>';
         const tempPassword = password || 'tuti123';
-        
+
         // Disparamos el correo en background para no bloquear la respuesta
         sendWelcomeEmail(email, nombre, tempPassword, rulesHtml).catch(err => console.error("Error enviando email:", err));
       } catch (emailErr) {
@@ -575,7 +584,7 @@ app.put('/api/users/:id/password', async (req, res) => {
   try {
     const userQuery = await db.query('SELECT clave FROM public.t_usuarios WHERE id_usuarios = $1', [id]);
     if (userQuery.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
-    
+
     const user = userQuery.rows[0];
     const validCurrent = user.clave === currentPassword || (!user.clave && currentPassword === 'tuti123');
 
@@ -1360,7 +1369,7 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     if (waitlistRes.rows.length > 0) {
       const dateStr = booking.date instanceof Date ? booking.date.toISOString().split('T')[0] : booking.date;
       const notifyMsg = `¡Se liberó un cupo! Hay lugar disponible para la clase de las ${classTimeStr} el día ${dateStr}.`;
-      
+
       for (const wlUser of waitlistRes.rows) {
         await db.query(
           'INSERT INTO public.t_notificaciones (id_usuarios, titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, $4, false, NOW())',
@@ -1788,7 +1797,7 @@ app.put('/api/payments/:id/confirm', async (req, res) => {
     if (paymentRes.rows.length === 0) {
       return res.status(404).json({ error: 'Pago pendiente no encontrado.' });
     }
-    
+
     const payment = paymentRes.rows[0];
     if (payment.estado === 'PAID') {
       return res.status(400).json({ error: 'El pago ya se encuentra confirmado.' });
@@ -1823,7 +1832,7 @@ app.post('/api/payments/:id/notify', async (req, res) => {
     if (paymentRes.rows.length === 0) {
       return res.status(404).json({ error: 'Pago pendiente no encontrado.' });
     }
-    
+
     const payment = paymentRes.rows[0];
 
     // Enviar notificación (se usa id_usuario en t_notificaciones si existiera la columna, 
@@ -2106,7 +2115,7 @@ app.listen(PORT, () => {
 // ==========================================
 app.post('/api/push/subscribe', async (req, res) => {
   const { subscription, userId } = req.body;
-  
+
   if (!subscription || !userId) {
     return res.status(400).json({ error: 'Faltan datos de suscripción o usuario.' });
   }
@@ -2135,34 +2144,34 @@ const runExpirationJob = async () => {
   try {
     console.log('[Job] Corriendo verificación de vencimientos de créditos...');
     const usersRes = await db.query('SELECT id_usuario, id_usuarios, saldo_actual FROM public.t_cuenta_alumno WHERE saldo_actual > 0');
-    
+
     for (const user of usersRes.rows) {
       const studentId = user.id_usuarios; // UUID from t_usuarios
       let remainingCredits = user.saldo_actual;
-      
+
       const paymentsRes = await db.query(
         "SELECT * FROM public.t_historial_creditos WHERE id_usuarios = $1 AND estado IN ('PAID', 'CONFIRMED') ORDER BY fec_movimiento DESC",
         [studentId]
       );
-      
+
       for (const p of paymentsRes.rows) {
         if (remainingCredits <= 0) break;
         const allocated = Math.min(remainingCredits, p.cantidad);
         remainingCredits -= allocated;
-        
+
         const fecStr = p.fec_movimiento instanceof Date ? p.fec_movimiento.toISOString().split('T')[0] : String(p.fec_movimiento).split(' ')[0];
         const buyDate = new Date(fecStr + 'T12:00:00');
         const expDate = new Date(buyDate);
         expDate.setDate(expDate.getDate() + 30);
-        
+
         const now = new Date();
         const daysLeft = (expDate - now) / (1000 * 60 * 60 * 24);
-        
+
         if (daysLeft <= 0) {
           console.log(`[Job] Expirando ${allocated} creditos para usuario ${studentId}`);
           await db.query('UPDATE public.t_cuenta_alumno SET saldo_actual = GREATEST(0, saldo_actual - $1) WHERE id_usuarios = $2', [allocated, studentId]);
           await db.query('UPDATE public.t_historial_creditos SET estado = $1 WHERE id_historial_credito = $2', ['EXPIRED', p.id_historial_credito]);
-          
+
           const msg = `Tus ${allocated} clases disponibles han llegado a su fecha de expiración y ya no están disponibles.`;
           await db.query(
             'INSERT INTO public.t_notificaciones (id_usuarios, titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, $4, false, NOW())',
@@ -2171,13 +2180,13 @@ const runExpirationJob = async () => {
         } else if (daysLeft <= 7 && !p.bl_notificado_venc) {
           console.log(`[Job] Notificando vencimiento próximo a usuario ${studentId}`);
           await db.query('UPDATE public.t_historial_creditos SET bl_notificado_venc = true WHERE id_historial_credito = $1', [p.id_historial_credito]);
-          
+
           const msg = 'Tus clases disponibles están a punto de vencer. No olvides reservar tus turnos.';
           await db.query(
             'INSERT INTO public.t_notificaciones (id_usuarios, titulo, mensaje, tipo, leido, created_at) VALUES ($1, $2, $3, $4, false, NOW())',
             [studentId, 'Tus clases están a punto de vencer', msg, 'WARNING']
           );
-          
+
           // Enviar Web Push si tiene suscripción
           try {
             const subsRes = await db.query('SELECT subscription FROM public.t_suscripciones_push WHERE id_usuarios = $1', [studentId]);
@@ -2190,7 +2199,7 @@ const runExpirationJob = async () => {
               await webPush.sendNotification(s.subscription, payload).catch(e => console.error('Error web-push vencimiento:', e.message));
             }
           } catch (pushErr) {
-             console.error('Error enviando push de vencimiento:', pushErr.message);
+            console.error('Error enviando push de vencimiento:', pushErr.message);
           }
         }
       }
