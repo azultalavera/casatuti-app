@@ -9,8 +9,35 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
 export default function DashboardTab({ classes, bookings, students, studentProfiles, payments, setAdminTab, navigateToStudents }) {
-  const { branches } = useApp();
+  const { branches, nonWorkingDays } = useApp();
   const [selectedBranch, setSelectedBranch] = useState('ALL');
+
+  const currentMonthNum = new Date().getMonth() + 1;
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  const currentMonthName = monthNames[new Date().getMonth()];
+
+  // Cumpleaños del mes en curso
+  const birthdaysThisMonth = (students || []).filter(s => {
+    if (!s.fecha_nacimiento) return false;
+    const parts = s.fecha_nacimiento.split('T')[0].split('-');
+    return parts.length >= 2 ? parseInt(parts[1], 10) === currentMonthNum : false;
+  }).sort((a, b) => {
+    const dayA = parseInt((a.fecha_nacimiento.split('T')[0] || '').split('-')[2], 10) || 0;
+    const dayB = parseInt((b.fecha_nacimiento.split('T')[0] || '').split('-')[2], 10) || 0;
+    return dayA - dayB;
+  });
+
+  // Feriados y no laborables del mes en curso
+  const currentYear = new Date().getFullYear();
+  const currentMonthStr = String(currentMonthNum).padStart(2, '0');
+  const monthPrefix = `${currentYear}-${currentMonthStr}`;
+
+  const holidaysThisMonth = (nonWorkingDays || [])
+    .filter(n => n?.date?.startsWith(monthPrefix))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const todayDay = daysMap[new Date().getDay()];
@@ -260,6 +287,65 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
         <div style={{ fontSize: '18px', color: 'var(--gris-medio)', fontWeight: 'bold' }}>
           ➔
+        </div>
+      </div>
+
+      {/* Sección de Cumpleaños y Calendario del Mes */}
+      <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
+        <span className="dashboard-section-title">Agenda de {currentMonthName}</span>
+      </div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+        {/* Columna de Cumpleaños */}
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', color: 'var(--gris-oscuro)', boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--verde-oliva)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🎂</span> Cumpleaños del Mes
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+            {birthdaysThisMonth.length === 0 ? (
+              <p style={{ fontSize: '13px', color: 'var(--gris-medio)', margin: 0 }}>No hay cumpleaños registrados este mes.</p>
+            ) : (
+              birthdaysThisMonth.map(b => {
+                const day = parseInt((b.fecha_nacimiento.split('T')[0] || '').split('-')[2], 10) || 0;
+                return (
+                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-crema-claro)', padding: '10px 14px', borderRadius: '12px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--gris-oscuro)' }}>{b.name} {b.lastname || ''}</span>
+                    <span className="badge badge-oliva" style={{ fontSize: '11px', fontWeight: 800 }}>Día {day}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Columna de Feriados y Días No Laborables */}
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', color: 'var(--gris-oscuro)', boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--marron-arcilla)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📅</span> Feriados y No Laborables
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+            {holidaysThisMonth.length === 0 ? (
+              <p style={{ fontSize: '13px', color: 'var(--gris-medio)', margin: 0 }}>No hay feriados o días no laborables este mes.</p>
+            ) : (
+              holidaysThisMonth.map(h => {
+                const day = parseInt(h.date.split('-')[2], 10);
+                return (
+                  <div key={h.date} style={{ display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: 'var(--bg-crema-claro)', padding: '10px 14px', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="badge badge-clay" style={{ fontSize: '11px', fontWeight: 800 }}>Día {day}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--gris-medio)', fontWeight: 600 }}>{h.reason.split(' - ')[0]}</span>
+                    </div>
+                    {h.reason.split(' - ')[1] && (
+                      <span style={{ fontSize: '12px', color: 'var(--gris-oscuro)', fontWeight: 500 }}>{h.reason.split(' - ')[1]}</span>
+                    )}
+                    {!h.reason.includes(' - ') && (
+                      <span style={{ fontSize: '12px', color: 'var(--gris-oscuro)', fontWeight: 500 }}>{h.reason}</span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 
