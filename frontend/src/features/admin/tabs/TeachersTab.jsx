@@ -115,7 +115,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
   const filteredClasses = classes.filter(c => {
     if (!assignModalTeacher) return true;
     if (selectedTurnIds.includes(c.id)) return true;
-    const hasTeacher = !!c.teacher_id;
+    const hasTeacher = !!c.teacherId;
     return filterWithTeacher ? hasTeacher : !hasTeacher;
   });
 
@@ -490,7 +490,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           type="button"
                           onClick={() => {
                             setAssignModalTeacher(tc);
-                            setSelectedTurnIds(classes.filter(c => c.teacher_id === tc.id).map(c => c.id));
+                            setSelectedTurnIds(classes.filter(c => c.teacherId === tc.id).map(c => c.id));
                             setFilterWithTeacher(false);
                             setShowAssignModal(true);
                           }}
@@ -776,7 +776,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                               onClick={() => {
                                 const isChecked = selectedTurnIds.includes(c.id);
                                 if (!isChecked) {
-                                  if (c.teacherName && c.teacher_id !== assignModalTeacher.id) {
+                                  if (c.teacherName && c.teacherId !== assignModalTeacher.id) {
                                     const confirmReplace = window.confirm(
                                       `El turno de ${c.day} - ${c.time} ya está asignado a la profesora ${c.teacherName}.\n\n¿Estás segura de que deseas reemplazarla por ${assignModalTeacher.name}?`
                                     );
