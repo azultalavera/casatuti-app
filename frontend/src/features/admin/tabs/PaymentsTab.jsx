@@ -139,7 +139,10 @@ export default function PaymentsTab({ showFeedback }) {
   };
 
   const handleBulkConfirm = async () => {
-    if (selectedPayments.length === 0) return;
+    if (selectedPayments.length === 0) {
+      showFeedback('Por favor, seleccioná al menos un pago para confirmar.', 'danger');
+      return;
+    }
     setConfirmModalData({
       ids: selectedPayments,
       date: new Date().toISOString().split('T')[0]
@@ -168,7 +171,11 @@ export default function PaymentsTab({ showFeedback }) {
   };
 
   const handleBulkNotify = async () => {
-    if (!confirm(`¿Estás seguro de enviar ${selectedPayments.length} recordatorios?`)) return;
+    if (selectedPayments.length === 0) {
+      showFeedback('Por favor, seleccioná al menos un pago para notificar.', 'danger');
+      return;
+    }
+    if (!window.confirm(`¿Estás seguro de enviar ${selectedPayments.length} recordatorios?`)) return;
     setIsProcessingBulk(true);
     let successCount = 0;
     for (const id of selectedPayments) {
@@ -182,7 +189,7 @@ export default function PaymentsTab({ showFeedback }) {
     setIsProcessingBulk(false);
     setSelectedPayments([]);
     if (successCount > 0) {
-      showFeedback(`Se enviaron ${successCount} notificaciones.`, 'info');
+      showFeedback(`Se enviaron ${successCount} notificaciones con éxito.`, 'info');
     }
   };
 
