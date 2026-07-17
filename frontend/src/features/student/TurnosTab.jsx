@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EventIcon from '@mui/icons-material/Event';
 
@@ -489,7 +490,7 @@ export default function TurnosTab({
       )}
 
       {/* MODAL REPROGRAMAR */}
-      {rescheduleModalOpen && bookingToReschedule && (
+      {rescheduleModalOpen && bookingToReschedule && createPortal(
         <div className="modal-overlay" onClick={() => setRescheduleModalOpen(false)}>
           <div className="modal-content animate-scale-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ fontSize: '20px', color: 'var(--gris-oscuro)', marginBottom: '16px' }}>Reprogramar turno</h2>
@@ -582,7 +583,7 @@ export default function TurnosTab({
               </button>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
     </div>
   );
