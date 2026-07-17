@@ -195,6 +195,21 @@ export const mockService = {
     return feUser;
   },
 
+  resendWelcomeEmails: async (studentIds) => {
+    await delay();
+    const rawUsers = getStorageItem('tuti_users', initialUsers);
+    let count = 0;
+    for (const u of rawUsers) {
+      if (studentIds.includes(u.id_usuario)) {
+        u.clave = 'tuti123';
+        u.bl_cambio_pass_pte = true;
+        count++;
+      }
+    }
+    setStorageItem('tuti_users', rawUsers);
+    return { success: true, count };
+  },
+
   login: async (email, password) => {
     await delay();
     const rawUsers = getStorageItem('tuti_users', initialUsers);

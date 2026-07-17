@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -25,6 +26,7 @@ export default function InicioTab({
   bookingError,
   classes,
   payments,
+  bakes,
   resolveAlertAction,
   onCancel,
   onReprogramar,
@@ -39,7 +41,14 @@ export default function InicioTab({
   const myPendingPayments = (payments || []).filter(
     p => p.studentId == currentUser.id && p.status === 'PENDING'
   );
-  const pendingDebt = myPendingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+  
+  const myPendingInsumos = (bakes || []).filter(
+    b => b.studentId == currentUser.id && !b.isPaid && b.price > 0
+  );
+
+  const pendingDebt = 
+    myPendingPayments.reduce((sum, p) => sum + Number(p.amount), 0) +
+    myPendingInsumos.reduce((sum, b) => sum + Number(b.price), 0);
 
   const [expandedBookingId, setExpandedBookingId] = useState(null);
   const [isNormasExpanded, setIsNormasExpanded] = useState(true);
@@ -327,7 +336,7 @@ export default function InicioTab({
       )}
 
       {/* Modal Detalles de Deudas */}
-      {showDebtsModal && (
+      {showDebtsModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowDebtsModal(false)}>
           <div className="modal-content animate-scale-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -340,7 +349,7 @@ export default function InicioTab({
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: 'var(--bg-crema)', borderRadius: '12px' }}>
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
-                      {(p.description || 'Deuda pendiente').charAt(0).toUpperCase() + (p.description || 'Deuda pendiente').slice(1).toLowerCase()}
+                      {(p.motivo || 'Deuda pendiente').charAt(0).toUpperCase() + (p.motivo || 'Deuda pendiente').slice(1).toLowerCase()}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
                       {new Date(p.date || new Date()).toLocaleDateString('es-AR')}
@@ -348,6 +357,21 @@ export default function InicioTab({
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>
                     ${Number(p.amount).toLocaleString('es-AR')}
+                  </div>
+                </div>
+              ))}
+              {myPendingInsumos.map(b => (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: 'var(--bg-crema)', borderRadius: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
+                      {(b.description || 'Deuda de insumos').charAt(0).toUpperCase() + (b.description || 'Deuda de insumos').slice(1).toLowerCase()}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
+                      {new Date(b.date || new Date()).toLocaleDateString('es-AR')}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>
+                    ${Number(b.price).toLocaleString('es-AR')}
                   </div>
                 </div>
               ))}
@@ -360,7 +384,8 @@ export default function InicioTab({
               </span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

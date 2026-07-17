@@ -51,6 +51,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  resendWelcomeEmails: async (studentIds) => {
+    const res = await fetch(`${API_URL}/users/resend-welcome-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentIds })
+    });
+    return handleResponse(res);
+  },
+
   recordStudentPayment: async (studentIds, amount, creditsToAdd, date) => {
     const res = await fetch(`${API_URL}/payments`, {
       method: 'POST',
@@ -341,6 +350,14 @@ export const apiService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ confirmationDate })
+    });
+    return handleResponse(res);
+  },
+
+  confirmInsumoPayment: async (insumoId) => {
+    const res = await fetch(`${API_URL}/insumos/${insumoId}/confirm`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
     });
     return handleResponse(res);
   },

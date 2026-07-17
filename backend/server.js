@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5005;
 
 // Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
 app.use(cors({
-  origin: ['https://casatuti-app.vercel.app', 'http://localhost:5173'],
+  origin: ['https://casatuti.vercel.app', 'http://localhost:5173'],
   credentials: true
 }));
 
@@ -361,6 +361,50 @@ app.post('/api/users', async (req, res) => {
       return res.status(400).json({ error: 'El correo electrónico o número de documento ya está registrado.' });
     }
     res.status(500).json({ error: 'Error interno al registrar usuario.' });
+  }
+});
+
+// Re-enviar email de bienvenida masivo
+app.post('/api/users/resend-welcome-bulk', async (req, res) => {
+  const { studentIds } = req.body;
+  if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+    return res.status(400).json({ error: 'Faltan los IDs de las alumnas.' });
+  }
+
+  try {
+    const { rows: usersToNotify } = await db.query(
+      'SELECT id_usuarios, email, nombre FROM public.t_usuarios WHERE id_usuarios = ANY($1) AND rol = $2',
+      [studentIds, 'ALUMNO']
+    );
+
+    if (usersToNotify.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron alumnas válidas para notificar.' });
+    }
+
+    // Obtener normas (FAQs)
+    const { rows: faqs } = await db.query('SELECT pregunta, respuesta FROM public.t_faqs ORDER BY created_at ASC');
+    let rulesHtml = faqs.map(f => `<p style="margin-bottom: 4px;"><strong>${f.pregunta}</strong></p><p style="margin-top: 0;">${f.respuesta}</p>`).join('');
+    if (!rulesHtml) rulesHtml = '<p>No hay normas registradas en este momento.</p>';
+
+    const tempPassword = 'tuti123';
+    
+    // Actualizar contraseñas a tuti123 y pedir cambio
+    await db.query(
+      'UPDATE public.t_usuarios SET clave = $1, bl_cambio_pass_pte = true WHERE id_usuarios = ANY($2)',
+      [tempPassword, usersToNotify.map(u => u.id_usuarios)]
+    );
+
+    // Enviar correos
+    for (const u of usersToNotify) {
+      if (u.email) {
+        sendWelcomeEmail(u.email, u.nombre, tempPassword, rulesHtml).catch(err => console.error("Error reenviando email a:", u.email, err));
+      }
+    }
+
+    res.json({ success: true, count: usersToNotify.length });
+  } catch (error) {
+    console.error('Error al reenviar emails de bienvenida:', error);
+    res.status(500).json({ error: 'Error interno al reenviar correos.' });
   }
 });
 
@@ -1594,10 +1638,12 @@ app.get('/api/bakes', async (req, res) => {
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
         d.fec_carga::text AS date,
         d.precio_total AS price,
-        d.metodo_pago_pte AS payment_method
+        d.metodo_pago_pte AS payment_method,
+        d.bl_pagado AS is_paid,
+        d.descripcion AS description,
+        d.tipo AS type
       FROM public.t_deudas_insumos d
       JOIN public.t_usuarios u ON d.id_usuarios = u.id_usuarios
-      WHERE d.tipo = 'HORNO'
       ORDER BY d.fec_carga DESC
     `;
     const { rows } = await db.query(bakeQuery);
@@ -1607,11 +1653,42 @@ app.get('/api/bakes', async (req, res) => {
       studentName: r.student_name,
       date: r.date,
       price: parseFloat(r.price),
-      paymentMethod: r.payment_method
+      paymentMethod: r.payment_method,
+      isPaid: r.is_paid,
+      description: r.description,
+      type: r.type
     })));
   } catch (error) {
     console.error('Error al listar horneados:', error);
     res.status(500).json({ error: 'Error al obtener horneados.' });
+  }
+});
+
+// Confirmar el pago de un insumo (por parte del admin)
+app.put('/api/insumos/:id/confirm', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const debtRes = await db.query('SELECT * FROM public.t_deudas_insumos WHERE id_deudas_insumos = $1', [id]);
+    if (debtRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Deuda de insumo no encontrada.' });
+    }
+
+    const debt = debtRes.rows[0];
+    if (debt.bl_pagado) {
+      return res.status(400).json({ error: 'El pago ya se encuentra confirmado.' });
+    }
+
+    await db.query(`
+      UPDATE public.t_deudas_insumos 
+      SET bl_pagado = true
+      WHERE id_deudas_insumos = $1
+    `, [id]);
+
+    res.json({ success: true, message: 'Pago de insumo confirmado.' });
+  } catch (error) {
+    console.error('Error al confirmar pago de insumo:', error);
+    res.status(500).json({ error: 'Error al confirmar pago de insumo.' });
   }
 });
 
@@ -1626,7 +1703,7 @@ app.post('/api/bakes', async (req, res) => {
   try {
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
-        (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
+        (id_usuario, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
         ($1, 'HORNO', $2, $3, NULL, false, NOW())`,
       [studentId, description, price]
@@ -1651,7 +1728,7 @@ app.post('/api/extra-clay', async (req, res) => {
     const descripcion = `Arcilla extra: ${quantity}`;
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
-        (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
+        (id_usuario, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
         ($1, 'ARCILLA', $2, 0, NULL, false, NOW())`,
       [studentId, descripcion]

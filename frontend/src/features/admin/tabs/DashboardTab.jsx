@@ -61,11 +61,28 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
   const turnosHoyCount = filteredClasses.filter(c => c.day === todayDay).length;
   const alumnosCount = filteredStudents.length;
   const paquetesActivos = filteredStudentProfiles.filter(p => p.classCredits > 0).length;
-  const unpaidCount = filteredStudents.filter(st => {
-    const p = filteredStudentProfiles.find(p => p.studentId === st.id);
-    return !p || p.classCredits === 0;
-  }).length;
-  const deudaTotal = unpaidCount * 8000;
+  const pendingPayments = (payments || []).filter(p => {
+    if (p.status !== 'PENDING') return false;
+    if (selectedBranch === 'ALL') return true;
+    const st = students.find(s => s.id === p.studentId);
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
+  });
+
+  const deudaTotal = filteredStudents.reduce((total, st) => {
+    const studentPendingPayments = pendingPayments.filter(p => p.studentId === st.id);
+    if (studentPendingPayments.length > 0) {
+      // Si tiene pagos pendientes, se suma el monto de esos pagos como su deuda a verificar
+      const pendingSum = studentPendingPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      return total + pendingSum;
+    } else {
+      // Si no tiene pagos pendientes y tiene 0 créditos, se suma la deuda base de $8000
+      const profile = filteredStudentProfiles.find(p => p.studentId === st.id);
+      if (!profile || profile.classCredits === 0) {
+        return total + 8000;
+      }
+    }
+    return total;
+  }, 0);
 
   // Alertas resúmenes
   const alumnasConUnCredito = filteredStudentProfiles.filter(p => p.classCredits === 1).length;
@@ -79,12 +96,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
   });
   const proximosVencimientosCount = expiringProfiles.length;
 
-  const pendingPaymentsCount = (payments || []).filter(p => {
-    if (p.status !== 'PENDING') return false;
-    if (selectedBranch === 'ALL') return true;
-    const st = students.find(s => s.id === p.studentId);
-    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
-  }).length;
+  const pendingPaymentsCount = pendingPayments.length;
 
   return (
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

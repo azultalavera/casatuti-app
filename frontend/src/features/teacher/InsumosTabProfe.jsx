@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -211,8 +212,8 @@ export default function InsumosTabProfe({
       )}
 
       {/* Modal Horneado */}
-      {bakeModal.isOpen && (
-        <div className="modal-overlay" style={{ padding: '16px' }}>
+      {bakeModal.isOpen && createPortal(
+        <div className="modal-overlay" style={{ padding: '16px', zIndex: 9999 }}>
           <div className="clay-card animate-slide-up" style={{
             width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px', position: 'relative',
             maxHeight: '90vh', overflowY: 'auto'
@@ -225,7 +226,7 @@ export default function InsumosTabProfe({
               ✕
             </button>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '16px' }}>
-              Registrar Horneado
+              Registrar horneado
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginBottom: '16px' }}>
               Alumna: <strong>{bakeModal.studentName}</strong>
@@ -307,12 +308,13 @@ export default function InsumosTabProfe({
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Arcilla */}
-      {clayModal.isOpen && (
-        <div className="modal-overlay" style={{ padding: '16px' }}>
+      {clayModal.isOpen && createPortal(
+        <div className="modal-overlay" style={{ padding: '16px', zIndex: 9999 }}>
           <div className="clay-card animate-slide-up" style={{
             width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px', position: 'relative',
             maxHeight: '90vh', overflowY: 'auto'
@@ -325,7 +327,7 @@ export default function InsumosTabProfe({
               ✕
             </button>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '16px' }}>
-              Arcilla Extra
+              Arcilla extra
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginBottom: '16px' }}>
               Alumna: <strong>{clayModal.studentName}</strong>
@@ -354,7 +356,8 @@ export default function InsumosTabProfe({
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

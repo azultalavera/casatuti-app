@@ -571,6 +571,18 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const confirmInsumoPayment = async (insumoId) => {
+    setLoading(true);
+    try {
+      await mockService.confirmInsumoPayment(insumoId);
+      // Recargar insumos
+      const loadedBakes = await mockService.getBakes();
+      setBakes(loadedBakes);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const sendTransferReminder = async (paymentId) => {
     setLoading(true);
     try {
@@ -709,6 +721,7 @@ export const AppProvider = ({ children }) => {
     setLoading(true);
     try {
       await mockService.createExtraClay(clayData);
+      setBakes(await mockService.getBakes());
     } finally {
       setLoading(false);
     }
@@ -724,6 +737,18 @@ export const AppProvider = ({ children }) => {
       const loadedProfiles = await mockService.getStudentProfiles();
       setStudentProfiles(loadedProfiles);
       return newUser;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendWelcomeEmailsAction = async (studentIds) => {
+    setLoading(true);
+    try {
+      const result = await mockService.resendWelcomeEmails(studentIds);
+      const loadedUsers = await mockService.getUsers();
+      setUsers(loadedUsers);
+      return result;
     } finally {
       setLoading(false);
     }
@@ -946,6 +971,7 @@ export const AppProvider = ({ children }) => {
         createBake,
         recordStudentPayment,
         confirmPendingPayment,
+        confirmInsumoPayment,
         sendTransferReminder,
         requestStudentPayment,
         createNewTurn,
@@ -957,6 +983,7 @@ export const AppProvider = ({ children }) => {
         createNewUserAction,
         updateUserAction,
         updateUserPasswordAction,
+        resendWelcomeEmailsAction,
         deleteUserAction,
         toggleStudentBlockAction,
         resolveAlertAction,
