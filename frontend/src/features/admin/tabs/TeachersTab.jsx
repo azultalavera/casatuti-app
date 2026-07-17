@@ -603,7 +603,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
 
       {/* 4. MODAL POPUP PARA ASIGNAR MULTIPLES TURNOS */}
       {showAssignModal && assignModalTeacher && (
-        <div style={{
+        <div className="tuti-modal" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -673,56 +673,80 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                   No hay turnos registrados en el sistema.
                 </p>
               ) : (
-                classes.map(c => {
-                  const isChecked = selectedTurnIds.includes(c.id);
+                ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => {
+                  const dayClasses = classes.filter(c => c.day === day);
+                  if (dayClasses.length === 0) return null;
+                  
                   return (
-                    <div
-                      key={c.id}
-                      onClick={() => {
-                        setSelectedTurnIds(prev => 
-                          prev.includes(c.id) 
-                            ? prev.filter(id => id !== c.id) 
-                            : [...prev, c.id]
-                        );
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        border: isChecked ? '2px solid var(--verde-oliva)' : '1px solid var(--gris-claro)',
-                        backgroundColor: isChecked ? 'rgba(69, 95, 62, 0.04)' : 'var(--blanco)',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
-                          {c.day} - {c.time}
-                        </span>
-                        <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: '600' }}>
-                          <LocationOnIcon style={{ fontSize: '12px' }} /> Sucursal: {c.sucursal} | Actual: {c.teacherName}
-                        </span>
-                      </div>
-
-                      {/* Checkbox táctil */}
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '6px',
-                        border: isChecked ? '2px solid var(--verde-oliva)' : '2px solid var(--gris-medio)',
-                        backgroundColor: isChecked ? 'var(--verde-oliva)' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease'
+                    <div key={day} style={{ marginBottom: '14px' }}>
+                      <h4 style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '800', 
+                        color: 'var(--verde-oliva)', 
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        margin: '0 0 8px 0', 
+                        borderBottom: '1px dashed var(--gris-claro)', 
+                        paddingBottom: '4px' 
                       }}>
-                        {isChecked && (
-                          <svg style={{ width: '12px', height: '12px', color: 'var(--blanco)' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
+                        {day}
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {dayClasses.map(c => {
+                          const isChecked = selectedTurnIds.includes(c.id);
+                          return (
+                            <div
+                              key={c.id}
+                              onClick={() => {
+                                setSelectedTurnIds(prev => 
+                                  prev.includes(c.id) 
+                                    ? prev.filter(id => id !== c.id) 
+                                    : [...prev, c.id]
+                                );
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '10px 14px',
+                                borderRadius: '12px',
+                                border: isChecked ? '2px solid var(--verde-oliva)' : '1px solid var(--gris-claro)',
+                                backgroundColor: isChecked ? 'rgba(69, 95, 62, 0.04)' : 'var(--blanco)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
+                                  {c.time}
+                                </span>
+                                <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                  📍 {c.sucursal} {c.teacherName ? `| 👤 ${c.teacherName}` : ''}
+                                </span>
+                              </div>
+
+                              {/* Checkbox táctil */}
+                              <div style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '6px',
+                                border: isChecked ? '2px solid var(--verde-oliva)' : '2px solid var(--gris-medio)',
+                                backgroundColor: isChecked ? 'var(--verde-oliva)' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                                marginLeft: '12px'
+                              }}>
+                                {isChecked && (
+                                  <svg style={{ width: '12px', height: '12px', color: 'var(--blanco)' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
