@@ -114,7 +114,6 @@ export default function TeachersTab({ showFeedback, onEdit }) {
 
   const filteredClasses = classes.filter(c => {
     if (!assignModalTeacher) return true;
-    if (selectedTurnIds.includes(c.id)) return true;
     const hasTeacher = !!c.teacherId;
     return filterWithTeacher ? hasTeacher : !hasTeacher;
   });
@@ -665,7 +664,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: 0 }}>
-              Selecciona todos los turnos semanales que dictará esta profesora. Puedes seleccionar múltiples turnos a la vez.
+              Selecciona todos los turnos semanales que dictará este/a profesor/a. Puedes seleccionar múltiples turnos a la vez.
             </p>
 
             {/* Filtro Switch */}
@@ -778,7 +777,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                                 if (!isChecked) {
                                   if (c.teacherName && c.teacherId !== assignModalTeacher.id) {
                                     const confirmReplace = window.confirm(
-                                      `El turno de ${c.day} - ${c.time} ya está asignado a la profesora ${c.teacherName}.\n\n¿Estás segura de que deseas reemplazarla por ${assignModalTeacher.name}?`
+                                      `El turno de ${c.day} - ${c.time} ya está asignado a el/la profesor/a ${c.teacherName}.\n\n¿Estás seguro/a de que deseas reemplazarlo/a por ${assignModalTeacher.name}?`
                                     );
                                     if (!confirmReplace) return;
                                   }
