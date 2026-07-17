@@ -276,9 +276,9 @@ export default function PerfilTab() {
             <label style={labelStyle}>DNI</label>
             <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
           </div>
-          <div className="form-group">
+          <div className="form-group" style={{ minWidth: 0 }}>
             <label style={labelStyle}>Fecha de nacimiento</label>
-            <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
+            <input type="date" name="fecha_nacimiento" style={{ ...inputStyle, minWidth: 0, maxWidth: '100%', WebkitAppearance: 'none' }} value={formData.fecha_nacimiento} onChange={handleInput} />
           </div>
 
           <div style={sectionHeaderStyle}>

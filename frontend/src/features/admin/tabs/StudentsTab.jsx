@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 
 export default function StudentsTab({ showFeedback, onEdit, initialFilter, onClearFilter }) {
-  const { users, studentProfiles, createNewUserAction, deleteUserAction, toggleStudentBlockAction, branches } = useApp();
+  const { users, studentProfiles, createNewUserAction, deleteUserAction, toggleStudentBlockAction, resendWelcomeEmailsAction, branches } = useApp();
   const students = users.filter(u => u.role === 'ALUMNO');
 
   const [mode, setMode] = useState('list'); // 'list' | 'create'
@@ -12,6 +12,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
   const [filterZeroCredits, setFilterZeroCredits] = useState(false); // toggle zero credits
   const [filterActivePacks, setFilterActivePacks] = useState(false); // toggle active packs
   const [expandedStudentId, setExpandedStudentId] = useState(null);
+  const [isResending, setIsResending] = useState(false);
 
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
@@ -164,9 +165,9 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
 
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
-              <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
+              <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value.toUpperCase())} style={{ width: '100%', cursor: 'pointer' }}>
                 {branches.map(b => (
-                  <option key={b.id} value={b.name}>{b.name}</option>
+                  <option key={b.id} value={b.name.toUpperCase()}>{b.name}</option>
                 ))}
               </select>
             </div>
@@ -350,6 +351,36 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
 
           </div>
 
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <button
+              disabled={isResending || filteredStudents.length === 0}
+              onClick={async () => {
+                if (!window.confirm(`¿Estás seguro de re-enviar el correo de bienvenida a TODAS las alumnas filtradas (${filteredStudents.length})? Se les asignará la contraseña 'tuti123'.`)) return;
+                setIsResending(true);
+                try {
+                  const studentIds = filteredStudents.map(s => s.id);
+                  const result = await resendWelcomeEmailsAction(studentIds);
+                  showFeedback(`Se reenviaron ${result.count || studentIds.length} correos de bienvenida.`, 'success');
+                } catch (error) {
+                  showFeedback(error.message, 'danger');
+                } finally {
+                  setIsResending(false);
+                }
+              }}
+              style={{
+                padding: '10px 16px', borderRadius: '16px', border: 'none',
+                backgroundColor: 'var(--verde-oliva)', color: 'var(--blanco)',
+                fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}
+              onMouseOver={e => e.currentTarget.style.opacity = 0.9}
+              onMouseOut={e => e.currentTarget.style.opacity = 1}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+              {isResending ? 'Enviando...' : 'Re-enviar Bienvenida a Filtradas'}
+            </button>
+          </div>
+
           <div>
 
             {filteredStudents.length === 0 ? (
@@ -487,7 +518,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
                           {/* Details removed */}
 
                           {/* Botones de acción */}
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             {/* 1. Pausar */}
                             <button
                               onClick={async (e) => {
@@ -538,6 +569,31 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
                               onMouseOut={e => e.currentTarget.style.opacity = 1}
                             >
                               Eliminar
+                            </button>
+                            
+                            {/* 4. Re-enviar Bienvenida */}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm(`¿Deseas re-enviar el correo de bienvenida a ${st.name}? Se le asignará la clave 'tuti123'.`)) return;
+                                try {
+                                  await resendWelcomeEmailsAction([st.id]);
+                                  showFeedback(`Correo enviado a ${st.name}.`, 'success');
+                                } catch (error) {
+                                  showFeedback(error.message, 'danger');
+                                }
+                              }}
+                              style={{
+                                flex: '1 1 100%', padding: '12px 0', borderRadius: '16px', border: '1px solid var(--verde-oliva)',
+                                backgroundColor: 'transparent', color: 'var(--verde-oliva)',
+                                fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                              }}
+                              onMouseOver={e => { e.currentTarget.style.backgroundColor = 'var(--verde-oliva)'; e.currentTarget.style.color = 'var(--blanco)'; }}
+                              onMouseOut={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--verde-oliva)'; }}
+                            >
+                              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                              Re-enviar Bienvenida (Email)
                             </button>
                           </div>
                         </div>

@@ -39,6 +39,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
     branches,
     resolveAlertAction,
     payments,
+    bakes,
   } = useApp();
 
   // --- Estado de Turnos ---
@@ -230,6 +231,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             successMessage={successMessage}
             classes={classes}
             payments={payments}
+            bakes={bakes}
             resolveAlertAction={resolveAlertAction}
             onCancel={handleCancel}
             onReprogramar={(bId) => {
@@ -278,6 +280,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
             buyLoading={buyLoading}
             onBuy={handleBuy}
             payments={payments}
+            bakes={bakes}
           />
         )}
 

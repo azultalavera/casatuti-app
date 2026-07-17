@@ -13,8 +13,10 @@ export default function PaymentsTab({ showFeedback }) {
     packs,
     recordStudentPayment,
     confirmPendingPayment,
+    confirmInsumoPayment,
     sendTransferReminder,
-    branches
+    branches,
+    bakes
   } = useApp();
 
   // Filtro de Sucursal
@@ -31,32 +33,68 @@ export default function PaymentsTab({ showFeedback }) {
     if (selectedBranch === 'ALL') return true;
     const st = baseStudents.find(s => s.id === p.studentId);
     return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
-  });
+  }).map(p => ({ ...p, isInsumo: false }));
+
+  const pendingBakes = (bakes || []).filter(b => {
+    if (b.isPaid || b.price <= 0) return false;
+    if (selectedBranch === 'ALL') return true;
+    const st = baseStudents.find(s => s.id === b.studentId);
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
+  }).map(b => ({
+    id: b.id,
+    studentId: b.studentId,
+    amount: b.price,
+    date: b.date,
+    motivo: b.description || 'Deuda de insumo',
+    status: 'PENDING',
+    isInsumo: true,
+    insumoType: b.type
+  }));
+
+  const allPendingPayments = [...pendingPayments, ...pendingBakes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const confirmedPayments = payments.filter(p => {
     if (p.status !== 'PAID') return false;
     if (selectedBranch === 'ALL') return true;
     const st = baseStudents.find(s => s.id === p.studentId);
     return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
-  });
+  }).map(p => ({ ...p, isInsumo: false }));
+
+  const confirmedBakes = (bakes || []).filter(b => {
+    if (!b.isPaid) return false;
+    if (selectedBranch === 'ALL') return true;
+    const st = baseStudents.find(s => s.id === b.studentId);
+    return st && (st.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
+  }).map(b => ({
+    id: b.id,
+    studentId: b.studentId,
+    amount: b.price,
+    date: b.date, // Ideally this would be fec_pago but we don't have it, so fallback to fec_carga (b.date)
+    motivo: b.description || 'Pago de insumo',
+    status: 'PAID',
+    isInsumo: true,
+    insumoType: b.type
+  }));
+
+  const allConfirmedPayments = [...confirmedPayments, ...confirmedBakes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // Filtro de Meses para Pagos Confirmados
   const [selectedMonths, setSelectedMonths] = useState([]);
 
   // Extraer meses únicos en formato YYYY-MM
   const allMonths = Array.from(new Set(
-    payments.filter(p => p.status === 'PAID').map(p => p.date.substring(0, 7))
-  )).sort((a, b) => b.localeCompare(a)); // Descendente
+    allConfirmedPayments.map(p => p.date ? p.date.substring(0, 7) : '')
+  )).filter(m => m !== '').sort((a, b) => b.localeCompare(a)); // Descendente
 
   // Filtrar pagos confirmados según los meses seleccionados (si no hay ninguno, se muestran todos)
-  const filteredConfirmed = confirmedPayments.filter(p => {
+  const filteredConfirmedPayments = allConfirmedPayments.filter(p => {
     if (selectedMonths.length === 0) return true;
     const m = p.date.substring(0, 7);
     return selectedMonths.includes(m);
   });
 
   // Total recaudado de los pagos confirmados filtrados
-  const totalAmount = filteredConfirmed.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalConfirmed = filteredConfirmedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   // Formulario Manual
   const [manualStudentIds, setManualStudentIds] = useState([]);
@@ -73,7 +111,7 @@ export default function PaymentsTab({ showFeedback }) {
   const [confirmModalData, setConfirmModalData] = useState(null);
 
   // Tabs y Modales
-  const [activeTab, setActiveTab] = useState(pendingPayments.length > 0 ? 'PENDING' : 'CONFIRMED');
+  const [activeTab, setActiveTab] = useState(allPendingPayments.length > 0 ? 'PENDING' : 'CONFIRMED');
   const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
 
   const handlePackChange = (e) => {
@@ -123,10 +161,10 @@ export default function PaymentsTab({ showFeedback }) {
 
   const toggleSelectAll = (e) => {
     e.stopPropagation();
-    if (selectedPayments.length === pendingPayments.length) {
+    if (selectedPayments.length === allPendingPayments.length) {
       setSelectedPayments([]);
     } else {
-      setSelectedPayments(pendingPayments.map(p => p.id));
+      setSelectedPayments(allPendingPayments.map(p => p.id));
     }
   };
 
@@ -139,7 +177,10 @@ export default function PaymentsTab({ showFeedback }) {
   };
 
   const handleBulkConfirm = async () => {
-    if (selectedPayments.length === 0) return;
+    if (selectedPayments.length === 0) {
+      showFeedback('Por favor, seleccioná al menos un pago para confirmar.', 'danger');
+      return;
+    }
     setConfirmModalData({
       ids: selectedPayments,
       date: new Date().toISOString().split('T')[0]
@@ -149,9 +190,15 @@ export default function PaymentsTab({ showFeedback }) {
     if (!confirmModalData || confirmModalData.ids.length === 0) return;
     setIsProcessingBulk(true);
     let successCount = 0;
+    let isBake = false;
     for (const id of confirmModalData.ids) {
       try {
-        await confirmPendingPayment(id, confirmModalData.date);
+        isBake = pendingBakes.some(b => b.id === id);
+        if (isBake) {
+          await confirmInsumoPayment(id);
+        } else {
+          await confirmPendingPayment(id, confirmModalData.date);
+        }
         successCount++;
       } catch (e) {
         console.error(`Error confirmando pago ${id}:`, e);
@@ -162,13 +209,21 @@ export default function PaymentsTab({ showFeedback }) {
     setSelectedPayments([]);
     setConfirmModalData(null);
     if (successCount > 0) {
-      showFeedback(`Se confirmaron ${successCount} pagos exitosamente.`, 'info');
+        if (isBake) {
+          showFeedback(`Se confirmaron ${successCount} pagos correctamente.`, 'info');
+        } else {
+          showFeedback(`Se confirmaron ${successCount} pagos correctamente y se asignaron los créditos.`, 'info');
+        }
       setActiveTab('CONFIRMED');
     }
   };
 
   const handleBulkNotify = async () => {
-    if (!confirm(`¿Estás seguro de enviar ${selectedPayments.length} recordatorios?`)) return;
+    if (selectedPayments.length === 0) {
+      showFeedback('Por favor, seleccioná al menos un pago para notificar.', 'danger');
+      return;
+    }
+    if (!window.confirm(`¿Estás seguro de enviar ${selectedPayments.length} recordatorios?`)) return;
     setIsProcessingBulk(true);
     let successCount = 0;
     for (const id of selectedPayments) {
@@ -182,7 +237,7 @@ export default function PaymentsTab({ showFeedback }) {
     setIsProcessingBulk(false);
     setSelectedPayments([]);
     if (successCount > 0) {
-      showFeedback(`Se enviaron ${successCount} notificaciones.`, 'info');
+      showFeedback(`Se enviaron ${successCount} notificaciones con éxito.`, 'info');
     }
   };
 
@@ -234,7 +289,7 @@ export default function PaymentsTab({ showFeedback }) {
           style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'PENDING' ? 'var(--blanco)' : 'transparent', color: activeTab === 'PENDING' ? 'var(--gris-oscuro)' : 'var(--gris-medio)', fontWeight: 800, fontSize: '14px', boxShadow: activeTab === 'PENDING' ? '0 2px 8px rgba(0,0,0,0.04)' : 'none', transition: 'all 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
         >
           <HourglassEmptyIcon style={{ fontSize: '18px', color: activeTab === 'PENDING' ? 'var(--marron-arcilla)' : 'inherit' }} /> Pendientes
-          {pendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '10px', padding: '2px 6px', marginLeft: '4px' }}>{pendingPayments.length}</span>}
+          {allPendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '10px', padding: '2px 6px', marginLeft: '4px' }}>{allPendingPayments.length}</span>}
         </button>
         <button
           onClick={() => setActiveTab('CONFIRMED')}
@@ -250,10 +305,10 @@ export default function PaymentsTab({ showFeedback }) {
         <div style={{ padding: '16px', fontWeight: 700, fontSize: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <HourglassEmptyIcon style={{ color: 'var(--marron-arcilla)' }} /> Pagos pendientes
-            {pendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '11px', padding: '2px 6px' }}>{pendingPayments.length}</span>}
+            {allPendingPayments.length > 0 && <span className="badge badge-clay" style={{ fontSize: '11px', padding: '2px 6px' }}>{allPendingPayments.length}</span>}
           </div>
         </div>
-        {pendingPayments.length > 0 && (
+        {allPendingPayments.length > 0 && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 12px' }}>
             <div
               onClick={toggleSelectAll}
@@ -261,7 +316,7 @@ export default function PaymentsTab({ showFeedback }) {
             >
               <input
                 type="checkbox"
-                checked={selectedPayments.length === pendingPayments.length && pendingPayments.length > 0}
+                checked={selectedPayments.length === allPendingPayments.length && allPendingPayments.length > 0}
                 readOnly
                 style={{ cursor: 'pointer', accentColor: 'var(--marron-arcilla)', margin: 0 }}
               />
@@ -270,17 +325,17 @@ export default function PaymentsTab({ showFeedback }) {
           </div>
         )}
         <div style={{ padding: '0 16px 16px 16px' }}>
-          {pendingPayments.length === 0 ? (
+          {allPendingPayments.length === 0 ? (
             <p style={{ fontStyle: 'italic', fontSize: '13px', color: 'var(--gris-medio)' }}>No hay pagos pendientes.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {pendingPayments.map(pay => {
-                const st = baseStudents.find(u => u.id === pay.studentId);
-                const isSelected = selectedPayments.includes(pay.id);
+              {allPendingPayments.map(p => {
+                const st = baseStudents.find(u => u.id === p.studentId);
+                const isSelected = selectedPayments.includes(p.id);
                 return (
                   <div
-                    key={pay.id}
-                    onClick={() => toggleSelectOne(pay.id)}
+                    key={p.id}
+                    onClick={() => toggleSelectOne(p.id)}
                     className="stat-card-modern animate-slide-up"
                     style={{
                       padding: '20px',
@@ -296,24 +351,31 @@ export default function PaymentsTab({ showFeedback }) {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleSelectOne(pay.id)}
+                        onChange={() => toggleSelectOne(p.id)}
                         onClick={(e) => e.stopPropagation()}
                         style={{ width: '18px', height: '18px', accentColor: 'var(--marron-arcilla)', cursor: 'pointer' }}
                       />
 
                       <div style={{ flex: 1 }}>
                         <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>{st?.name || 'Alumno'}</h4>
-                        <p style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
-                          <strong style={{ color: 'var(--naranja-tierra)' }}>{pay.classCreditsAdded} clases</strong> • <strong>${pay.amount.toLocaleString('es-AR')}</strong>
+                        <p style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {p.isInsumo ? (
+                            <span style={{ fontSize: '10px', fontWeight: 700, backgroundColor: 'var(--marron-arcilla)', color: '#fff', padding: '2px 6px', borderRadius: '12px', textTransform: 'uppercase' }}>
+                              {p.insumoType === 'HORNO' ? 'HORNEADO' : 'ARCILLA'}
+                            </span>
+                          ) : (
+                            <strong style={{ color: 'var(--naranja-tierra)' }}>{`${p.classCreditsAdded} clases`}</strong>
+                          )}
+                          <span>• <strong>${p.amount.toLocaleString('es-AR')}</strong></span>
                         </p>
-                        <p style={{ fontSize: '10px', color: 'var(--gris-medio)', marginTop: '2px' }}>{pay.date.split(' ')[0]}</p>
+                        <p style={{ fontSize: '10px', color: 'var(--gris-medio)', marginTop: '2px' }}>{p.date.split(' ')[0]}</p>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }} onClick={e => e.stopPropagation()}>
                         <button
                           onClick={async () => {
                             setConfirmModalData({
-                              ids: [pay.id],
+                              ids: [p.id],
                               date: new Date().toISOString().split('T')[0]
                             });
                           }}
@@ -326,7 +388,7 @@ export default function PaymentsTab({ showFeedback }) {
                         <button
                           onClick={async () => {
                             try {
-                              await sendTransferReminder(pay.id);
+                              await sendTransferReminder(p.id);
                               showFeedback(`Recordatorio enviado a ${st?.name}.`, 'info');
                             } catch (err) {
                               showFeedback(err.message, 'danger');
@@ -539,7 +601,7 @@ export default function PaymentsTab({ showFeedback }) {
               Total recaudado {selectedMonths.length === 0 ? '(Todos los meses)' : '(Selección)'}
             </span>
             <span style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-1px' }}>
-              ${totalAmount.toLocaleString('es-AR')}
+              ${totalConfirmed.toLocaleString('es-AR')}
             </span>
           </div>
 
@@ -548,14 +610,14 @@ export default function PaymentsTab({ showFeedback }) {
           </h4>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {filteredConfirmed.length === 0 ? (
+            {filteredConfirmedPayments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
                 <p style={{ fontStyle: 'italic', fontSize: '13px' }}>No hay registros de pagos confirmados.</p>
               </div>
             ) : (() => {
               // Agrupar por mes
               const grouped = {};
-              filteredConfirmed.forEach(pay => {
+              filteredConfirmedPayments.forEach(pay => {
                 const m = pay.date.substring(0, 7);
                 if (!grouped[m]) grouped[m] = [];
                 grouped[m].push(pay);
@@ -574,19 +636,25 @@ export default function PaymentsTab({ showFeedback }) {
                     <h5 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gris-oscuro)', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '8px', marginBottom: '4px', marginTop: '0' }}>
                       {monthLabel}
                     </h5>
-                    {grouped[month].map(pay => {
-                      const st = baseStudents.find(u => u.id === pay.studentId);
+                    {grouped[month].map(p => {
+                      const st = baseStudents.find(u => u.id === p.studentId);
                       return (
-                        <div key={pay.id} className="stat-card-modern animate-slide-up" style={{ padding: '16px 20px', borderRadius: '20px', backgroundColor: 'var(--bg-crema-claro)', border: 'none', boxShadow: 'none' }}>
+                        <div key={p.id} className="stat-card-modern animate-slide-up" style={{ padding: '16px 20px', borderRadius: '20px', backgroundColor: 'var(--bg-crema-claro)', border: 'none', boxShadow: 'none' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                               <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>{st?.name || 'Alumno'}</h4>
                               <p style={{ fontSize: '11px', color: 'var(--gris-medio)', marginTop: '2px', marginBottom: 0 }}>
-                                {pay.date.split(' ')[0]} • +{pay.classCreditsAdded} clases
+                                {p.isInsumo ? (
+                                  <span style={{ fontSize: '10px', fontWeight: 700, backgroundColor: 'var(--marron-arcilla)', color: '#fff', padding: '2px 6px', borderRadius: '12px', textTransform: 'uppercase' }}>
+                                    {p.insumoType === 'HORNO' ? 'HORNEADO' : 'ARCILLA'}
+                                  </span>
+                                ) : (
+                                  `${p.date.split(' ')[0]} • +${p.classCreditsAdded} clases`
+                                )}
                               </p>
                             </div>
                             <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>
-                              ${pay.amount.toLocaleString('es-AR')}
+                              ${p.amount.toLocaleString('es-AR')}
                             </span>
                           </div>
                         </div>

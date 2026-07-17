@@ -41,7 +41,7 @@ export default function AlumnosTabProfe({ currentUser, classes, bookings, studen
   return (
     <div className="animate-slide-up">
       <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '16px' }}>
-        Directorio de Alumnos
+        Directorio de Alumnos/as
       </h3>
 
       {/* Buscador */}
@@ -49,7 +49,7 @@ export default function AlumnosTabProfe({ currentUser, classes, bookings, studen
         <input 
           type="text" 
           className="input-tuti" 
-          placeholder="Buscar alumno por nombre..." 
+          placeholder="Buscar alumno/a por nombre..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ paddingLeft: '40px' }}
@@ -60,7 +60,7 @@ export default function AlumnosTabProfe({ currentUser, classes, bookings, studen
       {/* Lista de Alumnos */}
       {filteredStudents.length === 0 ? (
         <div className="clay-card" style={{ textAlign: 'center', padding: '24px', color: 'var(--gris-medio)' }}>
-          <p style={{ fontStyle: 'italic', margin: 0 }}>No se encontraron alumnos.</p>
+          <p style={{ fontStyle: 'italic', margin: 0 }}>No se encontraron alumnos/as.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -54,6 +54,8 @@ export default function ProfeView({ activeTab, setActiveTab }) {
             takeAttendance={takeAttendance}
             deliverClayToStudent={deliverClayToStudent}
             bookClassForStudent={bookClassForStudent}
+            createBake={createBake}
+            createExtraClay={createExtraClay}
             setActiveTab={setActiveTab}
           />
         );
@@ -67,6 +69,7 @@ export default function ProfeView({ activeTab, setActiveTab }) {
             takeAttendance={takeAttendance}
             deliverClayToStudent={deliverClayToStudent}
             createBake={createBake}
+            createExtraClay={createExtraClay}
           />
         );
       case 'alumnos':
