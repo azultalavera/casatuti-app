@@ -462,7 +462,7 @@ input {
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
+  z-index: 100000 !important;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   font-weight: 700;
   min-width: 300px;
