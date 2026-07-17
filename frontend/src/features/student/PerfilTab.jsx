@@ -263,26 +263,22 @@ export default function PerfilTab() {
         )}
 
         <form onSubmit={handleSubmitProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label style={labelStyle}>Nombre</label>
-              <input type="text" name="nombre" style={inputStyle} value={formData.nombre} onChange={handleInput} required />
-            </div>
-            <div className="form-group">
-              <label style={labelStyle}>Apellido</label>
-              <input type="text" name="apellido" style={inputStyle} value={formData.apellido} onChange={handleInput} />
-            </div>
+          <div className="form-group">
+            <label style={labelStyle}>Nombre</label>
+            <input type="text" name="nombre" style={inputStyle} value={formData.nombre} onChange={handleInput} required />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Apellido</label>
+            <input type="text" name="apellido" style={inputStyle} value={formData.apellido} onChange={handleInput} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label style={labelStyle}>DNI</label>
-              <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
-            </div>
-            <div className="form-group">
-              <label style={labelStyle}>Fecha de nacimiento</label>
-              <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
-            </div>
+          <div className="form-group">
+            <label style={labelStyle}>DNI</label>
+            <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Fecha de nacimiento</label>
+            <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
           </div>
 
           <div style={sectionHeaderStyle}>
