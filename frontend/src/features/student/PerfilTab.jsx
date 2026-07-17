@@ -257,32 +257,28 @@ export default function PerfilTab() {
         </div>
 
         {message && (
-          <div className={`alert-banner ${message.type === 'error' ? 'danger' : 'success'}`} style={{ marginBottom: '20px' }}>
+          <div className={`alert-banner ${message.type === 'error' ? 'danger' : 'success'}`} style={{ position: 'relative', top: 'auto', left: 'auto', transform: 'none', width: '100%', animation: 'none', marginBottom: '20px', zIndex: 1 }}>
             {message.text}
           </div>
         )}
 
         <form onSubmit={handleSubmitProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label style={labelStyle}>Nombre</label>
-              <input type="text" name="nombre" style={inputStyle} value={formData.nombre} onChange={handleInput} required />
-            </div>
-            <div className="form-group">
-              <label style={labelStyle}>Apellido</label>
-              <input type="text" name="apellido" style={inputStyle} value={formData.apellido} onChange={handleInput} />
-            </div>
+          <div className="form-group">
+            <label style={labelStyle}>Nombre</label>
+            <input type="text" name="nombre" style={inputStyle} value={formData.nombre} onChange={handleInput} required />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Apellido</label>
+            <input type="text" name="apellido" style={inputStyle} value={formData.apellido} onChange={handleInput} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label style={labelStyle}>DNI</label>
-              <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
-            </div>
-            <div className="form-group">
-              <label style={labelStyle}>Fecha de nacimiento</label>
-              <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
-            </div>
+          <div className="form-group">
+            <label style={labelStyle}>DNI</label>
+            <input type="number" name="nro_documento" style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={formData.nro_documento} disabled />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Fecha de nacimiento</label>
+            <input type="date" name="fecha_nacimiento" style={inputStyle} value={formData.fecha_nacimiento} onChange={handleInput} />
           </div>
 
           <div style={sectionHeaderStyle}>
@@ -324,7 +320,7 @@ export default function PerfilTab() {
         </div>
 
         {passMessage && (
-          <div className={`alert-banner ${passMessage.type === 'error' ? 'danger' : 'success'}`} style={{ marginBottom: '20px' }}>
+          <div className={`alert-banner ${passMessage.type === 'error' ? 'danger' : 'success'}`} style={{ position: 'relative', top: 'auto', left: 'auto', transform: 'none', width: '100%', animation: 'none', marginBottom: '20px', zIndex: 1 }}>
             {passMessage.text}
           </div>
         )}
