@@ -1653,7 +1653,7 @@ app.get('/api/bakes', async (req, res) => {
     const bakeQuery = `
       SELECT 
         d.id_deudas_insumos AS id,
-        d.id_usuarios AS student_id,
+        d.id_usuario AS student_id,
         COALESCE(u.nombre || ' ' || u.apellido, 'Alumno') AS student_name,
         d.fec_carga::text AS date,
         d.precio_total AS price,
@@ -1662,7 +1662,7 @@ app.get('/api/bakes', async (req, res) => {
         d.descripcion AS description,
         d.tipo AS type
       FROM public.t_deudas_insumos d
-      JOIN public.t_usuarios u ON d.id_usuarios = u.id_usuarios
+      JOIN public.t_usuarios u ON d.id_usuario = u.id_usuario
       ORDER BY d.fec_carga DESC
     `;
     const { rows } = await db.query(bakeQuery);
@@ -1688,7 +1688,7 @@ app.put('/api/insumos/:id/confirm', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const debtRes = await db.query('SELECT * FROM public.t_deudas_insumos WHERE id_deudas_insumos = $1', [id]);
+    const debtRes = await db.query('SELECT * FROM public.t_deudas_insumos WHERE id = $1', [id]);
     if (debtRes.rows.length === 0) {
       return res.status(404).json({ error: 'Deuda de insumo no encontrada.' });
     }
@@ -1701,7 +1701,7 @@ app.put('/api/insumos/:id/confirm', async (req, res) => {
     await db.query(`
       UPDATE public.t_deudas_insumos 
       SET bl_pagado = true
-      WHERE id_deudas_insumos = $1
+      WHERE id = $1
     `, [id]);
 
     res.json({ success: true, message: 'Pago de insumo confirmado.' });
