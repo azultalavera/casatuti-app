@@ -14,6 +14,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignModalTeacher, setAssignModalTeacher] = useState(null);
   const [selectedTurnIds, setSelectedTurnIds] = useState([]);
+  const [filterWithTeacher, setFilterWithTeacher] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('ALL');
@@ -110,6 +111,13 @@ export default function TeachersTab({ showFeedback, onEdit }) {
     const parts = name.trim().split(/\s+/);
     return parts.map(p => p[0]).join('').toUpperCase().substring(0, 3);
   };
+
+  const filteredClasses = classes.filter(c => {
+    if (!assignModalTeacher) return true;
+    if (selectedTurnIds.includes(c.id)) return true;
+    const hasTeacher = !!c.teacher_id;
+    return filterWithTeacher ? hasTeacher : !hasTeacher;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -483,6 +491,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           onClick={() => {
                             setAssignModalTeacher(tc);
                             setSelectedTurnIds(classes.filter(c => c.teacher_id === tc.id).map(c => c.id));
+                            setFilterWithTeacher(false);
                             setShowAssignModal(true);
                           }}
                           style={{
@@ -659,6 +668,67 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               Selecciona todos los turnos semanales que dictará esta profesora. Puedes seleccionar múltiples turnos a la vez.
             </p>
 
+            {/* Filtro Switch */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#f8f6f4',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--gris-claro)',
+              margin: '4px 0 8px 0'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
+                Filtrar por asignación:
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: !filterWithTeacher ? 'var(--marron-arcilla)' : 'var(--gris-medio)',
+                  transition: 'color 0.2s ease'
+                }}>
+                  Sin profesor
+                </span>
+                
+                {/* Switch Toggle */}
+                <div 
+                  onClick={() => setFilterWithTeacher(prev => !prev)}
+                  style={{
+                    width: '40px',
+                    height: '22px',
+                    borderRadius: '11px',
+                    backgroundColor: filterWithTeacher ? 'var(--verde-oliva)' : '#d0c9c0',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.25s ease'
+                  }}
+                >
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--blanco)',
+                    position: 'absolute',
+                    top: '3px',
+                    left: filterWithTeacher ? '21px' : '3px',
+                    transition: 'left 0.25s cubic-bezier(0.3, 1.5, 0.7, 1)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                  }} />
+                </div>
+
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: filterWithTeacher ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                  transition: 'color 0.2s ease'
+                }}>
+                  Con profesor
+                </span>
+              </div>
+            </div>
+
             {/* Listado de Turnos */}
             <div style={{
               display: 'flex',
@@ -668,13 +738,13 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               overflowY: 'auto',
               paddingRight: '4px'
             }}>
-              {classes.length === 0 ? (
+              {filteredClasses.length === 0 ? (
                 <p style={{ fontStyle: 'italic', fontSize: '12px', textAlign: 'center', color: 'var(--gris-medio)', padding: '16px 0' }}>
-                  No hay turnos registrados en el sistema.
+                  No hay turnos {filterWithTeacher ? 'con profesor' : 'sin profesor'} para mostrar.
                 </p>
               ) : (
                 ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => {
-                  const dayClasses = classes.filter(c => c.day === day);
+                  const dayClasses = filteredClasses.filter(c => c.day === day);
                   if (dayClasses.length === 0) return null;
                   
                   const hasChecked = dayClasses.some(c => selectedTurnIds.includes(c.id));
@@ -704,11 +774,18 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                             <div
                               key={c.id}
                               onClick={() => {
-                                setSelectedTurnIds(prev => 
-                                  prev.includes(c.id) 
-                                    ? prev.filter(id => id !== c.id) 
-                                    : [...prev, c.id]
-                                );
+                                const isChecked = selectedTurnIds.includes(c.id);
+                                if (!isChecked) {
+                                  if (c.teacherName && c.teacher_id !== assignModalTeacher.id) {
+                                    const confirmReplace = window.confirm(
+                                      `El turno de ${c.day} - ${c.time} ya está asignado a la profesora ${c.teacherName}.\n\n¿Estás segura de que deseas reemplazarla por ${assignModalTeacher.name}?`
+                                    );
+                                    if (!confirmReplace) return;
+                                  }
+                                  setSelectedTurnIds(prev => [...prev, c.id]);
+                                } else {
+                                  setSelectedTurnIds(prev => prev.filter(id => id !== c.id));
+                                }
                               }}
                               style={{
                                 display: 'flex',
