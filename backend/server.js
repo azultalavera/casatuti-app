@@ -207,6 +207,11 @@ const mapFaqToFE = (f) => {
 // 1. ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
+// Ruta de salud de la API
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Login
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
