@@ -47,12 +47,18 @@ export default function TurnosTab({
 
   const historyBookings = bookings.filter(b => b.studentId === currentUser?.id).sort((a,b) => new Date(b.date) - new Date(a.date));
 
+  const formatMonth = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    const m = d.toLocaleString('es-ES', { month: 'long' });
+    return `${m.charAt(0).toUpperCase() + m.slice(1)} - ${d.getFullYear()}`;
+  };
+
   const availableMonths = React.useMemo(() => {
     const months = new Set();
     historyBookings.forEach(b => {
       if (b.date) {
-        const d = new Date(b.date + 'T00:00:00');
-        months.add(d.toLocaleString('es-ES', { month: 'long', year: 'numeric' }));
+        months.add(formatMonth(b.date));
       }
     });
     return Array.from(months);
@@ -61,17 +67,13 @@ export default function TurnosTab({
   React.useEffect(() => {
     if (selectedMonth !== 'Todos') {
       setExpandedMonth(selectedMonth);
-    } else if (availableMonths.length > 0 && !expandedMonth) {
-      setExpandedMonth(availableMonths[0]);
     }
-  }, [availableMonths, expandedMonth, selectedMonth]);
+  }, [selectedMonth]);
 
   const getBookingsForMonth = (monthStr) => {
     return historyBookings.filter(b => {
       if (!b.date) return false;
-      const d = new Date(b.date + 'T00:00:00');
-      const mStr = d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-      return mStr === monthStr;
+      return formatMonth(b.date) === monthStr;
     });
   };
 
@@ -427,7 +429,7 @@ export default function TurnosTab({
                     transition: 'background-color 0.2s ease'
                   }}
                 >
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, textTransform: 'capitalize' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
                     {m}
                   </h3>
                   <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--marron-arcilla)' }}>
