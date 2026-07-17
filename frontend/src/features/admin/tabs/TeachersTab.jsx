@@ -677,9 +677,10 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                   const dayClasses = classes.filter(c => c.day === day);
                   if (dayClasses.length === 0) return null;
                   
+                  const hasChecked = dayClasses.some(c => selectedTurnIds.includes(c.id));
                   return (
-                    <div key={day} style={{ marginBottom: '14px' }}>
-                      <h4 style={{ 
+                    <details key={day} style={{ marginBottom: '14px' }} open={hasChecked}>
+                      <summary style={{ 
                         fontSize: '12px', 
                         fontWeight: '800', 
                         color: 'var(--verde-oliva)', 
@@ -687,11 +688,16 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                         letterSpacing: '0.05em',
                         margin: '0 0 8px 0', 
                         borderBottom: '1px dashed var(--gris-claro)', 
-                        paddingBottom: '4px' 
+                        paddingBottom: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                       }}>
-                        {day}
-                      </h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span>{day} ({dayClasses.length} {dayClasses.length === 1 ? 'turno' : 'turnos'})</span>
+                        <span style={{ fontSize: '10px', color: 'var(--gris-medio)' }}>▼</span>
+                      </summary>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                         {dayClasses.map(c => {
                           const isChecked = selectedTurnIds.includes(c.id);
                           return (
@@ -748,7 +754,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           );
                         })}
                       </div>
-                    </div>
+                    </details>
                   );
                 })
               )}
