@@ -11,9 +11,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-// Habilitar CORS para permitir peticiones del frontend (Vite y Producción)
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://casatuti.vercel.app',
+  'https://casatuti-app.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['https://casatuti.vercel.app', 'http://localhost:5173'],
+  origin: function (origin, callback) {
+    // Si no hay origin (por ejemplo peticiones del mismo servidor o herramientas como Postman), se permite
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por política de CORS'));
+    }
+  },
   credentials: true
 }));
 
