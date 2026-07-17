@@ -775,7 +775,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                               onClick={() => {
                                 const isChecked = selectedTurnIds.includes(c.id);
                                 if (!isChecked) {
-                                  if (c.teacherName && c.teacherId !== assignModalTeacher.id) {
+                                  if (c.teacherId && c.teacherId !== assignModalTeacher.id) {
                                     const confirmReplace = window.confirm(
                                       `El turno de ${c.day} - ${c.time} ya está asignado a el/la profesor/a ${c.teacherName}.\n\n¿Estás seguro/a de que deseas reemplazarlo/a por ${assignModalTeacher.name}?`
                                     );
