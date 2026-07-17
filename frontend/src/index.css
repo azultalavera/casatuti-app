@@ -488,6 +488,12 @@ input {
   color: var(--verde-oliva-dark);
 }
 
+.alert-banner.success {
+  background-color: var(--verde-oliva);
+  border-color: rgba(46, 74, 63, 0.1);
+  color: var(--blanco);
+}
+
 /* Scrollbar Súper Elegante */
 ::-webkit-scrollbar {
   width: 5px;

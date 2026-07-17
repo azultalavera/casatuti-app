@@ -257,7 +257,7 @@ export default function PerfilTab() {
         </div>
 
         {message && (
-          <div className={`alert-banner ${message.type === 'error' ? 'danger' : 'success'}`} style={{ marginBottom: '20px' }}>
+          <div className={`alert-banner ${message.type === 'error' ? 'danger' : 'success'}`} style={{ position: 'relative', top: 'auto', left: 'auto', transform: 'none', width: '100%', animation: 'none', marginBottom: '20px', zIndex: 1 }}>
             {message.text}
           </div>
         )}
@@ -320,7 +320,7 @@ export default function PerfilTab() {
         </div>
 
         {passMessage && (
-          <div className={`alert-banner ${passMessage.type === 'error' ? 'danger' : 'success'}`} style={{ marginBottom: '20px' }}>
+          <div className={`alert-banner ${passMessage.type === 'error' ? 'danger' : 'success'}`} style={{ position: 'relative', top: 'auto', left: 'auto', transform: 'none', width: '100%', animation: 'none', marginBottom: '20px', zIndex: 1 }}>
             {passMessage.text}
           </div>
         )}
