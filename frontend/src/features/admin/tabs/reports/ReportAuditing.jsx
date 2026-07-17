@@ -55,36 +55,50 @@ export default function ReportAuditing() {
           <p>Excelente. No hay pagos pendientes de auditoría en este momento.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--gris-claro)' }}>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Fecha</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Alumna</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>DNI</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Monto pendiente</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Créditos Involucrados</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingPayments.map(p => {
-                const user = users.find(u => u.id === p.studentId);
-                return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{p.date ? p.date.split('T')[0].split(' ')[0] : '-'}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }}>
-                      {user ? `${user.name} ${user.lastname || ''}` : 'Desconocida'}
-                    </td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-medio)' }}>{user ? user.nro_documento : '-'}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>${p.amount.toLocaleString()}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px' }}>
-                      <span className="badge badge-warning">{p.classCreditsAdded} créditos</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {pendingPayments.map(p => {
+            const user = users.find(u => u.id === p.studentId);
+            return (
+              <div 
+                key={p.id} 
+                className="animate-slide-up"
+                style={{
+                  background: 'var(--blanco)',
+                  border: '1px solid var(--gris-claro)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  boxShadow: 'var(--shadow-flat)'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
+                      {user ? `${user.name} ${user.lastname || ''}`.trim() : 'Desconocida'}
+                    </span>
+                    {user?.nro_documento && (
+                      <span style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>
+                        DNI: {user.nro_documento}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                      {p.classCreditsAdded} créditos
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>
+                      {p.date ? p.date.split('T')[0].split(' ')[0] : '-'}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--rojo-alerta)', marginLeft: '16px' }}>
+                  ${p.amount.toLocaleString()}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

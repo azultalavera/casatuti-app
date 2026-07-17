@@ -170,33 +170,44 @@ export default function ReportRevenue() {
           <p>No se encontraron registros de recaudación para este periodo y filtro.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--gris-claro)' }}>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Fecha</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Tipificación</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Detalle</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Alumna</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Monto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRevenue.map(r => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{r.date.split(' ')[0]}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px' }}>
-                    <span className={`badge ${r.category === 'Clases' ? 'badge-arcilla' : 'badge-oliva'}`}>
-                      {r.category}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{r.description}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }}>{r.studentName}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: 'bold' }}>${r.amount.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {filteredRevenue.map(r => (
+            <div 
+              key={r.id} 
+              className="animate-slide-up"
+              style={{
+                background: 'var(--blanco)',
+                border: '1px solid var(--gris-claro)',
+                borderRadius: '16px',
+                padding: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: 'var(--shadow-flat)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gris-oscuro)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {r.studentName}
+                  </span>
+                  <span className={`badge ${r.category === 'Clases' ? 'badge-clay' : 'badge-oliva'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                    {r.category}
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--gris-medio)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  {r.description}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>
+                  {r.date.split(' ')[0]}
+                </div>
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--verde-oliva)', marginLeft: '16px', whiteSpace: 'nowrap' }}>
+                +${r.amount.toLocaleString()}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

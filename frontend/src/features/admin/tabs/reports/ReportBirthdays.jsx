@@ -71,30 +71,40 @@ export default function ReportBirthdays() {
           <p>No hay alumnas con fecha de nacimiento registrada en este mes.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--gris-claro)' }}>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Día del Mes</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Alumna</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Teléfono</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              {birthdayUsers.map(u => {
-                const day = (u.fecha_nacimiento.split('T')[0] || '').split('-')[2];
-                return (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px', fontSize: '16px', fontWeight: 'bold', color: 'var(--verde-oliva)' }}>{day}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }}>{u.name} {u.lastname}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-medio)' }}>{u.telefono || '-'}</td>
-                    <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-medio)' }}>{u.email}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {birthdayUsers.map(u => {
+            const day = (u.fecha_nacimiento.split('T')[0] || '').split('-')[2];
+            return (
+              <div 
+                key={u.id} 
+                className="animate-slide-up"
+                style={{
+                  background: 'var(--blanco)',
+                  border: '1px solid var(--gris-claro)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  boxShadow: 'var(--shadow-flat)'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
+                    {u.name} {u.lastname}
+                  </span>
+                  <div style={{ fontSize: '12px', color: 'var(--gris-medio)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {u.telefono && <span>📞 {u.telefono}</span>}
+                    {u.email && <span>✉️ {u.email}</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--verde-oliva-light)', padding: '6px 12px', borderRadius: '12px', minWidth: '60px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--verde-oliva-dark)', fontWeight: 600 }}>Día</span>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--verde-oliva)', lineHeight: 1.1 }}>{day}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
