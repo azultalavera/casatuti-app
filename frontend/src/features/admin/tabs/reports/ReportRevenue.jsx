@@ -124,9 +124,6 @@ export default function ReportRevenue() {
           <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Recaudación Total</h3>
           <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>Registro unificado de todos los ingresos (Clases, Horneados, etc).</p>
         </div>
-        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>⬇</span> Descargar Excel
-        </button>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
@@ -210,6 +207,12 @@ export default function ReportRevenue() {
           ))}
         </div>
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', width: '100%', justifyContent: 'center' }}>
+          <span>⬇</span> Descargar Excel
+        </button>
+      </div>
     </div>
   );
 }

@@ -54,9 +54,6 @@ export default function ReportBirthdays() {
           <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Reporte de Cumpleaños</h3>
           <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>Listado de cumpleaños del mes para enviar saludos o promociones.</p>
         </div>
-        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>⬇</span> Descargar Excel
-        </button>
       </div>
 
       <div className="form-group" style={{ maxWidth: '300px', marginBottom: '24px' }}>
@@ -107,6 +104,12 @@ export default function ReportBirthdays() {
           })}
         </div>
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', width: '100%', justifyContent: 'center' }}>
+          <span>⬇</span> Descargar Excel
+        </button>
+      </div>
     </div>
   );
 }

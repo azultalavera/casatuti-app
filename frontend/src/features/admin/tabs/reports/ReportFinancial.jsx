@@ -54,9 +54,6 @@ export default function ReportFinancial() {
           <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Reporte Financiero (Horneados)</h3>
           <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>Registro de cobros por servicio de horneado.</p>
         </div>
-        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>⬇</span> Descargar Excel
-        </button>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
@@ -117,6 +114,12 @@ export default function ReportFinancial() {
           ))}
         </div>
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', width: '100%', justifyContent: 'center' }}>
+          <span>⬇</span> Descargar Excel
+        </button>
+      </div>
     </div>
   );
 }
