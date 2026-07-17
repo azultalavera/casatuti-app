@@ -96,21 +96,19 @@ export default function ReportMetrics() {
       {/* Cards de Métricas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
         
-        <div className="stat-card-modern" style={{ background: 'linear-gradient(135deg, #455f3e 0%, #2c3d28 100%)', color: 'white' }}>
-          <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', fontWeight: 600 }}>ALUMNAS ACTIVAS</div>
-          <div style={{ fontSize: '36px', fontWeight: 800, marginBottom: '8px' }}>{activeStudents.length} <span style={{fontSize:'16px', fontWeight:400, opacity:0.8}}>/ {totalAlumnos}</span></div>
-          <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '16px' }}>{activePercentage}% del total de alumnas registradas.</div>
-          <button onClick={handleExportActive} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar activas</button>
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: '2px solid var(--verde-oliva)', color: 'var(--gris-oscuro)' }}>
+          <div style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '8px', fontWeight: 600 }}>ALUMNAS ACTIVAS</div>
+          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--verde-oliva)', marginBottom: '8px' }}>{activeStudents.length} <span style={{fontSize:'16px', fontWeight:400, color: 'var(--gris-medio)'}}>/ {totalAlumnos}</span></div>
+          <div style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{activePercentage}% del total de alumnas registradas.</div>
         </div>
 
-        <div className="stat-card-modern" style={{ background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)', color: 'white' }}>
-          <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', fontWeight: 600 }}>TASA DE ABANDONO</div>
-          <div style={{ fontSize: '36px', fontWeight: 800, marginBottom: '8px' }}>{dropoutPercentage}%</div>
-          <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '16px' }}>{dropoutStudents.length} alumnas sin créditos ni reservas recientes.</div>
-          <button onClick={handleExportDropouts} className="btn-tuti" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', width: '100%', fontSize: '12px' }}>⬇ Exportar abandonos</button>
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: '2px solid var(--rojo-alerta)', color: 'var(--gris-oscuro)' }}>
+          <div style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '8px', fontWeight: 600 }}>TASA DE ABANDONO</div>
+          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--rojo-alerta)', marginBottom: '8px' }}>{dropoutPercentage}%</div>
+          <div style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{dropoutStudents.length} alumnas sin créditos ni reservas recientes.</div>
         </div>
 
-        <div className="stat-card-modern" style={{ background: 'var(--blanco)', border: '1px solid var(--gris-claro)' }}>
+        <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', color: 'var(--gris-oscuro)' }}>
           <div style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '8px', fontWeight: 600 }}>OCUPACIÓN SEMANAL</div>
           <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '8px' }}>{currentWeeklyOccupancy}%</div>
           <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginBottom: '16px' }}>{recentBookings.length} reservas sobre {totalWeeklyCapacity} cupos disponibles.</div>
@@ -119,6 +117,15 @@ export default function ReportMetrics() {
           </div>
         </div>
 
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' }}>
+        <button onClick={handleExportActive} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', flex: 1, justifyContent: 'center', minWidth: '200px' }}>
+          <span>⬇</span> Exportar Activas (Excel)
+        </button>
+        <button onClick={handleExportDropouts} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', flex: 1, justifyContent: 'center', minWidth: '200px', backgroundColor: 'var(--marron-arcilla)' }}>
+          <span>⬇</span> Exportar Abandonos (Excel)
+        </button>
       </div>
 
     </div>

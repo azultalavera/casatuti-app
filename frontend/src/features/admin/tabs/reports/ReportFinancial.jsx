@@ -54,9 +54,6 @@ export default function ReportFinancial() {
           <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--gris-oscuro)' }}>Reporte Financiero (Horneados)</h3>
           <p style={{ fontSize: '14px', color: 'var(--gris-medio)' }}>Registro de cobros por servicio de horneado.</p>
         </div>
-        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>⬇</span> Descargar Excel
-        </button>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
@@ -81,33 +78,48 @@ export default function ReportFinancial() {
           <p>No se encontraron registros de horneados para este periodo.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--gris-claro)' }}>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Fecha</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Alumna</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Monto</th>
-                <th style={{ padding: '12px 8px', color: 'var(--gris-medio)', fontSize: '14px' }}>Método de Pago</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBakes.map(b => (
-                <tr key={b.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', color: 'var(--gris-oscuro)' }}>{b.date.split(' ')[0]}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }}>{b.studentName}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px', fontWeight: 'bold' }}>${b.price.toLocaleString()}</td>
-                  <td style={{ padding: '12px 8px', fontSize: '14px' }}>
-                    <span className={`badge ${b.paymentMethod === 'TRANSF' ? 'badge-oliva' : 'badge-clay'}`}>
-                      {b.paymentMethod === 'TRANSF' ? 'Transferencia' : 'Contado'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {filteredBakes.map(b => (
+            <div 
+              key={b.id} 
+              className="animate-slide-up"
+              style={{
+                background: 'var(--blanco)',
+                border: '1px solid var(--gris-claro)',
+                borderRadius: '16px',
+                padding: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: 'var(--shadow-flat)'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gris-oscuro)' }}>
+                  {b.studentName}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className={`badge ${b.paymentMethod === 'TRANSF' ? 'badge-oliva' : 'badge-clay'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                    {b.paymentMethod === 'TRANSF' ? 'Transferencia' : 'Contado'}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>
+                    {b.date.split(' ')[0]}
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', marginLeft: '16px' }}>
+                +${b.price.toLocaleString()}
+              </div>
+            </div>
+          ))}
         </div>
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <button onClick={handleExport} className="btn-tuti btn-primary-clay" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', width: '100%', justifyContent: 'center' }}>
+          <span>⬇</span> Descargar Excel
+        </button>
+      </div>
     </div>
   );
 }

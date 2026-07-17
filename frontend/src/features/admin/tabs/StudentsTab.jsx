@@ -101,7 +101,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
 
       {/* Vista de Registro / Alta */}
       {mode === 'create' && (
-        <div style={{
+        <div className="tuti-modal" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -566,7 +566,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
           }}
           style={{
             position: 'fixed',
-            bottom: '96px',
+            bottom: '108px',
             right: '24px',
             width: '56px',
             height: '56px',

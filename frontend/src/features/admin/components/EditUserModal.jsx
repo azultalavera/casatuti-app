@@ -43,7 +43,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
   };
 
   return (
-    <div style={{
+    <div className="tuti-modal" style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(107, 79, 59, 0.4)',
       backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',

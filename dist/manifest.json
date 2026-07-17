@@ -1,0 +1,24 @@
+{
+  "name": "Casa Tuti - Taller de Cerámica",
+  "short_name": "Casa Tuti",
+  "description": "Digitalización y control operativo para taller de cerámica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F4EA",
+  "theme_color": "#F8F4EA",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

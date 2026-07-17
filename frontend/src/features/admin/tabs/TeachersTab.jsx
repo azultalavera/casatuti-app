@@ -14,6 +14,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignModalTeacher, setAssignModalTeacher] = useState(null);
   const [selectedTurnIds, setSelectedTurnIds] = useState([]);
+  const [filterWithTeacher, setFilterWithTeacher] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('ALL');
@@ -111,12 +112,18 @@ export default function TeachersTab({ showFeedback, onEdit }) {
     return parts.map(p => p[0]).join('').toUpperCase().substring(0, 3);
   };
 
+  const filteredClasses = classes.filter(c => {
+    if (!assignModalTeacher) return true;
+    const hasTeacher = !!c.teacherId;
+    return filterWithTeacher ? hasTeacher : !hasTeacher;
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
       {/* Vista de Registro / Alta */}
       {mode === 'create' && (
-        <div style={{
+        <div className="tuti-modal" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -482,7 +489,8 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                           type="button"
                           onClick={() => {
                             setAssignModalTeacher(tc);
-                            setSelectedTurnIds(classes.filter(c => c.teacher_id === tc.id).map(c => c.id));
+                            setSelectedTurnIds(classes.filter(c => c.teacherId === tc.id).map(c => c.id));
+                            setFilterWithTeacher(false);
                             setShowAssignModal(true);
                           }}
                           style={{
@@ -575,7 +583,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
           }}
           style={{
             position: 'fixed',
-            bottom: '96px',
+            bottom: '108px',
             right: '24px',
             width: '56px',
             height: '56px',
@@ -603,7 +611,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
 
       {/* 4. MODAL POPUP PARA ASIGNAR MULTIPLES TURNOS */}
       {showAssignModal && assignModalTeacher && (
-        <div style={{
+        <div className="tuti-modal" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -656,8 +664,69 @@ export default function TeachersTab({ showFeedback, onEdit }) {
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--gris-medio)', margin: 0 }}>
-              Selecciona todos los turnos semanales que dictará esta profesora. Puedes seleccionar múltiples turnos a la vez.
+              Selecciona todos los turnos semanales que dictará este/a profesor/a. Puedes seleccionar múltiples turnos a la vez.
             </p>
+
+            {/* Filtro Switch */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#f8f6f4',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--gris-claro)',
+              margin: '4px 0 8px 0'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
+                Filtrar por asignación:
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: !filterWithTeacher ? 'var(--marron-arcilla)' : 'var(--gris-medio)',
+                  transition: 'color 0.2s ease'
+                }}>
+                  Sin profesor
+                </span>
+                
+                {/* Switch Toggle */}
+                <div 
+                  onClick={() => setFilterWithTeacher(prev => !prev)}
+                  style={{
+                    width: '40px',
+                    height: '22px',
+                    borderRadius: '11px',
+                    backgroundColor: filterWithTeacher ? 'var(--verde-oliva)' : '#d0c9c0',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.25s ease'
+                  }}
+                >
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--blanco)',
+                    position: 'absolute',
+                    top: '3px',
+                    left: filterWithTeacher ? '21px' : '3px',
+                    transition: 'left 0.25s cubic-bezier(0.3, 1.5, 0.7, 1)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                  }} />
+                </div>
+
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: filterWithTeacher ? 'var(--verde-oliva)' : 'var(--gris-medio)',
+                  transition: 'color 0.2s ease'
+                }}>
+                  Con profesor
+                </span>
+              </div>
+            </div>
 
             {/* Listado de Turnos */}
             <div style={{
@@ -668,63 +737,100 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               overflowY: 'auto',
               paddingRight: '4px'
             }}>
-              {classes.length === 0 ? (
+              {filteredClasses.length === 0 ? (
                 <p style={{ fontStyle: 'italic', fontSize: '12px', textAlign: 'center', color: 'var(--gris-medio)', padding: '16px 0' }}>
-                  No hay turnos registrados en el sistema.
+                  No hay turnos {filterWithTeacher ? 'con profesor' : 'sin profesor'} para mostrar.
                 </p>
               ) : (
-                classes.map(c => {
-                  const isChecked = selectedTurnIds.includes(c.id);
+                ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => {
+                  const dayClasses = filteredClasses.filter(c => c.day === day);
+                  if (dayClasses.length === 0) return null;
+                  
+                  const hasChecked = dayClasses.some(c => selectedTurnIds.includes(c.id));
                   return (
-                    <div
-                      key={c.id}
-                      onClick={() => {
-                        setSelectedTurnIds(prev => 
-                          prev.includes(c.id) 
-                            ? prev.filter(id => id !== c.id) 
-                            : [...prev, c.id]
-                        );
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        border: isChecked ? '2px solid var(--verde-oliva)' : '1px solid var(--gris-claro)',
-                        backgroundColor: isChecked ? 'rgba(69, 95, 62, 0.04)' : 'var(--blanco)',
+                    <details key={day} style={{ marginBottom: '14px' }} open={hasChecked}>
+                      <summary style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '800', 
+                        color: 'var(--verde-oliva)', 
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        margin: '0 0 8px 0', 
+                        borderBottom: '1px dashed var(--gris-claro)', 
+                        paddingBottom: '4px',
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
-                          {c.day} - {c.time}
-                        </span>
-                        <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: '600' }}>
-                          <LocationOnIcon style={{ fontSize: '12px' }} /> Sucursal: {c.sucursal} | Actual: {c.teacherName}
-                        </span>
-                      </div>
-
-                      {/* Checkbox táctil */}
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '6px',
-                        border: isChecked ? '2px solid var(--verde-oliva)' : '2px solid var(--gris-medio)',
-                        backgroundColor: isChecked ? 'var(--verde-oliva)' : 'transparent',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease'
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                       }}>
-                        {isChecked && (
-                          <svg style={{ width: '12px', height: '12px', color: 'var(--blanco)' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
+                        <span>{day} ({dayClasses.length} {dayClasses.length === 1 ? 'turno' : 'turnos'})</span>
+                        <span style={{ fontSize: '10px', color: 'var(--gris-medio)' }}>▼</span>
+                      </summary>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                        {dayClasses.map(c => {
+                          const isChecked = selectedTurnIds.includes(c.id);
+                          return (
+                            <div
+                              key={c.id}
+                              onClick={() => {
+                                const isChecked = selectedTurnIds.includes(c.id);
+                                if (!isChecked) {
+                                  if (c.teacherId && c.teacherId !== assignModalTeacher.id) {
+                                    const confirmReplace = window.confirm(
+                                      `El turno de ${c.day} - ${c.time} ya está asignado a el/la profesor/a ${c.teacherName}.\n\n¿Estás seguro/a de que deseas reemplazarlo/a por ${assignModalTeacher.name}?`
+                                    );
+                                    if (!confirmReplace) return;
+                                  }
+                                  setSelectedTurnIds(prev => [...prev, c.id]);
+                                } else {
+                                  setSelectedTurnIds(prev => prev.filter(id => id !== c.id));
+                                }
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '10px 14px',
+                                borderRadius: '12px',
+                                border: isChecked ? '2px solid var(--verde-oliva)' : '1px solid var(--gris-claro)',
+                                backgroundColor: isChecked ? 'rgba(69, 95, 62, 0.04)' : 'var(--blanco)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gris-oscuro)' }}>
+                                  {c.time}
+                                </span>
+                                <span style={{ fontSize: '10px', color: 'var(--gris-medio)', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                  📍 {c.sucursal} {c.teacherName ? `| 👤 ${c.teacherName}` : ''}
+                                </span>
+                              </div>
+
+                              {/* Checkbox táctil */}
+                              <div style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '6px',
+                                border: isChecked ? '2px solid var(--verde-oliva)' : '2px solid var(--gris-medio)',
+                                backgroundColor: isChecked ? 'var(--verde-oliva)' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                                marginLeft: '12px'
+                              }}>
+                                {isChecked && (
+                                  <svg style={{ width: '12px', height: '12px', color: 'var(--blanco)' }} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
+                    </details>
                   );
                 })
               )}
