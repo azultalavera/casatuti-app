@@ -741,7 +741,7 @@ export default function PaymentsTab({ showFeedback }) {
         }}
         style={{
           position: 'fixed',
-          bottom: '96px',
+          bottom: '108px',
           right: '24px',
           width: '56px',
           height: '56px',

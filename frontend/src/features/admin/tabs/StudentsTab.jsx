@@ -566,7 +566,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
           }}
           style={{
             position: 'fixed',
-            bottom: '96px',
+            bottom: '108px',
             right: '24px',
             width: '56px',
             height: '56px',
