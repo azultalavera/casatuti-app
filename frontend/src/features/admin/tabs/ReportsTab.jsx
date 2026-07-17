@@ -10,11 +10,11 @@ export default function ReportsTab({ goBack }) {
   const [activeTab, setActiveTab] = useState('REVENUE');
 
   const tabs = [
-    { id: 'REVENUE', label: 'Recaudación Total' },
-    { id: 'METRICS', label: 'Métricas Generales' },
+    { id: 'REVENUE', label: 'Recaudación' },
+    { id: 'METRICS', label: 'Métricas' },
     { id: 'ATTENDANCE', label: 'Asistencia' },
-    { id: 'FINANCIAL', label: 'Financiero (Horneados)' },
-    { id: 'AUDIT', label: 'Auditoría (Deudas)' },
+    { id: 'FINANCIAL', label: 'Horneados' },
+    { id: 'AUDIT', label: 'Auditoría' },
     { id: 'BIRTHDAYS', label: 'Cumpleaños' },
   ];
 
@@ -53,12 +53,13 @@ export default function ReportsTab({ goBack }) {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              borderRadius: '14px',
               border: 'none',
               backgroundColor: activeTab === tab.id ? 'var(--verde-oliva)' : 'var(--blanco)',
               color: activeTab === tab.id ? 'var(--blanco)' : 'var(--gris-oscuro)',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               boxShadow: activeTab === tab.id ? 'var(--shadow-clay)' : 'var(--shadow-sm)'

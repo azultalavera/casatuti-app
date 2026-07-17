@@ -450,7 +450,7 @@ function AppContentWrapper() {
       </div>
 
       {/* Navbar Móvil Flotante Inferior */}
-      {!(currentUser?.role === 'ADMIN' && adminTab === 'config') && (
+      {!(currentUser?.role === 'ADMIN' && (adminTab === 'config' || adminTab === 'reports')) && (
         <div className="mobile-navbar-floating">
           {currentUser?.role === 'ADMIN' && viewOverride === null ? (
           <>
