@@ -163,7 +163,7 @@ export default function AlumnoView({ activeTab = 'inicio', setActiveTab }) {
     const booking = bookings.find(b => b.id === bookingId);
     const classData = classes.find(c => c.id === booking.classId);
     const [h, m] = (classData.time.split(' - ')[0]).split(':').map(Number);
-    const classStart = new Date(booking.date);
+    const classStart = new Date(booking.date + 'T00:00:00');
     classStart.setHours(h, m, 0, 0);
     const diffHours = (classStart - new Date()) / 3600000;
     const isLate = diffHours < 2;
