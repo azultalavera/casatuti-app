@@ -168,8 +168,8 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
       <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
         <span className="dashboard-section-title">Alertas y Vencimientos</span>
       </div>
-      <details className="stat-card-modern" style={{ padding: '0', overflow: 'hidden', marginTop: '0', backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px' }} open>
-        <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <details className="stat-card-modern" style={{ padding: '0', overflow: 'hidden', marginTop: '0', backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', color: 'var(--gris-oscuro)' }} open>
+        <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--gris-oscuro)' }}>
           <WarningAmberIcon style={{ color: 'var(--rojo)' }} /> Detalle de alertas
         </summary>
         <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
