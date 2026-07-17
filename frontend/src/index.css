@@ -1109,3 +1109,18 @@ input {
     font-size: 16px !important;
   }
 }
+
+/* --- MODAL OVERLAYS AND BODY SCROLL LOCK PREVENTING NAVBAR OVERLAP --- */
+.tuti-modal {
+  z-index: 9999 !important;
+}
+
+body:has(.tuti-modal),
+body:has(.modal-overlay) {
+  overflow: hidden !important;
+}
+
+body:has(.tuti-modal) .mobile-navbar-floating,
+body:has(.modal-overlay) .mobile-navbar-floating {
+  display: none !important;
+}

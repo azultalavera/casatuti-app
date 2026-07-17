@@ -365,7 +365,7 @@ export default function InicioTabProfe({
 
       {/* Modal de Todas las Clases Asignadas */}
       {showAllClassesModal && (
-        <div style={{
+        <div className="tuti-modal" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(30, 27, 22, 0.4)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
