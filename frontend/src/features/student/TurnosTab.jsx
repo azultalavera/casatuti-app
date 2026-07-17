@@ -31,6 +31,7 @@ export default function TurnosTab({
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [bookingToReschedule, setBookingToReschedule] = useState(null);
   const [expandedMonth, setExpandedMonth] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState('Todos');
 
   const [rescheduleSelectedDay, setRescheduleSelectedDay] = useState(weekDays.find(w => w.available)?.day || 'Lunes');
 
@@ -58,10 +59,12 @@ export default function TurnosTab({
   }, [historyBookings]);
 
   React.useEffect(() => {
-    if (availableMonths.length > 0 && !expandedMonth) {
+    if (selectedMonth !== 'Todos') {
+      setExpandedMonth(selectedMonth);
+    } else if (availableMonths.length > 0 && !expandedMonth) {
       setExpandedMonth(availableMonths[0]);
     }
-  }, [availableMonths, expandedMonth]);
+  }, [availableMonths, expandedMonth, selectedMonth]);
 
   const getBookingsForMonth = (monthStr) => {
     return historyBookings.filter(b => {
@@ -378,12 +381,39 @@ export default function TurnosTab({
       {activeSubTab === 'historial' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
+          {availableMonths.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ fontSize: '16px', margin: 0, color: 'var(--verde-oliva-dark)' }}>Filtro por mes</h3>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--gris-claro)',
+                  backgroundColor: 'var(--blanco)',
+                  color: 'var(--verde-oliva-dark)',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  outline: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}
+              >
+                <option value="Todos">Todos</option>
+                {availableMonths.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {availableMonths.length === 0 ? (
             <div className="clay-card" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
               <p style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>No hay turnos registrados en tu historial.</p>
             </div>
           ) : (
-            availableMonths.map(m => (
+            (selectedMonth === 'Todos' ? availableMonths : [selectedMonth]).map(m => (
               <div key={m} style={{ marginBottom: '16px', borderRadius: '16px', backgroundColor: 'var(--blanco)', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
                 <div 
                   onClick={() => setExpandedMonth(expandedMonth === m ? null : m)}
