@@ -30,7 +30,7 @@ export default function TurnosTab({
   const [activeSubTab, setActiveSubTab] = useState('reservar');
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [bookingToReschedule, setBookingToReschedule] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState('Todos');
+  const [expandedMonth, setExpandedMonth] = useState(null);
 
   const [rescheduleSelectedDay, setRescheduleSelectedDay] = useState(weekDays.find(w => w.available)?.day || 'Lunes');
 
@@ -54,18 +54,23 @@ export default function TurnosTab({
         months.add(d.toLocaleString('es-ES', { month: 'long', year: 'numeric' }));
       }
     });
-    return ['Todos', ...Array.from(months)];
+    return Array.from(months);
   }, [historyBookings]);
 
-  const filteredHistory = React.useMemo(() => {
-    if (selectedMonth === 'Todos') return historyBookings;
+  React.useEffect(() => {
+    if (availableMonths.length > 0 && !expandedMonth) {
+      setExpandedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, expandedMonth]);
+
+  const getBookingsForMonth = (monthStr) => {
     return historyBookings.filter(b => {
       if (!b.date) return false;
       const d = new Date(b.date + 'T00:00:00');
       const mStr = d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-      return mStr === selectedMonth;
+      return mStr === monthStr;
     });
-  }, [historyBookings, selectedMonth]);
+  };
 
   const openRescheduleModal = (booking) => {
     setBookingToReschedule(booking);
@@ -373,118 +378,122 @@ export default function TurnosTab({
       {activeSubTab === 'historial' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ fontSize: '16px', margin: 0, color: 'var(--verde-oliva-dark)' }}>Filtro por mes</h3>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '12px',
-                border: '1px solid var(--gris-claro)',
-                backgroundColor: 'var(--blanco)',
-                color: 'var(--verde-oliva-dark)',
-                fontSize: '14px',
-                fontWeight: 700,
-                outline: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-              }}
-            >
-              {availableMonths.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-
-          {filteredHistory.length === 0 ? (
+          {availableMonths.length === 0 ? (
             <div className="clay-card" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
-              <p style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>No hay turnos registrados en este mes.</p>
+              <p style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>No hay turnos registrados en tu historial.</p>
             </div>
           ) : (
-            filteredHistory.map(b => {
-              const cd = classes.find(c => c.id === b.classId) || {};
-              const isActive = b.status === 'CONFIRMED' && new Date(b.date + 'T23:59:59') >= new Date();
-              const isPast = b.status === 'CONFIRMED' && new Date(b.date + 'T23:59:59') < new Date();
-              
-              let statusLabel = 'Reservada';
-              let statusColor = 'var(--verde-oliva)';
-              if (b.status === 'ATTENDED') { statusLabel = 'Asistió'; statusColor = 'var(--verde-oliva-dark)'; }
-              else if (b.status === 'CANCELLED' && b.rescheduledTo) { statusLabel = 'Reprogramada'; statusColor = 'var(--marron-arcilla)'; }
-              else if (b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE') { statusLabel = 'Cancelada'; statusColor = 'var(--rojo-alerta)'; }
-              else if (b.status === 'ABSENT') { statusLabel = 'Ausente'; statusColor = 'var(--rojo-alerta)'; }
-              else if (isPast) { statusLabel = 'Pasada (Sin Asistencia)'; statusColor = 'var(--gris-medio)'; }
-
-              // Data de Reprogramación
-              let rescheduledText = null;
-              if (b.rescheduledTo) {
-                const newB = bookings.find(x => x.id === b.rescheduledTo);
-                if (newB) {
-                  const newC = classes.find(c => c.id === newB.classId) || {};
-                  rescheduledText = `Reprogramaste para el ${newC.day} ${newB.date?.split('-').reverse().join('/')} a las ${newC.time}`;
-                }
-              }
-              if (b.rescheduledFrom) {
-                const oldB = bookings.find(x => x.id === b.rescheduledFrom);
-                if (oldB) {
-                  const oldC = classes.find(c => c.id === oldB.classId) || {};
-                  rescheduledText = `Reprogramada desde la clase del ${oldC.day} ${oldB.date?.split('-').reverse().join('/')} a las ${oldC.time}`;
-                }
-              }
-
-              return (
-                <div key={b.id} style={{
-                  padding: '20px', borderRadius: '28px', backgroundColor: 'var(--blanco)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '8px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                        {cd.day} {b.date ? `${b.date.split('-')[2]}/${b.date.split('-')[1]}` : ''} · {cd.time}
-                      </h4>
-                      <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600, marginBottom: 0 }}>
-                        <LocationOnIcon style={{ fontSize: '14px', verticalAlign: 'text-bottom' }} /> {cd.sucursal} · Prof. {cd.teacherName}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', border: `1px solid ${statusColor}`, color: statusColor }}>
-                        {statusLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  {rescheduledText && (
-                    <div style={{ fontSize: '12px', color: 'var(--marron-arcilla)', backgroundColor: 'var(--bg-crema)', padding: '6px 10px', borderRadius: '8px', fontWeight: 600 }}>
-                      ℹ️ {rescheduledText}
-                    </div>
-                  )}
-
-                  {isActive && (
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
-                      {(() => {
-                        const classStartDateTime = new Date(`${b.date}T${cd.time.split(' - ')[0]}:00`);
-                        const hoursDiff = (classStartDateTime - new Date()) / (1000 * 60 * 60);
-                        const canReschedule = hoursDiff > 2;
-                        return canReschedule && (
-                          <button
-                            onClick={() => openRescheduleModal(b)}
-                            style={{ background: 'transparent', border: '1px solid var(--marron-arcilla)', borderRadius: '16px', fontSize: '12px', color: 'var(--marron-arcilla)', fontWeight: 800, cursor: 'pointer', padding: '6px 12px' }}
-                          >
-                            Reprogramar
-                          </button>
-                        );
-                      })()}
-                      <button
-                        onClick={() => onCancel(b.id)}
-                        style={{ background: 'transparent', border: 'none', fontSize: '12px', color: 'var(--rojo-alerta)', fontWeight: 800, cursor: 'pointer', padding: '6px 12px' }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
+            availableMonths.map(m => (
+              <div key={m} style={{ marginBottom: '16px', borderRadius: '16px', backgroundColor: 'var(--blanco)', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+                <div 
+                  onClick={() => setExpandedMonth(expandedMonth === m ? null : m)}
+                  style={{ 
+                    padding: '16px 20px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    cursor: 'pointer', 
+                    backgroundColor: expandedMonth === m ? 'var(--bg-crema)' : 'var(--blanco)',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                >
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0, textTransform: 'capitalize' }}>
+                    {m}
+                  </h3>
+                  <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--marron-arcilla)' }}>
+                    {expandedMonth === m ? '−' : '+'}
+                  </span>
                 </div>
-              );
-            })
+                
+                {expandedMonth === m && (
+                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '1px solid var(--gris-claro)' }}>
+                    {getBookingsForMonth(m).map(b => {
+                      const cd = classes.find(c => c.id === b.classId) || {};
+                      const isActive = b.status === 'CONFIRMED' && new Date(b.date + 'T23:59:59') >= new Date();
+                      const isPast = b.status === 'CONFIRMED' && new Date(b.date + 'T23:59:59') < new Date();
+                      
+                      let statusLabel = 'Reservada';
+                      let statusColor = 'var(--verde-oliva)';
+                      if (b.status === 'ATTENDED') { statusLabel = 'Asistió'; statusColor = 'var(--verde-oliva-dark)'; }
+                      else if (b.status === 'CANCELLED' && b.rescheduledTo) { statusLabel = 'Reprogramada'; statusColor = 'var(--marron-arcilla)'; }
+                      else if (b.status === 'CANCELLED' || b.status === 'CANCELLED_LATE') { statusLabel = 'Cancelada'; statusColor = 'var(--rojo-alerta)'; }
+                      else if (b.status === 'ABSENT') { statusLabel = 'Ausente'; statusColor = 'var(--rojo-alerta)'; }
+                      else if (isPast) { statusLabel = 'Pasada (Sin Asistencia)'; statusColor = 'var(--gris-medio)'; }
+
+                      // Data de Reprogramación
+                      let rescheduledText = null;
+                      if (b.rescheduledTo) {
+                        const newB = bookings.find(x => x.id === b.rescheduledTo);
+                        if (newB) {
+                          const newC = classes.find(c => c.id === newB.classId) || {};
+                          rescheduledText = `Reprogramaste para el ${newC.day} ${newB.date?.split('-').reverse().join('/')} a las ${newC.time}`;
+                        }
+                      }
+                      if (b.rescheduledFrom) {
+                        const oldB = bookings.find(x => x.id === b.rescheduledFrom);
+                        if (oldB) {
+                          const oldC = classes.find(c => c.id === oldB.classId) || {};
+                          rescheduledText = `Reprogramada desde la clase del ${oldC.day} ${oldB.date?.split('-').reverse().join('/')} a las ${oldC.time}`;
+                        }
+                      }
+
+                      return (
+                        <div key={b.id} style={{
+                          padding: '16px', borderRadius: '16px', backgroundColor: 'var(--bg-crema)',
+                          border: '1px solid var(--marron-arcilla)', display: 'flex', flexDirection: 'column', gap: '8px'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                              <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
+                                {cd.day} {b.date ? `${b.date.split('-')[2]}/${b.date.split('-')[1]}` : ''} · {cd.time}
+                              </h4>
+                              <p style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600, marginBottom: 0 }}>
+                                <LocationOnIcon style={{ fontSize: '13px', verticalAlign: 'text-bottom' }} /> {cd.sucursal} · Prof. {cd.teacherName}
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', border: `1px solid ${statusColor}`, color: statusColor }}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          {rescheduledText && (
+                            <div style={{ fontSize: '11px', color: 'var(--marron-arcilla)', backgroundColor: 'var(--blanco)', padding: '6px 10px', borderRadius: '8px', fontWeight: 600 }}>
+                              ℹ️ {rescheduledText}
+                            </div>
+                          )}
+
+                          {isActive && (
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                              {(() => {
+                                const classStartDateTime = new Date(`${b.date}T${cd.time.split(' - ')[0]}:00`);
+                                const hoursDiff = (classStartDateTime - new Date()) / (1000 * 60 * 60);
+                                const canReschedule = hoursDiff > 2;
+                                return canReschedule && (
+                                  <button
+                                    onClick={() => openRescheduleModal(b)}
+                                    style={{ background: 'var(--blanco)', border: '1px solid var(--marron-arcilla)', borderRadius: '16px', fontSize: '11px', color: 'var(--marron-arcilla)', fontWeight: 800, cursor: 'pointer', padding: '6px 12px' }}
+                                  >
+                                    Reprogramar
+                                  </button>
+                                );
+                              })()}
+                              <button
+                                onClick={() => onCancel(b.id)}
+                                style={{ background: 'transparent', border: 'none', fontSize: '11px', color: 'var(--rojo-alerta)', fontWeight: 800, cursor: 'pointer', padding: '6px 12px' }}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))
           )}
         </div>
       )}
