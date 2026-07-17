@@ -8,6 +8,7 @@ import PaymentsTab   from './tabs/PaymentsTab';
 import ConfigTab     from './tabs/ConfigTab';
 import ReportsTab    from './tabs/ReportsTab';
 import EditUserModal from './components/EditUserModal';
+import PerfilTab     from '../student/PerfilTab';
 
 const TABS = [
   { id: 'dashboard', label: 'Resumen'    },
@@ -88,6 +89,10 @@ export default function AdminView({ activeTab = 'dashboard', setActiveTab = () =
 
       {activeTab === 'reports' && (
         <ReportsTab goBack={() => setActiveTab('dashboard')} />
+      )}
+
+      {activeTab === 'perfil' && (
+        <PerfilTab />
       )}
 
       {/* Modal de edición compartido */}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -254,7 +255,7 @@ export default function ClasesTabProfe({
                         className="btn-tuti btn-primary-clay" 
                         style={{ flex: 1, padding: '8px', fontSize: '12px', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
-                        <GroupsIcon style={{ fontSize: '18px' }} /> Ver Alumnos
+                        <GroupsIcon style={{ fontSize: '18px' }} /> Ver Alumnos/as
                       </button>
                       
                       {requestStatus === 'PENDING' ? (
@@ -311,7 +312,7 @@ export default function ClasesTabProfe({
               <ArrowBackIcon style={{ color: 'var(--gris-oscuro)', fontSize: '20px' }} />
             </button>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Gestión de alumnos</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Gestión de alumnos/as</h3>
               <span style={{ fontSize: '12px', color: 'var(--gris-medio)', fontWeight: 600 }}>{selectedDateStr.split('-').reverse().join('/')}</span>
             </div>
           </div>
@@ -320,7 +321,7 @@ export default function ClasesTabProfe({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {activeClassBookings.length === 0 ? (
               <div className="clay-card" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--gris-medio)' }}>
-                <p style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>No hay alumnos inscriptos para esta fecha.</p>
+                <p style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>No hay alumnos/as inscriptos/as para esta fecha.</p>
               </div>
             ) : (
               activeClassBookings.map(b => {
@@ -376,11 +377,11 @@ export default function ClasesTabProfe({
       )}
 
       {/* Modal de Registro de Horneado */}
-      {bakeModal.isOpen && (
-        <div className="modal-overlay">
+      {bakeModal.isOpen && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Registrar horneado</h3>
-            <p style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '16px' }}>Alumno: <strong>{bakeModal.studentName}</strong></p>
+            <p style={{ fontSize: '14px', color: 'var(--gris-medio)', marginBottom: '16px' }}>Alumno/a: <strong>{bakeModal.studentName}</strong></p>
             <form onSubmit={handleRegisterBake} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Precio Total ($) *</label>
@@ -399,17 +400,18 @@ export default function ClasesTabProfe({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Solicitar Pausa */}
-      {pauseModal.isOpen && (
-        <div className="modal-overlay">
+      {pauseModal.isOpen && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Solicitar pausa de clase</h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginBottom: '16px', lineHeight: '1.4' }}>
               Estás por enviar una solicitud al administrador para pausar la clase <strong>{pauseModal.classInfo?.name}</strong> del día <strong>{pauseModal.dateStr?.split('-').reverse().join('/')}</strong>. 
-              Los alumnos inscriptos serán notificados si la pausa es aprobada.
+              Los alumnos/as inscriptos/as serán notificados si la pausa es aprobada.
             </p>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button type="button" onClick={() => setPauseModal({ isOpen: false, classInfo: null, dateStr: null })} className="btn-tuti btn-secondary" style={{ flex: 1 }}>Cancelar</button>

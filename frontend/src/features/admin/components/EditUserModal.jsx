@@ -16,7 +16,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
   const [instagram, setInstagram] = useState(user?.instagram || '');
   const [birthdate, setBirthdate] = useState((user?.fecha_nacimiento || '').split('T')[0] || '');
   const [selectedBranches, setSelectedBranches] = useState(
-    user?.sucursal ? user.sucursal.split(',').map(s => s.trim()) : (branches.length > 0 ? [branches[0].name] : ['CENTRO'])
+    user?.sucursal ? user.sucursal.split(',').map(s => s.trim().toUpperCase()) : (branches.length > 0 ? [branches[0].name.toUpperCase()] : ['CENTRO'])
   );
 
   const handleSubmit = async (e) => {
@@ -105,11 +105,11 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
                       if (selectedBranches.length === branches.length) {
                         setSelectedBranches([]);
                       } else {
-                        setSelectedBranches(branches.map(b => b.name));
+                        setSelectedBranches(branches.map(b => b.name.toUpperCase()));
                       }
                       return;
                     }
-                    setSelectedBranches(typeof value === 'string' ? value.split(',') : value);
+                    setSelectedBranches(typeof value === 'string' ? value.split(',').map(v => v.trim().toUpperCase()) : value.map(v => v.toUpperCase()));
                   }} 
                   input={<OutlinedInput />}
                   renderValue={(selected) => {
@@ -147,17 +147,21 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
                     <ListItemText primary="Seleccionar todas" primaryTypographyProps={{ fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' }} />
                   </MenuItem>
                   {branches.map(b => (
-                    <MenuItem key={b.id} value={b.name} style={{ fontSize: '14px' }}>
-                      <Checkbox checked={selectedBranches.indexOf(b.name) > -1} size="small" sx={{ color: 'var(--gris-medio)', '&.Mui-checked': { color: 'var(--verde-oliva)' } }} />
-                      <ListItemText primary={b.name} primaryTypographyProps={{ fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }} />
+                    <MenuItem key={b.id} value={b.name.toUpperCase()} style={{ fontSize: '14px' }}>
+                      <Checkbox 
+                        checked={selectedBranches.indexOf(b.name.toUpperCase()) > -1} 
+                        size="small"
+                        sx={{ color: 'var(--gris-claro)', '&.Mui-checked': { color: 'var(--verde-oliva)' } }}
+                      />
+                      <ListItemText primary={b.name} primaryTypographyProps={{ fontSize: '14px', color: 'var(--gris-oscuro)' }} />
                     </MenuItem>
                   ))}
                 </Select>
               </>
             ) : (
-              <select className="input-tuti" value={selectedBranches[0] || ''} onChange={e => setSelectedBranches([e.target.value])} style={{ width: '100%', cursor: 'pointer' }}>
+              <select className="input-tuti" value={selectedBranches[0] || 'CENTRO'} onChange={e => setSelectedBranches([e.target.value.toUpperCase()])} style={{ width: '100%', cursor: 'pointer' }}>
                 {branches.map(b => (
-                  <option key={b.id} value={b.name}>{b.name}</option>
+                  <option key={b.id} value={b.name.toUpperCase()}>{b.name}</option>
                 ))}
               </select>
             )}
