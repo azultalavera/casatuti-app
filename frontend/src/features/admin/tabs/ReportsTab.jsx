@@ -41,11 +41,10 @@ export default function ReportsTab({ goBack }) {
         </h2>
       </div>
 
-      {/* Tabs navigation */}
       <div style={{ 
         display: 'flex', 
+        flexWrap: 'wrap',
         gap: '8px', 
-        overflowX: 'auto', 
         paddingBottom: '8px',
         borderBottom: '1px solid var(--gris-claro)'
       }}>
