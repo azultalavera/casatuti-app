@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+let baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+if (baseApiUrl && !baseApiUrl.endsWith('/api') && !baseApiUrl.endsWith('/api/')) {
+  baseApiUrl = baseApiUrl.endsWith('/') ? `${baseApiUrl}api` : `${baseApiUrl}/api`;
+}
+const API_URL = baseApiUrl;
 
 const handleResponse = async (response) => {
   if (!response.ok) {
