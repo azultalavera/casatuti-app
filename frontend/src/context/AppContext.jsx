@@ -50,74 +50,78 @@ export const AppProvider = ({ children }) => {
         loadedBranches,
         loadedFaqs
       ] = await Promise.all([
-        mockService.getUsers().catch(() => []),
-        mockService.getStudentProfiles().catch(() => []),
-        mockService.getClasses().catch(() => []),
-        mockService.getBookings().catch(() => []),
-        mockService.getClayDeliveries().catch(() => []),
-        mockService.getBakes().catch(() => []),
-        mockService.getPayments().catch(() => []),
-        mockService.getAlerts().catch(() => []),
-        mockService.getWaitlist().catch(() => []),
-        mockService.getNonWorkingDays().catch(() => []),
-        mockService.getPacks().catch(() => []),
-        mockService.getBranches().catch(() => []),
-        mockService.getFaqs().catch(() => [])
+        mockService.getUsers().catch(() => ({ error: true })),
+        mockService.getStudentProfiles().catch(() => ({ error: true })),
+        mockService.getClasses().catch(() => ({ error: true })),
+        mockService.getBookings().catch(() => ({ error: true })),
+        mockService.getClayDeliveries().catch(() => ({ error: true })),
+        mockService.getBakes().catch(() => ({ error: true })),
+        mockService.getPayments().catch(() => ({ error: true })),
+        mockService.getAlerts().catch(() => ({ error: true })),
+        mockService.getWaitlist().catch(() => ({ error: true })),
+        mockService.getNonWorkingDays().catch(() => ({ error: true })),
+        mockService.getPacks().catch(() => ({ error: true })),
+        mockService.getBranches().catch(() => ({ error: true })),
+        mockService.getFaqs().catch(() => ({ error: true }))
       ]);
 
-      setUsers(loadedUsers);
-      setStudentProfiles(loadedProfiles);
-      setClasses(loadedClasses);
-      setBookings(loadedBookings);
-      setClayDeliveries(loadedDeliveries);
-      setBakes(loadedBakes);
-      setPayments(loadedPayments);
-      setAlerts(loadedAlerts);
-      setWaitlist(loadedWaitlist);
-      setNonWorkingDays(loadedNonWorkingDays || []);
-      setPacks(loadedPacks || []);
-      setBranches(loadedBranches || []);
-      setFaqs(loadedFaqs || []);
+      if (!loadedUsers.error) setUsers(loadedUsers);
+      if (!loadedProfiles.error) setStudentProfiles(loadedProfiles);
+      if (!loadedClasses.error) setClasses(loadedClasses);
+      if (!loadedBookings.error) setBookings(loadedBookings);
+      if (!loadedDeliveries.error) setClayDeliveries(loadedDeliveries);
+      if (!loadedBakes.error) setBakes(loadedBakes);
+      if (!loadedPayments.error) setPayments(loadedPayments);
+      if (!loadedAlerts.error) setAlerts(loadedAlerts);
+      if (!loadedWaitlist.error) setWaitlist(loadedWaitlist);
+      if (!loadedNonWorkingDays.error) setNonWorkingDays(loadedNonWorkingDays || []);
+      if (!loadedPacks.error) setPacks(loadedPacks || []);
+      if (!loadedBranches.error) setBranches(loadedBranches || []);
+      if (!loadedFaqs.error) setFaqs(loadedFaqs || []);
 
       // Administrar alertas vistas para no duplicar notificaciones nativas
-      const currentUserId = currentUser?.id || currentUser?.id_usuarios;
-      if (!silent) {
-        loadedAlerts.forEach(a => seenAlertIdsRef.current.add(a.id));
-      } else if (currentUserId) {
-        const newAlerts = loadedAlerts.filter(
-          a => a.studentId === currentUserId && !a.resolved && !seenAlertIdsRef.current.has(a.id)
-        );
-        if (newAlerts.length > 0) {
-          newAlerts.forEach(alert => {
-            seenAlertIdsRef.current.add(alert.id);
-            if ('Notification' in window) {
-              if (Notification.permission === 'granted') {
-                new Notification('Casa tuti', {
-                  body: alert.message,
-                  vibrate: [200, 100, 200]
-                });
-              } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(perm => {
-                  if (perm === 'granted') {
-                    new Notification('Casa tuti', {
-                      body: alert.message,
-                      vibrate: [200, 100, 200]
-                    });
-                  }
-                });
+      if (!loadedAlerts.error) {
+        const currentUserId = currentUser?.id || currentUser?.id_usuarios;
+        if (!silent) {
+          loadedAlerts.forEach(a => seenAlertIdsRef.current.add(a.id));
+        } else if (currentUserId) {
+          const newAlerts = loadedAlerts.filter(
+            a => a.studentId === currentUserId && !a.resolved && !seenAlertIdsRef.current.has(a.id)
+          );
+          if (newAlerts.length > 0) {
+            newAlerts.forEach(alert => {
+              seenAlertIdsRef.current.add(alert.id);
+              if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                  new Notification('Casa tuti', {
+                    body: alert.message,
+                    vibrate: [200, 100, 200]
+                  });
+                } else if (Notification.permission !== 'denied') {
+                  Notification.requestPermission().then(perm => {
+                    if (perm === 'granted') {
+                      new Notification('Casa tuti', {
+                        body: alert.message,
+                        vibrate: [200, 100, 200]
+                      });
+                    }
+                  });
+                }
               }
-            }
-          });
+            });
+          }
         }
       }
 
       // Comprobar si hay una sesión guardada en sessionStorage o actualizar usuario actual en tiempo real
-      const savedUserId = sessionStorage.getItem('tuti_session_user_id');
-      if (savedUserId) {
-        const savedUser = loadedUsers.find(u => u.id?.toString() === savedUserId.toString());
-        if (savedUser) {
-          setCurrentUser(savedUser);
-          setIsAuthenticated(true);
+      if (!loadedUsers.error) {
+        const savedUserId = sessionStorage.getItem('tuti_session_user_id');
+        if (savedUserId) {
+          const savedUser = loadedUsers.find(u => u.id?.toString() === savedUserId.toString());
+          if (savedUser) {
+            setCurrentUser(savedUser);
+            setIsAuthenticated(true);
+          }
         }
       }
     } catch (error) {
@@ -138,7 +142,7 @@ export const AppProvider = ({ children }) => {
     let isPolling = true;
     const pollData = async () => {
       while (isPolling) {
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 30000));
         if (isPolling) {
           await loadData(true);
         }
