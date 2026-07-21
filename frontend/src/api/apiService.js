@@ -82,6 +82,15 @@ export const apiService = {
     return handleResponse(res);
   },
 
+  switchProfile: async (id) => {
+    const res = await fetch(`${API_URL}/auth/switch-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    return handleResponse(res);
+  },
+
   forgotPassword: async (email) => {
     const res = await fetch(`${API_URL}/auth/forgot-password`, {
       method: 'POST',
@@ -96,6 +105,15 @@ export const apiService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: newRole })
+    });
+    return handleResponse(res);
+  },
+
+  updateUserSecondaryRole: async (userId, secondaryRole) => {
+    const res = await fetch(`${API_URL}/users/${userId}/secondary-role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secondaryRole })
     });
     return handleResponse(res);
   },

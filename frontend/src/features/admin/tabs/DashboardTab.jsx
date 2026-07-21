@@ -322,7 +322,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
                 return (
                   <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-crema-claro)', padding: '10px 14px', borderRadius: '12px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--gris-oscuro)' }}>{b.name} {b.lastname || ''}</span>
-                    <span className="badge badge-oliva" style={{ fontSize: '11px', fontWeight: 800 }}>Día {day}</span>
+                    <span className="badge badge-oliva" style={{ fontSize: '11px', fontWeight: 800 }}>{formatDateDDMMYYYY(b.fecha_nacimiento)}</span>
                   </div>
                 );
               })
@@ -344,7 +344,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
                 return (
                   <div key={h.date} style={{ display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: 'var(--bg-crema-claro)', padding: '10px 14px', borderRadius: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="badge badge-clay" style={{ fontSize: '11px', fontWeight: 800 }}>Día {day}</span>
+                      <span className="badge badge-clay" style={{ fontSize: '11px', fontWeight: 800 }}>{formatDateDDMMYYYY(h.date)}</span>
                       <span style={{ fontSize: '11px', color: 'var(--gris-medio)', fontWeight: 600 }}>{h.reason.split(' - ')[0]}</span>
                     </div>
                     {h.reason.split(' - ')[1] && (

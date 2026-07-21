@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../../../context/AppContext';
 import { exportToExcel } from '../../../../utils/exportToExcel';
+import { formatDateDDMMYYYY } from '../../../../utils/dateUtils';
 
 export default function ReportMetrics() {
   const { users, studentProfiles, classes, bookings, payments } = useApp();
@@ -63,8 +64,8 @@ export default function ReportMetrics() {
       
       const formatFec = (d) => {
         if (!d) return 'N/A';
-        const dateObj = new Date(d);
-        return isNaN(dateObj.getTime()) ? 'N/A' : dateObj.toLocaleDateString('es-AR');
+        const formatted = formatDateDDMMYYYY(d);
+        return formatted === '' ? 'N/A' : formatted;
       };
 
       return { 

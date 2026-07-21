@@ -7,6 +7,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PauseCircleOutlinedIcon from '@mui/icons-material/PauseCircleOutlined';
 import GroupsIcon from '@mui/icons-material/Groups';
+import EventIcon from '@mui/icons-material/Event';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 
 export default function ClasesTabProfe({
   currentUser,
@@ -227,7 +229,7 @@ export default function ClasesTabProfe({
           {selectedDateStr && (
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', marginBottom: '12px' }}>
-                Clases del {selectedDateStr.split('-').reverse().join('/')}
+                Clases del {formatDateDDMMYYYY(selectedDateStr)}
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -313,7 +315,7 @@ export default function ClasesTabProfe({
             </button>
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>Gestión de alumnos/as</h3>
-              <span style={{ fontSize: '12px', color: 'var(--gris-medio)', fontWeight: 600 }}>{selectedDateStr.split('-').reverse().join('/')}</span>
+              <span style={{ fontSize: '12px', color: 'var(--gris-medio)', fontWeight: 600 }}>{formatDateDDMMYYYY(selectedDateStr)}</span>
             </div>
           </div>
 
@@ -410,7 +412,7 @@ export default function ClasesTabProfe({
           <div className="modal-content animate-slide-up" style={{ maxWidth: '400px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: 'var(--gris-oscuro)' }}>Solicitar pausa de clase</h3>
             <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginBottom: '16px', lineHeight: '1.4' }}>
-              Estás por enviar una solicitud al administrador para pausar la clase <strong>{pauseModal.classInfo?.name}</strong> del día <strong>{pauseModal.dateStr?.split('-').reverse().join('/')}</strong>. 
+              Estás por enviar una solicitud al administrador para pausar la clase <strong>{pauseModal.classInfo?.name}</strong> del día <strong>{formatDateDDMMYYYY(pauseModal.dateStr)}</strong>. 
               Los alumnos/as inscriptos/as serán notificados si la pausa es aprobada.
             </p>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>

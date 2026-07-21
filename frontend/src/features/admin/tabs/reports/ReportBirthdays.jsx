@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../../context/AppContext';
 import { exportToExcel } from '../../../../utils/exportToExcel';
+import { formatDateDDMMYYYY } from '../../../../utils/dateUtils';
 
 export default function ReportBirthdays() {
   const { users } = useApp();
@@ -37,7 +38,7 @@ export default function ReportBirthdays() {
     }
     
     const exportData = birthdayUsers.map(u => ({
-      "Día": (u.fecha_nacimiento.split('T')[0] || '').split('-')[2],
+      "Fecha": formatDateDDMMYYYY(u.fecha_nacimiento),
       "Mes": months.find(m => m.id === selectedMonth)?.name || '',
       "Alumna": `${u.name} ${u.lastname || ''}`.trim(),
       "Email": u.email,
@@ -70,7 +71,7 @@ export default function ReportBirthdays() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {birthdayUsers.map(u => {
-            const day = (u.fecha_nacimiento.split('T')[0] || '').split('-')[2];
+            const formattedDate = formatDateDDMMYYYY(u.fecha_nacimiento);
             return (
               <div 
                 key={u.id} 
@@ -96,8 +97,8 @@ export default function ReportBirthdays() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--verde-oliva-light)', padding: '6px 12px', borderRadius: '12px', minWidth: '60px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--verde-oliva-dark)', fontWeight: 600 }}>Día</span>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--verde-oliva)', lineHeight: 1.1 }}>{day}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--verde-oliva-dark)', fontWeight: 600 }}>Fecha</span>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--verde-oliva)', lineHeight: 1.1 }}>{formattedDate}</span>
                 </div>
               </div>
             );

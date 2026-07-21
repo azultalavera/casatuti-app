@@ -9,6 +9,7 @@ import DrawIcon from '@mui/icons-material/Draw';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 
 const NORMAS_ICONS = [
   <DrawIcon style={{ color: '#E48F45', fontSize: '20px' }} />,
@@ -207,7 +208,7 @@ export default function InicioTab({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                        {cd.day} {b.date ? `${b.date.split('-')[2]}/${b.date.split('-')[1]}` : ''} · {cd.time}
+                        {cd.day} {b.date ? formatDateDDMMYYYY(b.date) : ''} · {cd.time}
                       </h4>
                       <p style={{ fontSize: '13px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600 }}>
                         <LocationOnIcon style={{ fontSize: '14px', verticalAlign: 'text-bottom' }} /> {cd.sucursal} · Prof. {cd.teacherName}
@@ -352,7 +353,7 @@ export default function InicioTab({
                       {(p.motivo || 'Deuda pendiente').charAt(0).toUpperCase() + (p.motivo || 'Deuda pendiente').slice(1).toLowerCase()}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
-                      {new Date(p.date || new Date()).toLocaleDateString('es-AR')}
+                      {formatDateDDMMYYYY(p.date || new Date())}
                     </div>
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>
@@ -367,7 +368,7 @@ export default function InicioTab({
                       {(b.description || 'Deuda de insumos').charAt(0).toUpperCase() + (b.description || 'Deuda de insumos').slice(1).toLowerCase()}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px' }}>
-                      {new Date(b.date || new Date()).toLocaleDateString('es-AR')}
+                      {formatDateDDMMYYYY(b.date || new Date())}
                     </div>
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--rojo-alerta)' }}>

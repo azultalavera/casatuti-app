@@ -14,6 +14,7 @@ export default function ConfigView() {
     alerts,
     changeUser,
     changeUserRole,
+    updateUserSecondaryRole,
     resetDatabase
   } = useApp();
 
@@ -110,6 +111,35 @@ export default function ConfigView() {
                   <option value="PROFE">PROFE (Profesor)</option>
                   <option value="ADMIN">ADMIN (Administrador)</option>
                   <option value="CONFIGURADOR">CONFIGURADOR (Soporte)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--gris-medio)', fontWeight: 600 }}>Rol Secundario:</span>
+                <select
+                  value={u.secondaryRole || ''}
+                  onChange={async (e) => {
+                    const nextRole = e.target.value;
+                    try {
+                      await updateUserSecondaryRole(u.id, nextRole === '' ? null : nextRole);
+                    } catch (err) {
+                      alert(`Error al actualizar rol secundario: ${err.message}`);
+                    }
+                  }}
+                  className="input-tuti"
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    width: 'auto',
+                    flex: '1',
+                    borderRadius: '8px',
+                    height: 'auto',
+                    border: '1px solid var(--verde-oliva)'
+                  }}
+                >
+                  <option value="">Ninguno</option>
+                  <option value="PROFE">PROFE (Profesor)</option>
+                  <option value="ADMIN">ADMIN (Administrador)</option>
                 </select>
               </div>
             </div>

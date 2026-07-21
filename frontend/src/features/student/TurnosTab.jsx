@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 import EventIcon from '@mui/icons-material/Event';
 
 const DAY_ABBR = { Lunes: 'LUN', Martes: 'MAR', 'Miércoles': 'MIÉ', Jueves: 'JUE', Viernes: 'VIE', Sábado: 'SÁB' };
@@ -458,14 +459,14 @@ export default function TurnosTab({
                         const newB = bookings.find(x => x.id === b.rescheduledTo);
                         if (newB) {
                           const newC = classes.find(c => c.id === newB.classId) || {};
-                          rescheduledText = `Reprogramaste para el ${newC.day} ${newB.date?.split('-').reverse().join('/')} a las ${newC.time}`;
+                          rescheduledText = `Reprogramaste para el ${newC.day} ${formatDateDDMMYYYY(newB.date)} a las ${newC.time}`;
                         }
                       }
                       if (b.rescheduledFrom) {
                         const oldB = bookings.find(x => x.id === b.rescheduledFrom);
                         if (oldB) {
                           const oldC = classes.find(c => c.id === oldB.classId) || {};
-                          rescheduledText = `Reprogramada desde la clase del ${oldC.day} ${oldB.date?.split('-').reverse().join('/')} a las ${oldC.time}`;
+                          rescheduledText = `Reprogramada desde la clase del ${oldC.day} ${formatDateDDMMYYYY(oldB.date)} a las ${oldC.time}`;
                         }
                       }
 
@@ -477,7 +478,7 @@ export default function TurnosTab({
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                               <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
-                                {cd.day} {b.date ? `${b.date.split('-')[2]}/${b.date.split('-')[1]}` : ''} · {cd.time}
+                                {cd.day} {b.date ? formatDateDDMMYYYY(b.date) : ''} · {cd.time}
                               </h4>
                               <p style={{ fontSize: '12px', color: 'var(--gris-medio)', marginTop: '4px', fontWeight: 600, marginBottom: 0 }}>
                                 <LocationOnIcon style={{ fontSize: '13px', verticalAlign: 'text-bottom' }} /> {cd.sucursal} · Prof. {cd.teacherName}

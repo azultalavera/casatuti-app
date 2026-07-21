@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 import { Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
 export default function EditUserModal({ userId, onClose, showFeedback }) {
-  const { users, updateUserAction, branches } = useApp();
+  const { users, updateUserAction, updateUserSecondaryRole, branches } = useApp();
   const user = users.find(u => u.id === userId);
   const isTeacher = user?.role === 'PROFE';
 
@@ -15,6 +15,7 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
   const [telefono, setTelefono]   = useState(user?.telefono || '');
   const [instagram, setInstagram] = useState(user?.instagram || '');
   const [birthdate, setBirthdate] = useState((user?.fecha_nacimiento || '').split('T')[0] || '');
+  const [secondaryRole, setSecondaryRole] = useState(user?.secondaryRole || '');
   const [selectedBranches, setSelectedBranches] = useState(
     user?.sucursal ? user.sucursal.split(',').map(s => s.trim().toUpperCase()) : (branches.length > 0 ? [branches[0].name.toUpperCase()] : ['CENTRO'])
   );
@@ -35,6 +36,9 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
         fecha_nacimiento: birthdate || null,
         sucursal: selectedBranches.join(', ')
       });
+      if (updateUserSecondaryRole && secondaryRole !== (user?.secondaryRole || '')) {
+        await updateUserSecondaryRole(userId, secondaryRole === '' ? null : secondaryRole);
+      }
       showFeedback(isTeacher ? '¡Profesor/a modificado con éxito!' : '¡Alumna modificada con éxito!', 'info');
       onClose();
     } catch (err) {
@@ -165,6 +169,14 @@ export default function EditUserModal({ userId, onClose, showFeedback }) {
                 ))}
               </select>
             )}
+          </div>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Rol Secundario</label>
+            <select className="input-tuti" value={secondaryRole} onChange={e => setSecondaryRole(e.target.value)} style={{ width: '100%', cursor: 'pointer' }}>
+              <option value="">Ninguno</option>
+              <option value="PROFE">PROFE (Profesor)</option>
+              <option value="ADMIN">ADMIN (Administrador)</option>
+            </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button type="button" onClick={onClose} className="btn-tuti btn-danger-soft" style={{ flex: 1, padding: '12px' }}>Cancelar</button>

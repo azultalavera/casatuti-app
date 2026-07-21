@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
+import { formatDateDDMMYYYY } from '../../../utils/dateUtils';
 import EventIcon from '@mui/icons-material/Event';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -429,7 +430,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
                 {nonWorkingDays.filter(n => n?.date?.startsWith(`${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`)).map(n => (
                   <div key={n.date} style={{ fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--blanco)', padding: '6px 12px', borderRadius: '10px' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--gris-oscuro)' }}>{n.date.split('-')[2]} {monthNames[currentCalendarMonth].substring(0, 3)}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--gris-oscuro)' }}>{formatDateDDMMYYYY(n.date)}</span>
                     <span style={{ color: 'var(--gris-medio)', fontSize: '12px', textAlign: 'right' }}>{n.reason}</span>
                   </div>
                 ))}
@@ -442,7 +443,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
               <div className="stat-card-modern animate-slide-up" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', boxShadow: 'var(--shadow-clay)' }}>
                 <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--gris-oscuro)' }}>Marcar Día</h3>
-                <p style={{ fontSize: '13px', color: 'var(--gris-medio)', margin: '4px 0 16px 0' }}>{selectedDateToMark}</p>
+                <p style={{ fontSize: '13px', color: 'var(--gris-medio)', margin: '4px 0 16px 0' }}>{formatDateDDMMYYYY(selectedDateToMark)}</p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="form-group">

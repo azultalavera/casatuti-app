@@ -11,9 +11,10 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
 function AppContentWrapper() {
-  const { currentUser, isAuthenticated, logoutAction, users, changeUser, loading, alerts, resolveAlertAction, resolveAllAlertsAction } = useApp();
+  const { currentUser, isAuthenticated, logoutAction, users, changeUser, loading, alerts, resolveAlertAction, resolveAllAlertsAction, switchProfile } = useApp();
   const [viewOverride, setViewOverride] = useState(null); // Permite forzar vista de consola
   const [showImpersonatorDropdown, setShowImpersonatorDropdown] = useState(false);
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
@@ -431,6 +432,18 @@ function AppContentWrapper() {
                 >
                   <PersonIcon style={{ fontSize: '16px', color: 'var(--gris-oscuro)' }} /> <span>Mi perfil</span>
                 </button>
+                {currentUser?.secondaryRole && (
+                  <button 
+                    className="dropdown-item-header" 
+                    onClick={() => {
+                      switchProfile();
+                      setShowHeaderDropdown(false);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}
+                  >
+                    <SwapHorizIcon style={{ fontSize: '16px', color: 'var(--verde-oliva)' }} /> <span>Cambiar de perfil</span>
+                  </button>
+                )}
                 <button 
                   className="dropdown-item-header" 
                   onClick={() => {

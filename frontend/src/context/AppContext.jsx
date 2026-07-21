@@ -204,6 +204,37 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Cambiar rol secundario de un usuario
+  const updateUserSecondaryRole = async (userId, secondaryRole) => {
+    setLoading(true);
+    try {
+      const updatedUser = await mockService.updateUserSecondaryRole(userId, secondaryRole);
+      const loadedUsers = await mockService.getUsers();
+      setUsers(loadedUsers);
+      if (currentUser && currentUser.id === userId) {
+        setCurrentUser(updatedUser);
+      }
+      return updatedUser;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cambiar de perfil (si tiene rol secundario)
+  const switchProfile = async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const updatedUser = await mockService.switchProfile(currentUser.id);
+      setCurrentUser(updatedUser);
+      await loadData();
+    } catch (err) {
+      console.error("Error cambiando de perfil", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Impersonación: cambiar de usuario
   const changeUser = (userId) => {
     const user = users.find(u => u.id === userId);
@@ -961,6 +992,8 @@ export const AppProvider = ({ children }) => {
         forgotPasswordAction,
         logoutAction,
         changeUserRole,
+        updateUserSecondaryRole,
+        switchProfile,
         changeUser,
         resetDatabase,
         // Student Actions

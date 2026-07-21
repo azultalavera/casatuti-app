@@ -74,6 +74,7 @@ const mapUserToFE = (u) => {
     fecha_nacimiento: u.fecha_nacimiento || null,
     bl_cambio_pass_pte: u.bl_cambio_pass_pte || false,
     sucursal: u.sucursal || 'CENTRO',
+    secondaryRole: u.secondary_role || null,
     created_at: u.created_at || null
   };
 };
@@ -252,6 +253,31 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Error en Login:', error);
     res.status(500).json({ error: 'Error del servidor al iniciar sesión.' });
+  }
+});
+
+// Cambiar de perfil (Swap rol y secondary_role)
+app.post('/api/auth/switch-profile', async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ error: 'Falta el id del usuario.' });
+  try {
+    const { rows } = await db.query('SELECT * FROM public.t_usuarios WHERE id_usuarios = $1', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
+    
+    const user = rows[0];
+    if (!user.secondary_role) return res.status(400).json({ error: 'El usuario no tiene un rol secundario asignado.' });
+
+    const newRole = user.secondary_role;
+    const newSecondaryRole = user.rol;
+
+    const updateRes = await db.query(
+      'UPDATE public.t_usuarios SET rol = $1, secondary_role = $2 WHERE id_usuarios = $3 RETURNING *',
+      [newRole, newSecondaryRole, id]
+    );
+    res.json(mapUserToFE(updateRes.rows[0]));
+  } catch (error) {
+    console.error('Error en switch-profile:', error);
+    res.status(500).json({ error: 'Error al cambiar de perfil.' });
   }
 });
 
@@ -458,6 +484,28 @@ app.put('/api/users/:id/role', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar rol:', error);
     res.status(500).json({ error: 'Error al actualizar el rol de usuario.' });
+  }
+});
+
+// Actualizar rol secundario de un usuario
+app.put('/api/users/:id/secondary-role', async (req, res) => {
+  const { id } = req.params;
+  const { secondaryRole } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      'UPDATE public.t_usuarios SET secondary_role = $1 WHERE id_usuarios = $2 RETURNING *',
+      [secondaryRole || null, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    res.json(mapUserToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar rol secundario:', error);
+    res.status(500).json({ error: 'Error al actualizar el rol secundario de usuario.' });
   }
 });
 

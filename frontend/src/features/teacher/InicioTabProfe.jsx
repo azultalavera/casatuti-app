@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 import GroupIcon from '@mui/icons-material/Group';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
@@ -66,7 +67,7 @@ export default function InicioTabProfe({
             classObj: c,
             dateObj: classStart,
             dateStr: dateStr,
-            displayDate: `${dayName} ${dateToCheck.getDate()} de ${MONTHS[dateToCheck.getMonth()]}`
+            displayDate: formatDateDDMMYYYY(classStart)
           });
         }
       }
@@ -225,7 +226,7 @@ export default function InicioTabProfe({
             id: `${c.id}-${dateStr}`,
             classObj: c,
             dateObj: classStart,
-            displayDate: `${dayName} ${dateToCheck.getDate()} de ${MONTHS[dateToCheck.getMonth()]}`,
+            displayDate: formatDateDDMMYYYY(classStart),
             enrolledCount: enrolled.length
           });
         }

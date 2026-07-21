@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import { formatDateDDMMYYYY } from '../../utils/dateUtils';
 
 export default function CreditosTab({
   currentUser,
@@ -304,7 +305,7 @@ export default function CreditosTab({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gris-medio)' }}>
                   <CalendarTodayIcon style={{ fontSize: '14px' }} />
                   <span style={{ fontSize: '12px' }}>
-                    Registrado: {p.date ? getDateObj(p.date).toLocaleDateString('es-AR') : 'Fecha desconocida'}
+                    Registrado: {p.date ? formatDateDDMMYYYY(p.date) : 'Fecha desconocida'}
                   </span>
                 </div>
               </div>
@@ -341,7 +342,7 @@ export default function CreditosTab({
                       ${Number(b.price).toLocaleString('es-AR')}
                     </span>
                     <span style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>
-                      {new Date(b.date || new Date()).toLocaleDateString('es-AR')}
+                      {formatDateDDMMYYYY(b.date || new Date())}
                     </span>
                   </div>
                 </div>
@@ -399,7 +400,7 @@ export default function CreditosTab({
                     backgroundColor: 'var(--bg-crema)', padding: '6px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600
                   }}>
                     <CalendarTodayIcon style={{ fontSize: '14px', color: 'var(--gris-medio)' }} />
-                    {pack.buyDate ? `Inicia: ${pack.buyDate.toLocaleDateString('es-AR')}` : 'Fecha: No registrada'}
+                    {pack.buyDate ? `Inicia: ${formatDateDDMMYYYY(pack.buyDate)}` : 'Fecha: No registrada'}
                   </div>
 
                   <div style={{
@@ -407,7 +408,7 @@ export default function CreditosTab({
                     backgroundColor: '#FFFBEA', padding: '6px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700
                   }}>
                     <HourglassEmptyIcon style={{ fontSize: '14px' }} />
-                    {pack.expDate ? `Vence: ${pack.expDate.toLocaleDateString('es-AR')}` : 'Vence: A confirmar'}
+                    {pack.expDate ? `Vence: ${formatDateDDMMYYYY(pack.expDate)}` : 'Vence: A confirmar'}
                   </div>
                 </div>
               </div>
