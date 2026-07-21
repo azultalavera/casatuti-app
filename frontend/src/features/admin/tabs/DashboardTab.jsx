@@ -7,6 +7,7 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SettingsIcon from '@mui/icons-material/Settings';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import { formatDateDDMMYYYY } from '../../../utils/dateUtils';
 
 export default function DashboardTab({ classes, bookings, students, studentProfiles, payments, setAdminTab, navigateToStudents }) {
   const { branches, nonWorkingDays } = useApp();
