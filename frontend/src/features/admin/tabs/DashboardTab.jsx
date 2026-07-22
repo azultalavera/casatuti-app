@@ -10,7 +10,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import { formatDateDDMMYYYY } from '../../../utils/dateUtils';
 
 export default function DashboardTab({ classes, bookings, students, studentProfiles, payments, setAdminTab, navigateToStudents }) {
-  const { branches, nonWorkingDays } = useApp();
+  const { branches, nonWorkingDays, alerts, handlePauseRequestAction } = useApp();
   const [selectedBranch, setSelectedBranch] = useState('ALL');
 
   const currentMonthNum = new Date().getMonth() + 1;
@@ -84,6 +84,9 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
     }
     return total;
   }, 0);
+
+  // Pause Requests
+  const pauseRequests = (alerts || []).filter(a => a.type === 'PAUSE_REQUEST' && !a.resolved);
 
   // Alertas resúmenes
   const alumnasConUnCredito = filteredStudentProfiles.filter(p => p.classCredits === 1).length;
@@ -203,6 +206,40 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
           </div>
         </div>
       </div>
+
+      {/* Solicitudes de Pausa */}
+      {pauseRequests.length > 0 && (
+        <>
+          <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
+            <span className="dashboard-section-title" style={{ color: 'var(--amarillo-alerta)' }}>Solicitudes de Pausa</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+            {pauseRequests.map(req => (
+              <div key={req.id} className="stat-card-modern" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '4px solid var(--amarillo-alerta)' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--gris-oscuro)', lineHeight: '1.4' }}>
+                  {req.message}
+                </p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => handlePauseRequestAction(req.id, true, req.metadata)}
+                    className="btn-tuti btn-primary-clay" 
+                    style={{ flex: 1, padding: '8px', fontSize: '12px' }}
+                  >
+                    Aceptar
+                  </button>
+                  <button 
+                    onClick={() => handlePauseRequestAction(req.id, false, req.metadata)}
+                    className="btn-tuti btn-secondary" 
+                    style={{ flex: 1, padding: '8px', fontSize: '12px', color: 'var(--rojo)' }}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Alertas de Alumnas: Créditos y Vencimientos */}
       <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>

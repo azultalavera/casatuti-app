@@ -841,6 +841,41 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const requestClassPauseAction = async (classId, className, dateStr, teacherName) => {
+    setLoading(true);
+    try {
+      await mockService.createAlert({
+        type: 'PAUSE_REQUEST',
+        message: `El profesor/a ${teacherName} solicitó pausar la clase "${className}" del día ${dateStr}.`,
+        metadata: { classId, className, dateStr, teacherName }
+      });
+      const loadedAlerts = await mockService.getAlerts();
+      setAlerts(loadedAlerts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePauseRequestAction = async (alertId, accept, metadata) => {
+    setLoading(true);
+    try {
+      if (accept && metadata) {
+        await mockService.toggleClassPause(metadata.classId, metadata.dateStr, true);
+      }
+      await mockService.resolveAlert(alertId);
+      const loadedAlerts = await mockService.getAlerts();
+      setAlerts(loadedAlerts);
+      
+      // Reload classes if accepted
+      if (accept) {
+        const loadedClasses = await mockService.getClasses();
+        setClasses(loadedClasses);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 8. Marcar resuelta una alerta
   const resolveAlertAction = async (alertId) => {
     setLoading(true);
@@ -1023,6 +1058,8 @@ export const AppProvider = ({ children }) => {
         resendWelcomeEmailsAction,
         deleteUserAction,
         toggleStudentBlockAction,
+        requestClassPauseAction,
+        handlePauseRequestAction,
         resolveAlertAction,
         resolveAllAlertsAction,
         addNonWorkingDay,

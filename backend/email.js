@@ -42,14 +42,24 @@ export const sendRecoveryEmail = async (to, newPassword) => {
   }
 };
 
-export const sendWelcomeEmail = async (to, name, tempPassword, rulesHtml) => {
+export const getPronoun = (genero) => {
+  switch (genero?.toUpperCase()) {
+    case 'M': return 'o';
+    case 'F': return 'a';
+    case 'X': return 'e';
+    default: return 'a'; // Default histórico
+  }
+};
+
+export const sendWelcomeEmail = async (to, name, tempPassword, rulesHtml, genero = 'F') => {
+  const p = getPronoun(genero);
   const mailOptions = {
     from: `"Casa Tuti" <${process.env.EMAIL_USER || 'no-reply@casatuti.com'}>`,
     to,
-    subject: '¡Bienvenida a Casa Tuti! - Tus accesos y normas de convivencia',
+    subject: `¡Bienvenid${p} a Casa Tuti! - Tus accesos y normas de convivencia`,
     html: `
       <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-        <h2 style="color: #455f3e; text-align: center;">¡Bienvenida a Casa Tuti, ${name}!</h2>
+        <h2 style="color: #455f3e; text-align: center;">¡Bienvenid${p} a Casa Tuti, ${name}!</h2>
         <p>Estamos muy felices de que te unas a nuestro taller.</p>
         
         <h3 style="color: #a84231;">Tus credenciales de acceso</h3>
@@ -63,7 +73,7 @@ export const sendWelcomeEmail = async (to, name, tempPassword, rulesHtml) => {
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
 
         <h3 style="color: #455f3e;">Normas de Convivencia</h3>
-        <p>Para asegurar la mejor experiencia para todas, te pedimos que leas nuestras normas de convivencia:</p>
+        <p>Para asegurar la mejor experiencia para tod${p}s, te pedimos que leas nuestras normas de convivencia:</p>
         <div style="background-color: #f9f9f9; padding: 16px; border-radius: 6px; font-size: 14px;">
           ${rulesHtml}
         </div>

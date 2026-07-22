@@ -17,7 +17,8 @@ export default function ClasesTabProfe({
   studentProfiles,
   takeAttendance,
   deliverClayToStudent,
-  createBake
+  createBake,
+  requestClassPauseAction
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState(null);
@@ -81,18 +82,25 @@ export default function ClasesTabProfe({
     setView('ROSTER');
   };
 
-  const handleRequestPause = (e) => {
+  const handleRequestPause = async (e) => {
     e.preventDefault();
-    // Registrar el estado pendiente localmente
-    setPauseRequests(prev => ({
-      ...prev,
-      [`${pauseModal.classInfo.id}-${pauseModal.dateStr}`]: 'PENDING'
-    }));
-    
-    // Simular el envío de solicitud de pausa
-    setSuccessMessage(`Solicitud de pausa enviada al administrador para la clase del ${pauseModal.dateStr}.`);
-    setTimeout(() => setSuccessMessage(''), 4000);
-    setPauseModal({ isOpen: false, classInfo: null, dateStr: null });
+    try {
+      // Registrar el estado pendiente localmente
+      setPauseRequests(prev => ({
+        ...prev,
+        [`${pauseModal.classInfo.id}-${pauseModal.dateStr}`]: 'PENDING'
+      }));
+      
+      // Enviar solicitud de pausa real a través del backend/alerta
+      await requestClassPauseAction(pauseModal.classInfo.id, pauseModal.classInfo.name, pauseModal.dateStr, currentUser.name);
+      
+      setSuccessMessage(`Solicitud de pausa enviada al administrador para la clase del ${pauseModal.dateStr}.`);
+      setTimeout(() => setSuccessMessage(''), 4000);
+      setPauseModal({ isOpen: false, classInfo: null, dateStr: null });
+    } catch (err) {
+      setErrorMessage(err.message || 'Error al enviar solicitud de pausa');
+      setTimeout(() => setErrorMessage(''), 4000);
+    }
   };
 
   // 3. Funciones del Roster (Asistencia, Arcilla, Horneado)
@@ -420,7 +428,8 @@ export default function ClasesTabProfe({
               <button type="button" onClick={handleRequestPause} className="btn-tuti btn-primary-clay" style={{ flex: 1, backgroundColor: 'var(--rojo-alerta)' }}>Enviar solicitud</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
