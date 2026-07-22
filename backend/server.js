@@ -1400,7 +1400,7 @@ app.post('/api/bookings', async (req, res) => {
 // Cancelar una reserva (Límite de 2 horas)
 app.post('/api/bookings/:id/cancel', async (req, res) => {
   const { id } = req.params;
-  const { forceLate } = req.body;
+  const { forceLate, forceRefund } = req.body;
 
   try {
     // 1. Obtener la reserva
@@ -1444,7 +1444,7 @@ app.post('/api/bookings/:id/cancel', async (req, res) => {
     const diffMs = classStartDateTime.getTime() - now.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
 
-    const isLateCancellation = forceLate || diffHours < 2;
+    const isLateCancellation = (forceLate || diffHours < 2) && !forceRefund;
 
     if (isLateCancellation) {
       // Cancelación tardía: Se cobra (se cambia a CANCELADA en la base, pero NO se reintegra el crédito)
@@ -1681,13 +1681,20 @@ app.post('/api/clay-deliveries', async (req, res) => {
       return res.status(400).json({ error: 'Límite mensual de arcilla alcanzado (1kg por mes). No se puede entregar más arcilla.' });
     }
 
-    // Registrar en t_deudas_insumos como entrega gratuita de arcilla mensual
+    // Fetch precio from config
+    const extraRes = await db.query("SELECT precio FROM public.t_config_extras WHERE tipo = 'ARCILLA' AND activo = true LIMIT 1");
+    let precio = 0;
+    if (extraRes.rows.length > 0) {
+      precio = parseFloat(extraRes.rows[0].precio);
+    }
+
+    // Registrar en t_deudas_insumos como entrega de arcilla mensual
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, peso_gramos, precio_total, bl_pagado, fec_carga)
       VALUES 
-        ($1, 'ARCILLA', 'Entrega de Arcilla 1kg', 1000, 0, true, NOW())`,
-      [studentId]
+        ($1, 'ARCILLA', 'Entrega de Arcilla 1kg', 1000, $2, false, NOW())`,
+      [studentId, precio]
     );
 
     res.status(201).json({ success: true });
@@ -1774,12 +1781,18 @@ app.post('/api/bakes', async (req, res) => {
   }
 
   try {
+    const extraRes = await db.query("SELECT precio FROM public.t_config_extras WHERE tipo = 'HORNEADO' AND activo = true LIMIT 1");
+    let finalPrice = price; // Default to provided price
+    if (extraRes.rows.length > 0) {
+      finalPrice = parseFloat(extraRes.rows[0].precio);
+    }
+
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
         ($1, 'HORNO', $2, $3, NULL, false, NOW())`,
-      [studentId, description, price]
+      [studentId, description, finalPrice]
     );
 
     res.status(201).json({ success: true });
@@ -1798,13 +1811,19 @@ app.post('/api/extra-clay', async (req, res) => {
   }
 
   try {
+    const extraRes = await db.query("SELECT precio FROM public.t_config_extras WHERE tipo = 'ARCILLA' AND activo = true LIMIT 1");
+    let precio = 0;
+    if (extraRes.rows.length > 0) {
+      precio = parseFloat(extraRes.rows[0].precio);
+    }
+
     const descripcion = `Arcilla extra: ${quantity}`;
     await db.query(
       `INSERT INTO public.t_deudas_insumos 
         (id_usuarios, tipo, descripcion, precio_total, metodo_pago_pte, bl_pagado, fec_carga)
       VALUES 
-        ($1, 'ARCILLA', $2, 0, NULL, false, NOW())`,
-      [studentId, descripcion]
+        ($1, 'ARCILLA', $2, $3, NULL, false, NOW())`,
+      [studentId, descripcion, precio]
     );
 
     res.status(201).json({ success: true });
@@ -2179,6 +2198,93 @@ app.delete('/api/packs/:id', async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar paquete:', error);
     res.status(500).json({ error: 'Error al eliminar paquete.' });
+  }
+});
+
+// ==========================================
+// 9.5. ENDPOINTS DE EXTRAS (ARCILLA, HORNEADO)
+// ==========================================
+
+const mapExtraToFE = (row) => ({
+  id: row.id_extra,
+  tipo: row.tipo,
+  name: row.nombre,
+  price: parseFloat(row.precio),
+  active: row.activo
+});
+
+app.get('/api/extras', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM public.t_config_extras ORDER BY tipo ASC, nombre ASC');
+    res.json(rows.map(mapExtraToFE));
+  } catch (error) {
+    console.error('Error al listar extras:', error);
+    res.status(500).json({ error: 'Error al obtener extras.' });
+  }
+});
+
+app.post('/api/extras', async (req, res) => {
+  const { tipo, name, price } = req.body;
+  if (!tipo || !name || price === undefined) {
+    return res.status(400).json({ error: 'Faltan datos requeridos (tipo, name, price).' });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO public.t_config_extras (tipo, nombre, precio)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [tipo, name, price]
+    );
+    res.status(201).json(mapExtraToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al crear extra:', error);
+    res.status(500).json({ error: 'Error al crear extra.' });
+  }
+});
+
+app.put('/api/extras/:id', async (req, res) => {
+  const { id } = req.params;
+  const { tipo, name, price, active } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      `UPDATE public.t_config_extras 
+       SET tipo = COALESCE($1, tipo),
+           nombre = COALESCE($2, nombre),
+           precio = COALESCE($3, precio),
+           activo = COALESCE($4, activo)
+       WHERE id_extra = $5
+       RETURNING *`,
+      [tipo, name, price, active, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Extra no encontrado.' });
+    }
+
+    res.json(mapExtraToFE(rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar extra:', error);
+    res.status(500).json({ error: 'Error al actualizar extra.' });
+  }
+});
+
+app.delete('/api/extras/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await db.query(
+      'DELETE FROM public.t_config_extras WHERE id_extra = $1 RETURNING *',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Extra no encontrado.' });
+    }
+    res.json({ success: true, deleted: rows[0].id_extra });
+  } catch (error) {
+    console.error('Error al eliminar extra:', error);
+    res.status(500).json({ error: 'Error al eliminar extra.' });
   }
 });
 

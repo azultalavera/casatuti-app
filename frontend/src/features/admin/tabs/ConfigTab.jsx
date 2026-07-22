@@ -17,6 +17,7 @@ export default function ConfigTab({ showFeedback, goBack }) {
     classes, updateTurn,
     nonWorkingDays, addNonWorkingDay, deleteNonWorkingDay,
     packs, createPack, updatePack, deletePack,
+    extras, createExtra, updateExtra, deleteExtra,
     branches, createBranch, updateBranch, deleteBranch,
     faqs, createFaq, updateFaq, deleteFaq
   } = useApp();
@@ -38,6 +39,13 @@ export default function ConfigTab({ showFeedback, goBack }) {
   const [configPackCredits, setConfigPackCredits] = useState('');
   const [configPackPrice, setConfigPackPrice] = useState('');
   const [editingPackId, setEditingPackId] = useState(null);
+
+  // --- EXTRAS STATES ---
+  const [configExtraType, setConfigExtraType] = useState('ARCILLA');
+  const [configExtraName, setConfigExtraName] = useState('');
+  const [configExtraPrice, setConfigExtraPrice] = useState('');
+  const [editingExtraId, setEditingExtraId] = useState(null);
+  const [packsSubTab, setPacksSubTab] = useState('credits'); // 'credits', 'extras'
 
   // --- BRANCHES STATES ---
   const [branchName, setBranchName] = useState('');
@@ -130,6 +138,42 @@ export default function ConfigTab({ showFeedback, goBack }) {
       try {
         await deletePack(id);
         showFeedback("Pack eliminado.", "info");
+      } catch (err) { showFeedback(err.message, "danger"); }
+    }
+  };
+
+  const handleSaveExtra = async (e) => {
+    e.preventDefault();
+    if (!configExtraType || !configExtraName || configExtraPrice === '') {
+      alert("Completá todos los campos");
+      return;
+    }
+    const data = { tipo: configExtraType, name: configExtraName, price: Number(configExtraPrice) };
+    try {
+      if (editingExtraId) {
+        await updateExtra(editingExtraId, data);
+        showFeedback("Extra actualizado exitosamente.", "info");
+      } else {
+        await createExtra(data);
+        showFeedback("Extra creado exitosamente.", "info");
+      }
+      setConfigExtraName('');
+      setConfigExtraPrice('');
+      setEditingExtraId(null);
+      setConfigExtraType('ARCILLA');
+    } catch (err) { showFeedback(err.message, "danger"); }
+  };
+  const startEditExtra = (extra) => {
+    setEditingExtraId(extra.id);
+    setConfigExtraType(extra.tipo);
+    setConfigExtraName(extra.name);
+    setConfigExtraPrice(extra.price);
+  };
+  const handleDeleteExtra = async (id) => {
+    if (window.confirm("¿Seguro que quieres eliminar este extra?")) {
+      try {
+        await deleteExtra(id);
+        showFeedback("Extra eliminado.", "info");
       } catch (err) { showFeedback(err.message, "danger"); }
     }
   };
@@ -496,6 +540,24 @@ export default function ConfigTab({ showFeedback, goBack }) {
 
       {view === 'packs' && (
         <div className="stat-card-modern animate-slide-up" style={{ padding: '24px', backgroundColor: 'var(--blanco)', borderRadius: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', color: 'var(--gris-oscuro)' }}>
+          
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--gris-claro)', paddingBottom: '8px' }}>
+            <button 
+              onClick={() => setPacksSubTab('credits')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: packsSubTab === 'credits' ? 'bold' : 'normal', color: packsSubTab === 'credits' ? 'var(--verde-oliva)' : 'var(--gris-medio)', borderBottom: packsSubTab === 'credits' ? '2px solid var(--verde-oliva)' : 'none', paddingBottom: '4px' }}
+            >
+              Créditos (Clases)
+            </button>
+            <button 
+              onClick={() => setPacksSubTab('extras')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: packsSubTab === 'extras' ? 'bold' : 'normal', color: packsSubTab === 'extras' ? 'var(--verde-oliva)' : 'var(--gris-medio)', borderBottom: packsSubTab === 'extras' ? '2px solid var(--verde-oliva)' : 'none', paddingBottom: '4px' }}
+            >
+              Extras (Insumos)
+            </button>
+          </div>
+
+          {packsSubTab === 'credits' && (
+            <>
           <form onSubmit={handleSavePack} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ flex: '1 1 120px' }}>
               <label style={{ fontSize: '11px' }}>Nombre</label>
@@ -533,6 +595,53 @@ export default function ConfigTab({ showFeedback, goBack }) {
             ))}
             {packs.length === 0 && <p style={{ fontSize: '12px', color: 'var(--gris-medio)', textAlign: 'center' }}>No hay packs configurados.</p>}
           </div>
+          </>)}
+
+          {packsSubTab === 'extras' && (
+            <>
+            <form onSubmit={handleSaveExtra} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ flex: '1 1 120px' }}>
+                <label style={{ fontSize: '11px' }}>Tipo</label>
+                <select className="input-tuti" value={configExtraType} onChange={e => setConfigExtraType(e.target.value)} required>
+                  <option value="ARCILLA">ARCILLA</option>
+                  <option value="HORNEADO">HORNEADO</option>
+                  <option value="OTRO">OTRO</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ flex: '1 1 120px' }}>
+                <label style={{ fontSize: '11px' }}>Nombre / Descripción</label>
+                <input type="text" className="input-tuti" value={configExtraName} onChange={e => setConfigExtraName(e.target.value)} placeholder="Ej. Bloque 1kg" required />
+              </div>
+              <div className="form-group" style={{ flex: '1 1 100px' }}>
+                <label style={{ fontSize: '11px' }}>Precio ($)</label>
+                <input type="number" className="input-tuti" value={configExtraPrice} onChange={e => setConfigExtraPrice(e.target.value)} required />
+              </div>
+              <button type="submit" className="btn-tuti btn-success-soft" style={{ padding: '12px 14px', width: 'auto', flex: '0 0 auto' }}>
+                {editingExtraId ? <EditIcon style={{ fontSize: '18px' }} /> : <AddIcon style={{ fontSize: '18px' }} />}
+              </button>
+              {editingExtraId && (
+                <button type="button" className="btn-tuti btn-danger-soft" onClick={() => { setEditingExtraId(null); setConfigExtraName(''); setConfigExtraPrice(''); setConfigExtraType('ARCILLA'); }} style={{ padding: '12px 14px', width: 'auto', flex: '0 0 auto' }}>
+                  <CloseIcon style={{ fontSize: '18px' }} />
+                </button>
+              )}
+            </form>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {extras.map(ex => (
+                <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: 'none', borderRadius: '24px', backgroundColor: 'var(--blanco)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>{ex.name}</h4>
+                    <span style={{ fontSize: '12px', color: 'var(--gris-medio)' }}>{ex.tipo} • ${ex.price.toLocaleString('es-AR')}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => startEditExtra(ex)} className="btn-tuti" style={{ padding: '4px 8px', fontSize: '11px', width: 'auto', backgroundColor: 'var(--bg-crema)' }}>Editar</button>
+                    <button onClick={() => handleDeleteExtra(ex.id)} className="btn-tuti" style={{ padding: '4px 8px', fontSize: '11px', width: 'auto', backgroundColor: '#fee' }}>Borrar</button>
+                  </div>
+                </div>
+              ))}
+              {extras.length === 0 && <p style={{ fontSize: '12px', color: 'var(--gris-medio)', textAlign: 'center' }}>No hay extras configurados.</p>}
+            </div>
+            </>
+          )}
         </div>
       )}
 

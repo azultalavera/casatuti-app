@@ -2,7 +2,7 @@ async function run() {
   const res = await fetch('http://127.0.0.1:5005/api/users');
   const users = await res.json();
   
-  const teachers = users.filter(u => u.role === 'PROFE');
+  const teachers = users.filter(u => u.role === 'PROFE' || u.secondaryRole === 'PROFE');
   console.log('Teachers before filter:', teachers.length);
   
   const searchTerm = '';

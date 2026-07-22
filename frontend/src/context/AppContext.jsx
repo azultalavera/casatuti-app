@@ -26,6 +26,7 @@ export const AppProvider = ({ children }) => {
   const [waitlist, setWaitlist] = useState([]);
   const [nonWorkingDays, setNonWorkingDays] = useState([]);
   const [packs, setPacks] = useState([]);
+  const [extras, setExtras] = useState([]);
   const [branches, setBranches] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ export const AppProvider = ({ children }) => {
         loadedWaitlist,
         loadedNonWorkingDays,
         loadedPacks,
+        loadedExtras,
         loadedBranches,
         loadedFaqs
       ] = await Promise.all([
@@ -61,6 +63,7 @@ export const AppProvider = ({ children }) => {
         mockService.getWaitlist().catch(() => ({ error: true })),
         mockService.getNonWorkingDays().catch(() => ({ error: true })),
         mockService.getPacks().catch(() => ({ error: true })),
+        mockService.getExtras().catch(() => ({ error: true })),
         mockService.getBranches().catch(() => ({ error: true })),
         mockService.getFaqs().catch(() => ({ error: true }))
       ]);
@@ -76,6 +79,7 @@ export const AppProvider = ({ children }) => {
       if (!loadedWaitlist.error) setWaitlist(loadedWaitlist);
       if (!loadedNonWorkingDays.error) setNonWorkingDays(loadedNonWorkingDays || []);
       if (!loadedPacks.error) setPacks(loadedPacks || []);
+      if (!loadedExtras.error) setExtras(loadedExtras || []);
       if (!loadedBranches.error) setBranches(loadedBranches || []);
       if (!loadedFaqs.error) setFaqs(loadedFaqs || []);
 
@@ -424,12 +428,12 @@ export const AppProvider = ({ children }) => {
   };
 
   // 2. Cancelar reserva delegando la lógica al backend
-  const cancelBooking = async (bookingId, forceLate = false) => {
+  const cancelBooking = async (bookingId, forceLate = false, forceRefund = false) => {
     setLoading(true);
     try {
       // Llamada al backend real para procesar la cancelación. El backend calcula las 2 horas y devuelve los créditos si corresponde.
       const response = await mockService.updateBooking(bookingId, { 
-        status: forceLate ? 'CANCELLED_LATE' : 'CANCELLED' 
+        status: forceLate ? 'CANCELLED_LATE' : forceRefund ? 'CANCELLED_REFUND' : 'CANCELLED' 
       });
 
       // Recargar datos actualizados desde el backend
@@ -846,7 +850,7 @@ export const AppProvider = ({ children }) => {
     try {
       await mockService.createAlert({
         type: 'PAUSE_REQUEST',
-        message: `El profesor/a ${teacherName} solicitó pausar la clase "${className}" del día ${dateStr}.`,
+        message: `El profesor/a ${teacherName} solicitó pausar la clase "${className}" del día ${dateStr.split('-').reverse().join('/')}.`,
         metadata: { classId, className, dateStr, teacherName }
       });
       const loadedAlerts = await mockService.getAlerts();
@@ -953,6 +957,46 @@ export const AppProvider = ({ children }) => {
       await mockService.deletePack(packId);
       const loadedPacks = await mockService.getPacks();
       setPacks(loadedPacks);
+    } catch (error) {
+      console.error('Error al eliminar paquete:', error);
+      throw error;
+    }
+  };
+
+  // --- Extras ---
+  const reloadExtras = async () => {
+    try {
+      const loadedExtras = await mockService.getExtras();
+      setExtras(loadedExtras);
+    } catch (error) {
+      console.error('Error al recargar extras:', error);
+    }
+  };
+
+  const createExtra = async (extraData) => {
+    try {
+      await mockService.createExtra(extraData);
+      await reloadExtras();
+    } catch (error) {
+      console.error('Error al crear extra:', error);
+      throw error;
+    }
+  };
+
+  const updateExtra = async (extraId, extraData) => {
+    try {
+      await mockService.updateExtra(extraId, extraData);
+      await reloadExtras();
+    } catch (error) {
+      console.error('Error al actualizar extra:', error);
+      throw error;
+    }
+  };
+
+  const deleteExtra = async (extraId) => {
+    try {
+      await mockService.deleteExtra(extraId);
+      await reloadExtras();
     } finally {
       setLoading(false);
     }
@@ -1020,6 +1064,7 @@ export const AppProvider = ({ children }) => {
         waitlist,
         nonWorkingDays,
         packs,
+        extras,
         branches,
         faqs,
         loading,
@@ -1067,6 +1112,9 @@ export const AppProvider = ({ children }) => {
         createPack,
         updatePack,
         deletePack,
+        createExtra,
+        updateExtra,
+        deleteExtra,
         createFaq,
         updateFaq,
         deleteFaq,

@@ -253,11 +253,14 @@ export const apiService = {
 
   updateBooking: async (bookingId, updates) => {
     // Si la actualización es para cancelar la clase
-    if (updates.status === 'CANCELLED' || updates.status === 'CANCELLED_LATE') {
+    if (updates.status === 'CANCELLED' || updates.status === 'CANCELLED_LATE' || updates.status === 'CANCELLED_REFUND') {
       const res = await fetch(`${API_URL}/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ forceLate: updates.status === 'CANCELLED_LATE' })
+        body: JSON.stringify({ 
+          forceLate: updates.status === 'CANCELLED_LATE',
+          forceRefund: updates.status === 'CANCELLED_REFUND'
+        })
       });
       return handleResponse(res);
     }
@@ -476,6 +479,37 @@ export const apiService = {
 
   deletePack: async (packId) => {
     const res = await fetch(`${API_URL}/packs/${packId}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  },
+
+  // --- EXTRAS (ARCILLA, HORNEADO) ---
+  getExtras: async () => {
+    const res = await fetch(`${API_URL}/extras`);
+    return handleResponse(res);
+  },
+
+  createExtra: async (extraData) => {
+    const res = await fetch(`${API_URL}/extras`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(extraData)
+    });
+    return handleResponse(res);
+  },
+
+  updateExtra: async (extraId, extraData) => {
+    const res = await fetch(`${API_URL}/extras/${extraId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(extraData)
+    });
+    return handleResponse(res);
+  },
+
+  deleteExtra: async (extraId) => {
+    const res = await fetch(`${API_URL}/extras/${extraId}`, {
       method: 'DELETE'
     });
     return handleResponse(res);

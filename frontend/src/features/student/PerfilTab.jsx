@@ -20,6 +20,7 @@ export default function PerfilTab() {
     nombre: defaultNombre,
     apellido: defaultApellido,
     nro_documento: currentUser?.nro_documento || '',
+    genero: currentUser?.genero || 'F',
     fecha_nacimiento: currentUser?.fecha_nacimiento
       ? String(currentUser.fecha_nacimiento).split('T')[0]
       : '',
@@ -279,6 +280,14 @@ export default function PerfilTab() {
           <div className="form-group" style={{ minWidth: 0 }}>
             <label style={labelStyle}>Fecha de nacimiento</label>
             <input type="date" name="fecha_nacimiento" style={{ ...inputStyle, minWidth: 0, maxWidth: '100%', WebkitAppearance: 'none' }} value={formData.fecha_nacimiento} onChange={handleInput} />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Género</label>
+            <select name="genero" style={{ ...inputStyle, cursor: 'pointer' }} value={formData.genero} onChange={handleInput}>
+              <option value="F">Femenino</option>
+              <option value="M">Masculino</option>
+              <option value="X">Otro / Prefiero no decir</option>
+            </select>
           </div>
 
           <div style={sectionHeaderStyle}>

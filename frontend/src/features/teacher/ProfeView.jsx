@@ -18,7 +18,8 @@ export default function ProfeView({ activeTab, setActiveTab }) {
     createBake,
     createExtraClay,
     bookClassForStudent,
-    requestClassPauseAction
+    requestClassPauseAction,
+    cancelBooking
   } = useApp();
 
   const [selectedBranch, setSelectedBranch] = useState('ALL');
@@ -57,6 +58,7 @@ export default function ProfeView({ activeTab, setActiveTab }) {
             bookClassForStudent={bookClassForStudent}
             createBake={createBake}
             createExtraClay={createExtraClay}
+            cancelBooking={cancelBooking}
             setActiveTab={setActiveTab}
           />
         );
@@ -72,6 +74,7 @@ export default function ProfeView({ activeTab, setActiveTab }) {
             createBake={createBake}
             createExtraClay={createExtraClay}
             requestClassPauseAction={requestClassPauseAction}
+            cancelBooking={cancelBooking}
           />
         );
       case 'alumnos':

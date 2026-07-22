@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../../../context/AppContext';
 import { exportToExcel } from '../../../../utils/exportToExcel';
+import { formatDateDDMMYYYY } from '../../../../utils/dateUtils';
 
 export default function ReportAuditing() {
   const { payments, users } = useApp();
@@ -17,7 +18,7 @@ export default function ReportAuditing() {
     const exportData = pendingPayments.map(p => {
       const user = users.find(u => u.id === p.studentId);
       return {
-        "Fecha_Pago": p.date ? p.date.split('T')[0].split(' ')[0] : 'N/A',
+        "Fecha_Pago": p.date ? formatDateDDMMYYYY(p.date.split('T')[0].split(' ')[0]) : 'N/A',
         "Alumna": user ? `${user.name} ${user.lastname || ''}`.trim() : 'Desconocida',
         "Documento": user ? user.nro_documento : 'N/A',
         "Monto_Adeudado": p.amount,
@@ -86,7 +87,7 @@ export default function ReportAuditing() {
                       {p.classCreditsAdded} créditos
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--gris-medio)' }}>
-                      {p.date ? p.date.split('T')[0].split(' ')[0] : '-'}
+                      {p.date ? formatDateDDMMYYYY(p.date.split('T')[0].split(' ')[0]) : '-'}
                     </span>
                   </div>
                 </div>

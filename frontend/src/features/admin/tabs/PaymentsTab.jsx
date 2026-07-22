@@ -5,6 +5,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import { formatDateDDMMYYYY } from '../../../utils/dateUtils';
 
 export default function PaymentsTab({ showFeedback }) {
   const {
@@ -368,7 +369,7 @@ export default function PaymentsTab({ showFeedback }) {
                           )}
                           <span>• <strong>${p.amount.toLocaleString('es-AR')}</strong></span>
                         </p>
-                        <p style={{ fontSize: '10px', color: 'var(--gris-medio)', marginTop: '2px' }}>{p.date.split(' ')[0]}</p>
+                        <p style={{ fontSize: '10px', color: 'var(--gris-medio)', marginTop: '2px' }}>{formatDateDDMMYYYY(p.date.split(' ')[0])}</p>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }} onClick={e => e.stopPropagation()}>
@@ -649,7 +650,7 @@ export default function PaymentsTab({ showFeedback }) {
                                     {p.insumoType === 'HORNO' ? 'HORNEADO' : 'ARCILLA'}
                                   </span>
                                 ) : (
-                                  `${p.date.split(' ')[0]} • +${p.classCreditsAdded} clases`
+                                  `${formatDateDDMMYYYY(p.date.split(' ')[0])} • +${p.classCreditsAdded} clases`
                                 )}
                               </p>
                             </div>

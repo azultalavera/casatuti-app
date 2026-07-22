@@ -52,12 +52,15 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
     ? students
     : students.filter(s => (s.sucursal || '').toUpperCase() === selectedBranch.toUpperCase());
 
-  const filteredStudentProfiles = selectedBranch === 'ALL'
-    ? studentProfiles
-    : studentProfiles.filter(p => {
-      const student = students.find(s => s.id === p.studentId);
-      return student && (student.sucursal || '').toUpperCase() === selectedBranch.toUpperCase();
-    });
+  const filteredStudentProfiles = studentProfiles.filter(p => {
+    if (p.isBlocked) return false;
+    const student = students.find(s => s.id === p.studentId);
+    if (!student) return false; // Solo considerar alumnos actuales
+    if (selectedBranch !== 'ALL' && (student.sucursal || '').toUpperCase() !== selectedBranch.toUpperCase()) {
+      return false;
+    }
+    return true;
+  });
 
   const turnosHoyCount = filteredClasses.filter(c => c.day === todayDay).length;
   const alumnosCount = filteredStudents.length;
@@ -90,9 +93,9 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
 
   // Alertas resúmenes
   const alumnasConUnCredito = filteredStudentProfiles.filter(p => p.classCredits === 1).length;
-  
+
   const expiringProfiles = filteredStudentProfiles.filter(p => {
-    if (!p.expirationDate) return false;
+    if (p.classCredits <= 0 || !p.expirationDate) return false;
     const expDate = new Date(p.expirationDate);
     const diffTime = expDate - new Date();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -207,30 +210,30 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
       </div>
 
-      {/* Solicitudes de Pausa */}
+      {/* Solicitudes de pausa */}
       {pauseRequests.length > 0 && (
         <>
           <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
-            <span className="dashboard-section-title" style={{ color: 'var(--amarillo-alerta)' }}>Solicitudes de Pausa</span>
+            <span className="dashboard-section-title" style={{ color: 'var(--amarillo-alerta)' }}>Solicitudes de pausa</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
             {pauseRequests.map(req => (
               <div key={req.id} className="stat-card-modern" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '4px solid var(--amarillo-alerta)' }}>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--gris-oscuro)', lineHeight: '1.4' }}>
-                  {req.message}
+                  {req.message.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')}
                 </p>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
+                  <button
                     onClick={() => handlePauseRequestAction(req.id, true, req.metadata)}
-                    className="btn-tuti btn-primary-clay" 
+                    className="btn-tuti btn-primary-clay"
                     style={{ flex: 1, padding: '8px', fontSize: '12px' }}
                   >
                     Aceptar
                   </button>
-                  <button 
+                  <button
                     onClick={() => handlePauseRequestAction(req.id, false, req.metadata)}
-                    className="btn-tuti btn-secondary" 
-                    style={{ flex: 1, padding: '8px', fontSize: '12px', color: 'var(--rojo)' }}
+                    className="btn-tuti btn-secondary"
+                    style={{ flex: 1, padding: '8px', fontSize: '12px', color: 'var(--rojo-alerta)' }}
                   >
                     Rechazar
                   </button>
@@ -241,24 +244,24 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </>
       )}
 
-      {/* Alertas de Alumnas: Créditos y Vencimientos */}
+      {/* Alertas de alumnas: Créditos y vencimientos */}
       <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
-        <span className="dashboard-section-title">Alertas y Vencimientos</span>
+        <span className="dashboard-section-title">Alertas y vencimientos</span>
       </div>
       <details className="stat-card-modern" style={{ padding: '0', overflow: 'hidden', marginTop: '0', backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', color: 'var(--gris-oscuro)' }} open>
         <summary style={{ padding: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--gris-oscuro)' }}>
-          <WarningAmberIcon style={{ color: 'var(--rojo)' }} /> Detalle de alertas
+          <WarningAmberIcon style={{ color: 'var(--rojo-alerta)' }} /> Detalle de alertas
         </summary>
         <div style={{ padding: '0 16px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-          
+
           {/* Alumnas con 1 crédito */}
           <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--amarillo-alerta)', lineHeight: 1 }}>{alumnasConUnCredito}</span>
             <span style={{ fontSize: '13px', color: 'var(--gris-oscuro)', fontWeight: 600, marginTop: '8px' }}>Alumnas con 1 crédito</span>
           </div>
 
-          {/* Pagos Pendientes */}
-          <div 
+          {/* Pagos pendientes */}
+          <div
             onClick={() => setAdminTab('payments')}
             style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
           >
@@ -268,14 +271,14 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
 
           {/* Alumnas con vencimiento cercano (<= 7 días) */}
           <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--gris-claro)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--rojo)', lineHeight: 1 }}>{proximosVencimientosCount}</span>
+            <span style={{ fontSize: '36px', fontWeight: 900, color: 'var(--rojo-alerta)', lineHeight: 1 }}>{proximosVencimientosCount}</span>
             <span style={{ fontSize: '13px', color: 'var(--gris-oscuro)', fontWeight: 600, marginTop: '8px' }}>Vencimientos próximos</span>
           </div>
 
         </div>
       </details>
 
-      {/* Botón/Card de Reportes */}
+      {/* Botón/Card de reportes */}
       <div
         className="stat-card-modern"
         onClick={() => setAdminTab('reports')}
@@ -308,7 +311,7 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
       </div>
 
-      {/* Botón/Card de Configuración */}
+      {/* Botón/Card de configuración */}
       <div
         className="stat-card-modern"
         onClick={() => setAdminTab('config')}
@@ -340,16 +343,16 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
         </div>
       </div>
 
-      {/* Sección de Cumpleaños y Calendario del Mes */}
+      {/* Sección de cumpleaños y calendario del mes */}
       <div className="dashboard-section-header" style={{ marginTop: '16px', marginBottom: '8px' }}>
         <span className="dashboard-section-title">Agenda de {currentMonthName}</span>
       </div>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-        {/* Columna de Cumpleaños */}
+        {/* Columna de cumpleaños */}
         <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', color: 'var(--gris-oscuro)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--verde-oliva)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🎂</span> Cumpleaños del Mes
+            <span>🎂</span> Cumpleaños del mes
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
             {birthdaysThisMonth.length === 0 ? (
@@ -368,10 +371,10 @@ export default function DashboardTab({ classes, bookings, students, studentProfi
           </div>
         </div>
 
-        {/* Columna de Feriados y Días No Laborables */}
+        {/* Columna de feriados y días no laborables */}
         <div className="stat-card-modern" style={{ backgroundColor: 'var(--blanco)', border: 'none', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', color: 'var(--gris-oscuro)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--marron-arcilla)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>📅</span> Feriados y No Laborables
+            <span>📅</span> Feriados y no laborables
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
             {holidaysThisMonth.length === 0 ? (

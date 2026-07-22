@@ -18,7 +18,7 @@ const formatDateToLocal = (date) => {
 
 export default function ClassesTab({ showFeedback }) {
   const { users, classes, createNewTurn, changeClassTeacher, updateTurn, deleteTurn, toggleClassPauseAction, branches, bookings = [] } = useApp();
-  const teachers = users.filter(u => u.role === 'PROFE');
+  const teachers = users.filter(u => u.role === 'PROFE' || u.secondaryRole === 'PROFE');
 
   const [mode, setMode] = useState('list'); // 'list', 'create', or 'edit'
   const [editingTeacherClassId, setEditingTeacherClassId] = useState(null);

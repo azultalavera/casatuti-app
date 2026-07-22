@@ -18,7 +18,8 @@ export default function ClasesTabProfe({
   takeAttendance,
   deliverClayToStudent,
   createBake,
-  requestClassPauseAction
+  requestClassPauseAction,
+  cancelBooking
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState(null);
@@ -128,6 +129,20 @@ export default function ClasesTabProfe({
     } catch (err) {
       setErrorMessage(err.message);
       setTimeout(() => setErrorMessage(''), 5000);
+    }
+  };
+
+  const handleRemoveStudent = async (booking) => {
+    if (window.confirm(`¿Seguro que querés quitar a ${booking.studentName} de esta clase y devolverle el crédito?`)) {
+      try {
+        setErrorMessage('');
+        await cancelBooking(booking.id, false, true); // forceRefund = true
+        setSuccessMessage("Alumno/a retirado/a de la clase y crédito devuelto con éxito.");
+        setTimeout(() => setSuccessMessage(''), 4000);
+      } catch (err) {
+        setErrorMessage(err.message);
+        setTimeout(() => setErrorMessage(''), 5000);
+      }
     }
   };
 
@@ -371,10 +386,20 @@ export default function ClasesTabProfe({
                           </button>
                         )}
                       </div>
-                      {/* Horneado */}
-                      <div>
-                        <button onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, price: '', paymentMethod: 'CONTADO' })} className="btn-tuti btn-secondary" style={{ padding: '8px 16px', fontSize: '12px', width: '100%', justifyContent: 'center' }}>
+                      {/* Horneado y Eliminar */}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => setBakeModal({ isOpen: true, studentId: b.studentId, studentName: b.studentName, price: '', paymentMethod: 'CONTADO' })} className="btn-tuti btn-secondary" style={{ padding: '8px 16px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
                           Registrar horneado
+                        </button>
+                        <button 
+                          onClick={() => handleRemoveStudent(b)}
+                          title="Quitar de la clase y devolver crédito"
+                          className="btn-tuti btn-danger"
+                          style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
                       </div>
                     </div>

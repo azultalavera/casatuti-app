@@ -5,7 +5,7 @@ import { Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/ma
 
 export default function TeachersTab({ showFeedback, onEdit }) {
   const { users, createNewUserAction, deleteUserAction, classes, bulkAssignClasses, branches } = useApp();
-  const teachers = users.filter(u => u.role === 'PROFE');
+  const teachers = users.filter(u => u.role === 'PROFE' || u.secondaryRole === 'PROFE');
 
   const [mode, setMode] = useState('list'); // 'list' | 'create'
   const [expandedTeacherId, setExpandedTeacherId] = useState(null);

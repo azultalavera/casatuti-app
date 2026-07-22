@@ -20,6 +20,7 @@ export default function InicioTabProfe({
   bookClassForStudent,
   createBake,
   createExtraClay,
+  cancelBooking,
   setActiveTab
 }) {
   const [selectedStudentToAdd, setSelectedStudentToAdd] = useState('');
@@ -146,6 +147,17 @@ export default function InicioTabProfe({
       alert("Arcilla registrada exitosamente.");
     } catch (err) {
       alert("Error al actualizar arcilla: " + err.message);
+    }
+  };
+
+  const handleRemoveStudent = async (booking) => {
+    if (window.confirm(`¿Seguro que querés quitar a ${booking.studentName} de esta clase y devolverle el crédito?`)) {
+      try {
+        await cancelBooking(booking.id, false, true); // forceRefund = true
+        alert("Alumno/a retirado/a de la clase y crédito devuelto con éxito.");
+      } catch (err) {
+        alert("Error al retirar al alumno/a: " + err.message);
+      }
     }
   };
 
@@ -401,6 +413,28 @@ export default function InicioTabProfe({
                           />
                           Arcilla
                         </label>
+                        
+                        {/* Botón Eliminar */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStudent(b)}
+                          title="Quitar de la clase y devolver crédito"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--rojo-alerta)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            marginLeft: '4px'
+                          }}
+                        >
+                          <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   );
@@ -452,7 +486,7 @@ export default function InicioTabProfe({
           zIndex: 1000,
           animation: 'slideUp 0.3s ease-out'
         }}>
-          <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', backgroundColor: 'var(--blanco)', zIndex: 10 }}>
+          <div style={{ padding: 'max(40px, env(safe-area-inset-top, 40px)) 20px 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', backgroundColor: 'var(--blanco)', zIndex: 10 }}>
             <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
               Próximas clases
             </h3>
