@@ -486,7 +486,7 @@ export default function InicioTabProfe({
           zIndex: 1000,
           animation: 'slideUp 0.3s ease-out'
         }}>
-          <div style={{ padding: 'max(40px, env(safe-area-inset-top, 40px)) 20px 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', backgroundColor: 'var(--blanco)', zIndex: 10 }}>
+          <div style={{ padding: 'max(70px, env(safe-area-inset-top, 70px)) 20px 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--gris-claro)', backgroundColor: 'var(--blanco)', zIndex: 10 }}>
             <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
               Próximas clases
             </h3>
