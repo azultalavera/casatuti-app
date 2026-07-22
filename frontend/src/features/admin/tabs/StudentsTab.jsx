@@ -21,6 +21,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
   const [telefono, setTelefono] = useState('');
   const [instagram, setInstagram] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [genero, setGenero]       = useState('F');
   const [branch, setBranch] = useState(branches.length > 0 ? branches[0].name : 'CENTRO');
 
   React.useEffect(() => {
@@ -59,11 +60,12 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
         telefono: telefono || null,
         instagram: instagram.trim() || null,
         fecha_nacimiento: birthdate || null,
-        sucursal: branch
+        sucursal: branch,
+        genero: genero
       });
-      showFeedback(`¡Alumna "${fullName}" registrada con éxito!`, 'success');
+      showFeedback(`¡Alumn${genero==='M'?'o':genero==='X'?'e':'a'} "${fullName}" registrad${genero==='M'?'o':genero==='X'?'e':'a'} con éxito!`, 'success');
       setNombre(''); setApellido(''); setEmail(''); setDocumento('');
-      setTelefono(''); setInstagram(''); setBirthdate(''); setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
+      setTelefono(''); setInstagram(''); setBirthdate(''); setGenero('F'); setBranch(branches.length > 0 ? branches[0].name : 'CENTRO');
       setMode('list'); // Redirigir a listado después de crear
     } catch (err) {
       showFeedback(err.message, 'danger');
@@ -115,7 +117,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>
-                Nuevo/a alumno/a
+                {genero === 'M' ? 'Nuevo alumno' : genero === 'X' ? 'Nuevo alumne' : 'Nueva alumna'}
               </h3>
               <button
                 type="button"
@@ -164,6 +166,15 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
             </div>
 
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Género *</label>
+              <select className="input-tuti" value={genero} onChange={e => setGenero(e.target.value)} required style={{ width: '100%', cursor: 'pointer' }}>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+                <option value="X">No binario</option>
+              </select>
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursal</label>
               <select className="input-tuti" value={branch} onChange={e => setBranch(e.target.value.toUpperCase())} style={{ width: '100%', cursor: 'pointer' }}>
                 {branches.map(b => (
@@ -173,7 +184,7 @@ export default function StudentsTab({ showFeedback, onEdit, initialFilter, onCle
             </div>
 
             <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '8px', fontSize: '14px', padding: '14px', width: '100%', fontWeight: '700' }}>
-              + Registrar Alumna
+              + Registrar Alumn{genero === 'M' ? 'o' : genero === 'X' ? 'e' : 'a'}
             </button>
           </form>
           </div>

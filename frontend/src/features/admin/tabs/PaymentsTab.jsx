@@ -846,9 +846,20 @@ export default function PaymentsTab({ showFeedback }) {
             width: '100%', maxWidth: '400px', backgroundColor: 'var(--blanco)', padding: '24px',
             borderRadius: '24px', boxShadow: '0 12px 36px rgba(44, 38, 30, 0.15)'
           }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: '0 0 16px 0' }}>
-              Confirmar {confirmModalData.ids.length > 1 ? 'pagos' : 'pago'}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gris-oscuro)', margin: 0 }}>
+                Confirmar {confirmModalData.ids.length > 1 ? 'pagos' : 'pago'}
+              </h3>
+              <button 
+                type="button"
+                onClick={() => setConfirmModalData(null)} 
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gris-medio)' }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             
             <div className="form-group">
               <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gris-oscuro)' }}>Fecha de transferencia / acreditación:</label>

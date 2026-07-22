@@ -75,6 +75,7 @@ const mapUserToFE = (u) => {
     bl_cambio_pass_pte: u.bl_cambio_pass_pte || false,
     sucursal: u.sucursal || 'CENTRO',
     secondaryRole: u.secondary_role || null,
+    genero: u.genero || null,
     created_at: u.created_at || null
   };
 };
@@ -343,7 +344,8 @@ app.post('/api/users', async (req, res) => {
     telefono,
     instagram,
     fecha_nacimiento,
-    sucursal
+    sucursal,
+    genero
   } = req.body;
 
   if (!email || !name || !role) {
@@ -358,8 +360,8 @@ app.post('/api/users', async (req, res) => {
     // 1. Insertar el usuario en la tabla t_usuarios
     const userInsertQuery = `
       INSERT INTO public.t_usuarios 
-      (nro_documento, clave, email, nombre, apellido, telefono, instagram, fecha_nacimiento, rol, bl_cambio_pass_pte, sucursal) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      (nro_documento, clave, email, nombre, apellido, telefono, instagram, fecha_nacimiento, rol, bl_cambio_pass_pte, sucursal, genero) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
     const { rows } = await db.query(userInsertQuery, [
@@ -373,7 +375,8 @@ app.post('/api/users', async (req, res) => {
       fecha_nacimiento || null,
       role,
       false, // bl_cambio_pass_pte
-      sucursal || 'CENTRO'
+      sucursal || 'CENTRO',
+      genero || null
     ]);
 
     const createdUser = rows[0];
@@ -393,7 +396,7 @@ app.post('/api/users', async (req, res) => {
         const tempPassword = password || 'tuti123';
 
         // Disparamos el correo en background para no bloquear la respuesta
-        sendWelcomeEmail(email, nombre, tempPassword, rulesHtml).catch(err => console.error("Error enviando email:", err));
+        sendWelcomeEmail(email, nombre, tempPassword, rulesHtml, genero).catch(err => console.error("Error enviando email:", err));
       } catch (emailErr) {
         console.error('Error al armar o enviar el email de bienvenida:', emailErr);
       }
@@ -606,7 +609,8 @@ app.put('/api/users/:id', async (req, res) => {
     instagram,
     fecha_nacimiento,
     avatar_url,
-    sucursal
+    sucursal,
+    genero
   } = req.body;
 
   if (!email || !nombre || !nro_documento) {
@@ -627,8 +631,9 @@ app.put('/api/users/:id', async (req, res) => {
         instagram = $6,
         fecha_nacimiento = $7,
         avatar_url = $8,
-        sucursal = $9
-      WHERE id_usuarios = $10
+        sucursal = $9,
+        genero = $10
+      WHERE id_usuarios = $11
       RETURNING *
     `;
     const formattedNombre = capitalizeName(nombre);
@@ -644,6 +649,7 @@ app.put('/api/users/:id', async (req, res) => {
       fecha_nacimiento || null,
       avatar_url || null,
       sucursal || 'CENTRO',
+      genero || null,
       id
     ]);
 

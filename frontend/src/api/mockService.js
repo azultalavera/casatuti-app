@@ -136,6 +136,7 @@ export const mockService = {
       fecha_nacimiento: u.fecha_nacimiento || null,
       bl_cambio_pass_pte: u.bl_cambio_pass_pte || false,
       sucursal: u.sucursal || 'CENTRO',
+      genero: u.genero || null,
       created_at: u.created_at || null
     };
   },
@@ -161,6 +162,7 @@ export const mockService = {
       bl_cambio_pass_pte: u.bl_cambio_pass_pte || false,
       created_at: u.created_at || new Date().toISOString(),
       sucursal: u.sucursal || 'CENTRO',
+      genero: u.genero || null,
       active: u.active !== false
     };
   },

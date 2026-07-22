@@ -59,6 +59,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
   const [telefono, setTelefono]   = useState('');
   const [instagram, setInstagram] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [genero, setGenero]       = useState('F');
   const [teacherBranches, setTeacherBranches] = useState([]);
 
   // Filtrado de Profesores
@@ -85,11 +86,13 @@ export default function TeachersTab({ showFeedback, onEdit }) {
         telefono: telefono || null,
         instagram: instagram.trim() || null,
         fecha_nacimiento: birthdate || null,
-        sucursal: teacherBranches.length > 0 ? teacherBranches.join(', ') : 'CENTRO'
+        sucursal: teacherBranches.length > 0 ? teacherBranches.join(', ') : 'CENTRO',
+        genero: genero
       });
-      showFeedback(`¡Profesor/a "${fullName}" registrado con éxito!`, 'success');
+      const p = genero === 'M' ? 'o' : genero === 'X' ? 'e' : 'a';
+      showFeedback(`¡Profesor${genero === 'M' ? '' : ''+p} "${fullName}" registrad${p} con éxito!`, 'success');
       setNombre(''); setApellido(''); setEmail(''); setDocumento('');
-      setTelefono(''); setInstagram(''); setBirthdate(''); setTeacherBranches([]);
+      setTelefono(''); setInstagram(''); setBirthdate(''); setGenero('F'); setTeacherBranches([]);
       setMode('list'); // Regresa al listado después de crear
     } catch (err) {
       showFeedback(err.message, 'danger');
@@ -136,7 +139,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gris-oscuro)', margin: 0 }}>
-                Dar de Alta Nuevo Profesor
+                {genero === 'M' ? 'Nuevo profesor' : genero === 'X' ? 'Nuevo profesore' : 'Nueva profesora'}
               </h3>
               <button
                 type="button"
@@ -178,6 +181,14 @@ export default function TeachersTab({ showFeedback, onEdit }) {
               <input type="date" className="input-tuti" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Género *</label>
+              <select className="input-tuti" value={genero} onChange={e => setGenero(e.target.value)} required style={{ width: '100%', cursor: 'pointer' }}>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+                <option value="X">No binario</option>
+              </select>
+            </div>
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--gris-medio)' }}>Sucursales</label>
               <Select
                 multiple
@@ -212,13 +223,11 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--verde-oliva)', borderWidth: '2px' }
                 }}
                 MenuProps={{
-                  slotProps: {
-                    paper: {
-                      style: {
-                        maxHeight: 224,
-                        width: 250,
-                        borderRadius: '16px'
-                      },
+                  PaperProps: {
+                    style: {
+                      maxHeight: 224,
+                      width: 250,
+                      borderRadius: '16px'
                     },
                   },
                 }}
@@ -230,18 +239,18 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                     size="small" 
                     sx={{ color: 'var(--gris-medio)', '&.Mui-checked, &.MuiCheckbox-indeterminate': { color: 'var(--verde-oliva)' } }} 
                   />
-                  <ListItemText primary="Seleccionar todas" slotProps={{ primary: { fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' } }} />
+                  <ListItemText primary="Seleccionar todas" primaryTypographyProps={{ fontSize: '14px', fontWeight: '700', color: 'var(--gris-oscuro)' }} />
                 </MenuItem>
                 {branches.map((b) => (
                   <MenuItem key={b.id} value={b.name} style={{ fontSize: '14px' }}>
                     <Checkbox checked={teacherBranches.indexOf(b.name) > -1} size="small" sx={{ color: 'var(--gris-medio)', '&.Mui-checked': { color: 'var(--verde-oliva)' } }} />
-                    <ListItemText primary={b.name} slotProps={{ primary: { fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' } }} />
+                    <ListItemText primary={b.name} primaryTypographyProps={{ fontSize: '14px', fontWeight: '500', color: 'var(--gris-oscuro)' }} />
                   </MenuItem>
                 ))}
               </Select>
             </div>
             <button type="submit" className="btn-tuti btn-success-soft" style={{ marginTop: '8px', fontSize: '14px', padding: '12px' }}>
-              + Registrar Profesor
+              + Registrar Profesor{genero === 'M' ? '' : genero === 'X' ? 'e' : 'a'}
             </button>
           </form>
           </div>
@@ -648,6 +657,7 @@ export default function TeachersTab({ showFeedback, onEdit }) {
                 </span>
               </div>
               <button
+                type="button"
                 onClick={() => setShowAssignModal(false)}
                 style={{
                   border: 'none',
